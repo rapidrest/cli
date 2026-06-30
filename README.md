@@ -22,9 +22,9 @@ The official CLI tool for [RapidREST](https://github.com/rapidrest) projects.
 ## Installation
 
 ```sh
-npm install -g rapidrest
+npm install -g @rapidrest/cli
 # or
-yarn global add rapidrest
+yarn global add @rapidrest/cli
 ```
 
 Requires Node.js 18 or later.
