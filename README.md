@@ -3,7 +3,7 @@
 The official CLI tool for [RapidREST](https://github.com/rapidrest) projects.
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/rapidrest.svg)](https://npmjs.org/package/rapidrest)
+[![Version](https://img.shields.io/npm/v/rapidrest.svg)](https://npmjs.com/package/@rapidrest/cli)
 [![License](https://img.shields.io/npm/l/rapidrest.svg)](https://github.com/rapidrest/cli/blob/main/package.json)
 
 ---
