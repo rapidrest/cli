@@ -10,9 +10,8 @@
 		"dist"
 	],
 	"scripts": {
-		"build": "{{#if pkgMgr.yarn}}yarn{{else}}npm run{{/if}} lint && rimraf dist && npx rapidreact build",
-		"dbuild": "rimraf dist && npx rapidreact build",
-		"debug": "nodemon --legacy-watch --watch 'src/**/*' --ext 'ts' --exec 'tsx --inspect=0.0.0.0:9229 src/server.ts'",
+		"build": "rimraf dist && tsc{{#if features.react}} && tsc -p tsconfig.client.json && vite build{{/if}}",
+		"debug": "npx rapidrest dev",
 		"docs": "typedoc --plugin typedoc-plugin-markdown --out docs/reference --target esnext --mode file src",
 		"lint": "eslint ./src ./test",
 		"local-audit": "{{#if pkgMgr.yarn}}yarn{{else}}npm{{/if}} install && yarn npm audit -A -R \"$@\"",
@@ -21,7 +20,7 @@
 		"report-coverage": "cat ./coverage/lcov.info | coveralls",
 		"profile:process": "node --prof-process --call-graph",
 		"profile:view": "npx speedscope",
-		"start": "tsx src/server.ts",
+		"start": "npx rapidrest start",
 		"test": "vitest run --coverage",
 		"test:prod": "{{#if pkgMgr.yarn}}yarn{{else}}npm run{{/if}} lint && {{#if pkgMgr.yarn}}yarn{{else}}npm run{{/if}} test",
 		"test:watch": "vitest --coverage",

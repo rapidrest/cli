@@ -3,9 +3,10 @@
 ///////////////////////////////////////////////////////////////////////////////
 import { createRequire } from "module";
 import nconf from "nconf";
+import { join } from "path";
 
 const _require = createRequire(import.meta.url);
-const packageInfo = _require("../package.json");
+const packageInfo = _require(join(process.cwd(), "package.json"));
 
 const conf = nconf
     .argv()

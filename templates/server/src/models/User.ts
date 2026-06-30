@@ -18,7 +18,13 @@ export enum UserStatus {
  */
 @Description("An example model class describing an authenticated user.")
 @Entity({ collation: { locale: "en", strength: 2 }})
+{{#if features.mongodb}}
 @DataStore("mongo")
+{{else if features.postgresql}}
+@DataStore("postgres")
+{{else if features.sqlite}}
+@DataStore("sqlite")
+{{/if}}
 @Protect(
     {
         uid: "User",

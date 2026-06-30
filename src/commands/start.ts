@@ -1,8 +1,9 @@
 import { Command, Flags } from '@oclif/core';
+import { existsSync } from 'fs';
 import { access, readFile } from 'fs/promises';
 import { join, delimiter } from 'path';
 import { spawn } from 'child_process';
-import { detectDatabases, startDatabases } from '../lib/db.js';
+import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
 import { detectReact } from '../lib/project.js';
 
 async function detectPackageManager(cwd: string): Promise<'npm' | 'yarn'> {
@@ -16,6 +17,15 @@ async function detectPackageManager(cwd: string): Promise<'npm' | 'yarn'> {
     return 'yarn';
   } catch { /* ignore */ }
   return 'npm';
+}
+
+function detectServerPath(cwd: string): string {
+  if (existsSync(join(cwd, "dist", "server", "server.js"))) {
+    return join("dist", "server", "server.js");
+  } else if (existsSync(join(cwd, "dist", "src", "server.js"))) {
+    return join("dist", "src", "server.js");
+  }
+  return join("dist", "server.js");
 }
 
 function runCommand(cmd: string, args: string[], cwd: string): Promise<void> {
@@ -71,29 +81,33 @@ export default class Start extends Command {
 
     // 2. Start databases
     const databases = await detectDatabases(cwd);
-    let dbProcesses: ReturnType<typeof spawn>[] = [];
+    let dbProcesses: StartedDatabase[] = [];
     let dbEnv: Record<string, string> = {};
     try {
       const result = await startDatabases(cwd, databases, (m) => this.log(m), (m) => this.warn(m));
-      dbProcesses = result.processes;
+      dbProcesses = result.databases;
       dbEnv = result.env;
     } catch (e) {
       this.error(e instanceof Error ? e.message : String(e));
     }
 
     // 3. Start server
+    const serverPath: string = detectServerPath(process.execPath);
     this.log('\nStarting RapidREST server...');
     const serverEnv = { ...process.env, ...dbEnv };
-    const server = spawn(process.execPath, ['dist/server.js'], {
+    const server = spawn(process.execPath, [serverPath], {
       cwd,
       stdio: 'inherit',
       env: serverEnv,
     });
 
     // 4. Forward signals and clean up
-    const cleanup = () => {
+    const cleanup = async () => {
       server.kill();
-      for (const p of dbProcesses) p.kill();
+      for (const db of dbProcesses) {
+        this.log(`Stopping database ${db.type}...`);
+        await db.server.stop();
+      }
     };
     process.once('SIGINT', cleanup);
     process.once('SIGTERM', cleanup);

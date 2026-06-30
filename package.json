@@ -14,7 +14,13 @@
     "@oclif/plugin-help": "^6",
     "@oclif/plugin-plugins": "^5",
     "fs-extra": "^11.3.6",
-    "handlebars": "^4.7.9"
+    "handlebars": "^4.7.9",
+    "mongodb-memory-server": "^11.2.0",
+    "pg": "^8.22.0",
+    "postgres-memory-server": "^0.2.2",
+    "redis-memory-server": "^0.17.0",
+    "semver": "^7.8.5",
+    "tmp": "^0.2.7"
   },
   "devDependencies": {
     "@eslint/compat": "^1",
@@ -25,6 +31,9 @@
     "@types/fs-extra": "^11.0.4",
     "@types/mocha": "^10",
     "@types/node": "^26.0.1",
+    "@types/pg": "^8",
+    "@types/semver": "^7",
+    "@types/tmp": "^0",
     "@vitest/coverage-v8": "4.1.9",
     "ansis": "^4.3.1",
     "debug": "^4.4.3",

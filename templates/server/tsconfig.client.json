@@ -1,8 +1,10 @@
 {
     "extends": "@rapidrest/react/tsconfig/client",
     "compilerOptions": {
-        "rootDir": "app",
-        "outDir": "dist/client"
+        "rootDir": ".",
+        "outDir": "dist",
+        "sourceMap": false,
+        "declaration": false
     },
     "include": ["app"]
 }

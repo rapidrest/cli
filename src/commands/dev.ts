@@ -1,7 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import { join, delimiter } from 'path';
 import { spawn } from 'child_process';
-import { detectDatabases, startDatabases } from '../lib/db.js';
+import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
 import { detectReact } from '../lib/project.js';
 
 export default class Dev extends Command {
@@ -22,11 +22,11 @@ export default class Dev extends Command {
 
     // 1. Start databases (no build step in dev mode)
     const databases = await detectDatabases(cwd);
-    let dbProcesses: ReturnType<typeof spawn>[] = [];
+    let dbProcesses: StartedDatabase[] = [];
     let dbEnv: Record<string, string> = {};
     try {
       const result = await startDatabases(cwd, databases, (m) => this.log(m), (m) => this.warn(m));
-      dbProcesses = result.processes;
+      dbProcesses = result.databases;
       dbEnv = result.env;
     } catch (e) {
       this.error(e instanceof Error ? e.message : String(e));
@@ -42,19 +42,21 @@ export default class Dev extends Command {
     };
 
     // 3. Build the tsx exec string — with optional inspector
-    const tsxExec = flags.inspect
-      ? 'tsx --inspect=0.0.0.0:9229 src/server.ts'
-      : 'tsx src/server.ts';
+    const tsxExec = join(projectBin, "tsx");
+    const tsxArgs = ["--watch", "src/server.ts"];
+    if (flags.inspect) {
+      tsxArgs.unshift("--inspect=0.0.0.0:9229");
+    }
 
     // 4. Start nodemon from the project's node_modules
-    this.log('\nStarting RapidREST server in development mode (nodemon + tsx)...');
+    this.log('\nStarting RapidREST server in development mode...');
     const nodemonBin = join(projectBin, `nodemon${ext}`);
 
-    const childProcesses: ReturnType<typeof spawn>[] = [...dbProcesses];
+    const childProcesses: ReturnType<typeof spawn>[] = [];
 
     const server = spawn(
-      nodemonBin,
-      ['--legacy-watch', '--watch', 'src', '--ext', 'ts,json', '--exec', tsxExec],
+      tsxExec,
+      tsxArgs,
       { cwd, stdio: 'inherit', env: serverEnv },
     );
     childProcesses.push(server);
@@ -68,8 +70,14 @@ export default class Dev extends Command {
     }
 
     // 6. Forward signals and clean up all child processes
-    const cleanup = () => {
-      for (const p of childProcesses) p.kill();
+    const cleanup = async () => {
+      for (const p of childProcesses) {
+        p.kill();
+      }
+      for (const db of dbProcesses) {
+        this.log(`Stopping database ${db.type}...`);
+        await db.server.stop();
+      }
     };
     process.once('SIGINT', cleanup);
     process.once('SIGTERM', cleanup);

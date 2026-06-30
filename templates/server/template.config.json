@@ -11,7 +11,13 @@
     { "file": "docker-compose.debug.yml",           "condition": "features.docker" },
     { "file": "helm",                               "condition": "features.k8s" },
     { "file": "helm/templates/0_config/redis.yaml", "condition": "features.redis" },
+    { "file": "scripts/profile-entrypoint.sh",      "condition": "features.docker" },
+    { "file": "scripts/test-run.sh",                "condition": "features.docker" },
+    { "file": "scripts/update_helm_version.js",     "condition": "features.k8s" },
+    { "file": "src/models/User.ts",                 "condition": "features.hasDatabase" },
     { "file": "src/routes/AppRoute.ts",             "condition": "features.react" },
+    { "file": "src/routes/AuthRoute.ts",            "condition": "features.hasDatabase" },
+    { "file": "src/routes/UserRoute.ts",            "condition": "features.hasDatabase" },
     { "file": "tsconfig.client.json",               "condition": "features.react" },
     { "file": "vite.config.ts",                     "condition": "features.react" }
   ]

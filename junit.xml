@@ -1,139 +1,139 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="62" failures="0" errors="0" time="9.3230349">
-    <testsuite name="test/lib/db.test.ts" timestamp="2026-06-30T05:04:27.878Z" hostname="Jane" tests="14" failures="0" errors="0" skipped="0" time="0.0241435">
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects mongodb from type: &quot;mongodb&quot; in datastores" time="0.0055806">
+<testsuites name="vitest tests" tests="62" failures="0" errors="0" time="10.591373">
+    <testsuite name="test/lib/db.test.ts" timestamp="2026-06-30T17:42:51.708Z" hostname="Jane" tests="14" failures="0" errors="0" skipped="0" time="0.0322677">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects mongodb from type: &quot;mongodb&quot; in datastores" time="0.0080559">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects redis from type: &quot;redis&quot; in datastores" time="0.0026415">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects redis from type: &quot;redis&quot; in datastores" time="0.0023804">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects postgresql from type: &quot;postgresql&quot; in datastores" time="0.0024704">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects postgresql from type: &quot;postgresql&quot; in datastores" time="0.0073559">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects multiple database types from a single config" time="0.0029309">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects multiple database types from a single config" time="0.0031789">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; handles single-quoted type values" time="0.0023515">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; handles single-quoted type values" time="0.0026062">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when config has no datastore type strings" time="0.0025361">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when config has no datastore type strings" time="0.0027143">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when src/config.ts does not exist" time="0.0014399">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when src/config.ts does not exist" time="0.0013738">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts mongodb-memory-server and sets DATASTORES env vars" time="0.0010843">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts mongodb-memory-server and sets DATASTORES env vars" time="0.0011107">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; sets no env vars and spawns no processes when no databases configured" time="0.0003492">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; sets no env vars and spawns no processes when no databases configured" time="0.0003665">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; logs success when Redis is already listening on 6379" time="0.0002812">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; logs success when Redis is already listening on 6379" time="0.0003107">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; warns when Redis is not listening on 6379" time="0.0001689">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; warns when Redis is not listening on 6379" time="0.0001935">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; logs success when PostgreSQL is already listening on 5432" time="0.000184">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; logs success when PostgreSQL is already listening on 5432" time="0.0001882">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; warns when PostgreSQL is not listening on 5432" time="0.000148">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; warns when PostgreSQL is not listening on 5432" time="0.0001566">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; throws when mongodb-memory-server child exits with non-zero code" time="0.0009011">
-        </testcase>
-    </testsuite>
-    <testsuite name="test/lib/project.test.ts" timestamp="2026-06-30T05:04:27.882Z" hostname="Jane" tests="9" failures="0" errors="0" skipped="0" time="0.0198387">
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns true when vite.config.ts exists" time="0.0042422">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false when vite.config.ts does not exist" time="0.0007792">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false for a non-existent directory" time="0.000785">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns a string author field" time="0.0022609">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns the name from an object author field" time="0.004488">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author is an empty string" time="0.0019154">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author field is absent" time="0.0017485">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json does not exist" time="0.0007072">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json is invalid JSON" time="0.0018656">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; throws when mongodb-memory-server child exits with non-zero code" time="0.0009878">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/template.test.ts" timestamp="2026-06-30T05:04:27.883Z" hostname="Jane" tests="17" failures="0" errors="0" skipped="0" time="0.0742015">
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{variable}} in file content" time="0.0100048">
+    <testsuite name="test/lib/project.test.ts" timestamp="2026-06-30T17:42:51.714Z" hostname="Jane" tests="9" failures="0" errors="0" skipped="0" time="0.0187837">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns true when vite.config.ts exists" time="0.0049976">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{name}} placeholders in output file paths" time="0.0041709">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false when vite.config.ts does not exist" time="0.0009483">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; evaluates {{#if}} Handlebars conditionals in content" time="0.0038044">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false for a non-existent directory" time="0.000876">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; copies binary files (.cjs, .gz) byte-for-byte without Handlebars processing" time="0.0027639">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns a string author field" time="0.0024465">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a file when its manifest condition is false" time="0.0036907">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns the name from an object author field" time="0.0020845">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; includes a file when its manifest condition is true" time="0.0030294">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author is an empty string" time="0.0018917">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a directory subtree when its manifest condition is false" time="0.0022597">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author field is absent" time="0.0018381">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; preserves ${{ }} GitHub Actions syntax unchanged" time="0.0024033">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json does not exist" time="0.0007522">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; throws when an output file already exists and force is not set" time="0.0017117">
-        </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; overwrites an existing output file when force is true" time="0.0026581">
-        </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; creates nested output directories for files in subdirectories" time="0.0034402">
-        </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ varname ]] in Helm files" time="0.0032118">
-        </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; resolves [[#if condition]]...[[/if]] blocks in Helm files" time="0.0027314">
-        </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; preserves Helm {{ }} Go-template expressions in helmPaths files" time="0.0067362">
-        </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; handles nested [[#if]] blocks in Helm files" time="0.0030155">
-        </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ dotted.path ]] from nested context in Helm files" time="0.0029638">
-        </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; files outside helmPaths still use Handlebars {{ }} normally" time="0.0042263">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json is invalid JSON" time="0.0018518">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/model.test.ts" timestamp="2026-06-30T05:04:27.886Z" hostname="Jane" tests="6" failures="0" errors="0" skipped="0" time="2.367382">
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; builds the correct Handlebars context from prompts and passes it to processTemplate" time="0.6084204">
+    <testsuite name="test/lib/template.test.ts" timestamp="2026-06-30T17:42:51.715Z" hostname="Jane" tests="17" failures="0" errors="0" skipped="0" time="0.0787482">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{variable}} in file content" time="0.0129727">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; uses author from package.json without prompting for it" time="0.3341038">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{name}} placeholders in output file paths" time="0.0053075">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; uses ./src/models as the default output directory" time="0.3466098">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; evaluates {{#if}} Handlebars conditionals in content" time="0.0068201">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; uses the --output-dir value when provided" time="0.3492336">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; copies binary files (.cjs, .gz) byte-for-byte without Handlebars processing" time="0.002799">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; passes force: true to processTemplate when --force is set" time="0.3826423">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a file when its manifest condition is false" time="0.0037899">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; points processTemplate at the model template directory" time="0.345168">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; includes a file when its manifest condition is true" time="0.0028718">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a directory subtree when its manifest condition is false" time="0.0023067">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; preserves ${{ }} GitHub Actions syntax unchanged" time="0.0023344">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; throws when an output file already exists and force is not set" time="0.0017652">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; overwrites an existing output file when force is true" time="0.0026265">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; creates nested output directories for files in subdirectories" time="0.0036841">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ varname ]] in Helm files" time="0.003184">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; resolves [[#if condition]]...[[/if]] blocks in Helm files" time="0.0034469">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; preserves Helm {{ }} Go-template expressions in helmPaths files" time="0.0034639">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; handles nested [[#if]] blocks in Helm files" time="0.0028966">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ dotted.path ]] from nested context in Helm files" time="0.0027743">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; files outside helmPaths still use Handlebars {{ }} normally" time="0.0044056">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/route.test.ts" timestamp="2026-06-30T05:04:27.886Z" hostname="Jane" tests="6" failures="0" errors="0" skipped="0" time="2.3502244">
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; builds the correct context from prompts" time="0.6088276">
+    <testsuite name="test/commands/generate/model.test.ts" timestamp="2026-06-30T17:42:51.718Z" hostname="Jane" tests="6" failures="0" errors="0" skipped="0" time="2.6980006">
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; builds the correct Handlebars context from prompts and passes it to processTemplate" time="0.7215758">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; uses author from package.json without prompting for it" time="0.343839">
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; uses author from package.json without prompting for it" time="0.408215">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; calls processTemplate twice by default (route file + test file)" time="0.3476662">
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; uses ./src/models as the default output directory" time="0.3618472">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; skips the test file when --no-test is passed" time="0.3401879">
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; uses the --output-dir value when provided" time="0.4234272">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; uses ./src/routes as the default output directory for the route file" time="0.3451285">
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; passes force: true to processTemplate when --force is set" time="0.4055279">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; passes force: true to both processTemplate calls when --force is set" time="0.3633322">
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; points processTemplate at the model template directory" time="0.3762013">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/server.test.ts" timestamp="2026-06-30T05:04:27.887Z" hostname="Jane" tests="10" failures="0" errors="0" skipped="0" time="4.4872448">
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; builds the correct base context from prompts" time="0.6159126">
+    <testsuite name="test/commands/generate/route.test.ts" timestamp="2026-06-30T17:42:51.718Z" hostname="Jane" tests="6" failures="0" errors="0" skipped="0" time="2.6781662">
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; builds the correct context from prompts" time="0.7229885">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps selected database and feature choices to boolean flags on context.features" time="0.3469369">
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; uses author from package.json without prompting for it" time="0.4290549">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase true when any persistent store is selected" time="1.0769632">
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; calls processTemplate twice by default (route file + test file)" time="0.3990159">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase false when only non-persistent features are selected" time="0.3397229">
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; skips the test file when --no-test is passed" time="0.3804873">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the SCM choice to a boolean map on context.scm" time="0.3533689">
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; uses ./src/routes as the default output directory for the route file" time="0.3825792">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the package manager choice to a boolean map on context.pkgMgr" time="0.3586152">
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; passes force: true to both processTemplate calls when --force is set" time="0.362765">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses ./&lt;name&gt; as the default output directory" time="0.3394669">
+    </testsuite>
+    <testsuite name="test/commands/generate/server.test.ts" timestamp="2026-06-30T17:42:51.719Z" hostname="Jane" tests="10" failures="0" errors="0" skipped="0" time="5.0854066">
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; builds the correct base context from prompts" time="0.7170226">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses --output-dir when provided" time="0.3394262">
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps selected database and feature choices to boolean flags on context.features" time="0.411345">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; points processTemplate at the server template directory" time="0.3507737">
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase true when any persistent store is selected" time="1.1969869">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; passes force: true when --force is set" time="0.3647368">
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase false when only non-persistent features are selected" time="0.3764021">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the SCM choice to a boolean map on context.scm" time="0.4125713">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the package manager choice to a boolean map on context.pkgMgr" time="0.3686922">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses ./&lt;name&gt; as the default output directory" time="0.4299432">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses --output-dir when provided" time="0.3983259">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; points processTemplate at the server template directory" time="0.3503049">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; passes force: true when --force is set" time="0.4224589">
         </testcase>
     </testsuite>
 </testsuites>
