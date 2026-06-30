@@ -79,6 +79,8 @@ export default class Start extends Command {
       }
     }
 
+    this.log('\nStarting RapidREST server...');
+
     // 2. Start databases
     const databases = await detectDatabases(cwd);
     let dbProcesses: StartedDatabase[] = [];

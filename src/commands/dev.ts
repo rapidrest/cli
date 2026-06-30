@@ -20,6 +20,8 @@ export default class Dev extends Command {
     const { flags } = await this.parse(Dev);
     const cwd = process.cwd();
 
+    this.log('\nStarting RapidREST server in development mode...');
+
     // 1. Start databases (no build step in dev mode)
     const databases = await detectDatabases(cwd);
     let dbProcesses: StartedDatabase[] = [];
@@ -42,15 +44,11 @@ export default class Dev extends Command {
     };
 
     // 3. Build the tsx exec string — with optional inspector
-    const tsxExec = join(projectBin, "tsx");
-    const tsxArgs = ["--watch", "src/server.ts"];
+    const tsxExec = join(projectBin, `tsx${ext}`);
+    const tsxArgs = ['--watch', 'src/server.ts'];
     if (flags.inspect) {
-      tsxArgs.unshift("--inspect=0.0.0.0:9229");
+      tsxArgs.unshift('--inspect=0.0.0.0:9229');
     }
-
-    // 4. Start nodemon from the project's node_modules
-    this.log('\nStarting RapidREST server in development mode...');
-    const nodemonBin = join(projectBin, `nodemon${ext}`);
 
     const childProcesses: ReturnType<typeof spawn>[] = [];
 
