@@ -1,0 +1,74 @@
+{{- if and (eq "api-gateway" (tpl $.Values.gateway.name $)) (eq $.Release.Namespace (tpl $.Values.gateway.namespace $)) }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: api-gateway
+spec:
+  gatewayClassName: nginx
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    hostname: {{ $.Values.host | quote }}
+    allowedRoutes:
+      namespaces:
+        from: All
+  {{- if $.Values.gateway.tls }}
+  - name: https
+    protocol: HTTPS
+    port: 443
+    hostname: {{ $.Values.host | quote }}
+    allowedRoutes:
+      namespaces:
+        from: All
+  {{- end }}
+{{- end }}
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: api-httproute
+spec:
+  parentRefs:
+  - name: {{ tpl $.Values.gateway.name $ }}
+    namespace: {{ tpl $.Values.gateway.namespace $ }}
+    sectionName: http
+  hostnames:
+  - {{ $.Values.host | quote }}
+  {{- if $.Values.gateway.tls }}
+  tls:
+    mode: Terminate
+    {{- if and (ne $.Values.host "localhost") (not (contains ".local" $.Values.host)) }}
+    certificateRefs:
+    - name: {{ $.Values.host }}-tls-cert
+      kind: Secret
+    {{- end }}
+  {{- end }}
+  rules:
+  - matches:
+    - path:
+        type: PathPrefix
+        value: /
+    backendRefs:
+    - name: [[name]]-services
+      port: 80
+    {{- if not $.Values.gateway.hsts }}
+    filters:
+    - type: ExtensionRef
+      extensionRef:
+        group: gateway.nginx.org
+        kind: NginxHTTPRoute
+        name: disable-hsts
+    {{- end }}
+{{- if not $.Values.gateway.hsts }}
+---
+apiVersion: gateway.nginx.org/v1alpha1
+kind: NginxHTTPRoute
+metadata:
+  name: disable-hsts
+spec:
+  headers:
+    response:
+      remove:
+      - Strict-Transport-Security
+{{- end }}

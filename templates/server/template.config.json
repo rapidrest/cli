@@ -1,0 +1,18 @@
+{
+  "helmPaths": ["helm"],
+  "conditionalFiles": [
+    { "file": ".github",                            "condition": "scm.github" },
+    { "file": ".gitlab-ci.yml",                     "condition": "scm.gitlab" },
+    { "file": ".yarn",                              "condition": "pkgMgr.yarn" },
+    { "file": ".yarnrc.yml",                        "condition": "pkgMgr.yarn" },
+    { "file": "app",                                "condition": "features.react" },
+    { "file": "Dockerfile",                         "condition": "features.docker" },
+    { "file": "docker-compose.yml",                 "condition": "features.docker" },
+    { "file": "docker-compose.debug.yml",           "condition": "features.docker" },
+    { "file": "helm",                               "condition": "features.k8s" },
+    { "file": "helm/templates/0_config/redis.yaml", "condition": "features.redis" },
+    { "file": "src/routes/AppRoute.ts",             "condition": "features.react" },
+    { "file": "tsconfig.client.json",               "condition": "features.react" },
+    { "file": "vite.config.ts",                     "condition": "features.react" }
+  ]
+}

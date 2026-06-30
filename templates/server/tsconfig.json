@@ -1,0 +1,10 @@
+{
+    "extends": "@rapidrest/react/tsconfig/server",
+    "compilerOptions": {
+        "rootDir": ".",
+        "outDir": "dist",
+        "sourceMap": false,
+        "declaration": false
+    },
+    "include": ["src", "app"]
+}

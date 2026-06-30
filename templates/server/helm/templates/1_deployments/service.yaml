@@ -1,0 +1,81 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: [[name]]-services
+  labels:
+    app: [[name]]
+    app.kubernetes.io/instance: [[name]]-services
+    environment: {{ $.Values.environment }}
+spec:
+  replicas: {{ $.Values.service.replicas }}
+  selector:
+    matchLabels:
+      app: [[name]]
+  template:
+    metadata:
+      labels:
+        app: [[name]]
+        app.kubernetes.io/instance: [[name]]-services
+        environment: {{ $.Values.environment }}
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+    spec:
+      imagePullSecrets:
+        - name: {{ $.Values.service.imagePullSecret }}
+      containers:
+        - name: [[name]]-services
+          image: {{ $.Values.service.image.registry }}/{{ $.Values.service.image.repository }}:{{ $.Values.service.image.tag }}
+          {{- if (eq $.Values.service.version "latest") }}
+          imagePullPolicy: Always
+          {{- else }}
+          imagePullPolicy: IfNotPresent
+          {{- end }}
+          {{- if ne $.Values.environment "production" }}
+          command: ["node"]
+          args: ["--inspect=0.0.0.0:9229", "dist/server.js"]
+          {{- end }}
+          envFrom:
+            - configMapRef:
+                name: service-config
+            {{- if $.Values.redis.create }}
+            - secretRef:
+                name: db-redis-info
+            {{- end }}
+            - secretRef:
+                name: jwt-auth
+            - secretRef:
+                name: service-db-info
+          ports:
+            - containerPort: 3000
+          resources: {{ $.Values.service.resources }}
+      initContainers:
+        {{- if $.Values.redis.create }}
+        {{- $secret := (lookup "v1" "Secret" $.Release.Namespace "db-redis-info") | default dict }}
+        {{- $secretData := (get $secret "data") | default dict }}
+        {{- $redisHost := (get $secretData "datastores__cache__url" | b64dec) | default (tpl $.Values.redis.url . | quote) }}
+        - name: redis-probe
+          image: redis
+          env:
+            - name: REDIS_HOST
+              value: {{ $redisHost | replace "redis://" "" }}
+          command: ['sh', '-c', "until redis-cli -h $REDIS_HOST ping; do echo waiting for cache; sleep $(expr 2 + $RANDOM % 13); done;"]
+        {{- end }}
+        {{- if $.Values.mongodb.create }}
+        - name: mongo-probe
+          image: busybox
+          env:
+            - name: MONGO_HOST
+              value: {{ $.Values.mongodb.fullnameOverride }}
+          command: ['sh', '-c', "until nc -z $MONGO_HOST 27017; do echo waiting for mongodb; sleep $(expr 2 + $RANDOM % 13); done"]
+        {{- end }}
+      {{- if $.Values.service.spec }}
+      {{- range $k, $v := $.Values.service.spec }}
+      {{- if kindIs "string" $v }}
+      {{ $k }}: {{ tpl $v $ | quote }}
+      {{- else }}
+      {{ $k }}: {{ $v }}
+      {{- end }}
+      {{- end }}
+      {{- end }}

@@ -1,0 +1,15 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jwt-auth
+type: Opaque
+data:
+  {{- $secret := (lookup "v1" "Secret" .Release.Namespace "jwt-auth") | default dict }}
+  {{- $secretData := (get $secret "data") | default dict }}
+  {{- $jwtSecret := (get $secretData "auth__password") | default (tpl .Values.auth.secret . | b64enc | quote) }}
+  auth__options__audience: {{ tpl .Values.auth.audience . | b64enc | quote }}
+  auth__options__issuer: {{ tpl .Values.auth.issuer . | b64enc | quote }}
+  auth__options__expiresIn: {{ tpl .Values.auth.expiresIn . | b64enc | quote }}
+  auth__password: {{ $jwtSecret }}
+  auth__secret: {{ $jwtSecret }}

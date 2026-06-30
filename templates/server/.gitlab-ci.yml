@@ -1,0 +1,76 @@
+# This folder is cached between builds
+# http://docs.gitlab.com/ce/ci/yaml/README.html#cache
+default:
+    cache: &global_cachecache
+        paths:
+            - node_modules/
+            - dist/
+            - docs/
+        policy: pull
+
+.job_template: &job_configuration
+    image: node:lts-buster
+    before_script:
+        - corepack enable
+
+build:
+    stage: build
+    <<: *job_configuration
+    cache:
+        <<: *global_cachecache
+        policy: pull-push
+    script:
+        - yarn install
+        - yarn build
+
+validate: 
+    stage: test
+    <<: *job_configuration 
+    allow_failure:
+        exit_codes:
+            - 101
+    script:
+        - set +e
+        - bash ./validate.sh
+
+test-code:
+    stage: test
+    <<: *job_configuration
+    script:
+        - yarn test --forceExit
+
+test-run:
+    stage: test
+    image: docker:latest
+    services:
+        - docker:dind
+    before_script:
+        - apk update
+        - apk add bash
+    script:
+        - bash ./scripts/test-run.sh
+
+test-docker-build:
+    stage: test
+    image: docker:git
+    services:
+        - docker:dind
+    script:
+        - docker build -t $CI_PROJECT_NAME . --secret id=YARN_TOKEN,env=NPM_TOKEN --no-cache
+        - docker rmi $CI_PROJECT_NAME
+
+publish:
+    stage: deploy
+    image: docker:git
+    only:
+        - tags
+    services:
+        - docker:dind
+    script:
+        - export registryPath=$(echo $NEXUS_REGISTRY/services/$CI_PROJECT_NAME | awk '{print tolower($0)}')
+        - docker login -u gitlab -p $NEXUS_PASSWORD $NEXUS_REGISTRY
+        - docker build -t $CI_PROJECT_NAME . --secret id=YARN_TOKEN,env=NPM_TOKEN
+        - docker tag $CI_PROJECT_NAME:latest $registryPath:latest
+        - docker push $registryPath:latest
+        - docker tag $CI_PROJECT_NAME:latest $registryPath:$CI_COMMIT_TAG
+        - docker push $registryPath:$CI_COMMIT_TAG

@@ -1,0 +1,65 @@
+host: localhost
+environment: dev
+auth:
+  audience: '{{ .Values.host }}'
+  issuer: 'api.{{ .Values.host }}'
+  expiresIn: 1 hour
+  secret: '{{ randAlphaNum 32 }}'
+cookies:
+  secret: '{{ randAlphaNum 32 }}'
+sessions:
+  secret: '{{ randAlphaNum 32 }}'
+common:
+  storageClass: default
+  logs:
+    level: info
+gateway:
+  name: api-gateway
+  namespace: '{{ .Release.Namespace }}'
+  hsts: true
+  tls: true
+[[#if features.redis]]
+redis:
+  create: true
+  url: 'redis://db-redis-master'
+  architecture: standalone
+  auth:
+    enabled: false
+  fullnameOverride: db-redis
+  usePassword: false
+  master:
+    persistence:
+      enabled: false
+  replica:
+    persistence:
+      enabled: false
+  networkPolicy:
+    enabled: true
+    allowExternal: false
+[[/if]]
+[[#if features.mongodb]]
+mongodb:
+  create: true
+  architecture: standalone
+  fullnameOverride: mongodb
+  auth:
+    enabled: false
+[[/if]]
+service:
+  image:
+    registry: ghcr.io
+    repository: [[name]]
+    tag: 1.1.2
+  replicas: 1
+  mongodb:
+    acl:
+      name: access_control_lists
+      host: ''
+    mongo:
+      name: [[name]]
+      fullnameOverride: ''
+      host: ''
+  config:
+    logs: true
+    metrics: true
+    releaseNotes: true

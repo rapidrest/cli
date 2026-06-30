@@ -1,0 +1,19 @@
+services:
+    server:
+        build:
+            context: .
+        command: ["npx", "rapidreact", "dev"]
+        ports:
+            - "3000:3000"
+            - "9229:9229"
+        environment:
+            - datastores__acl__url=mongodb://mongo
+            - datastores__mongo__url=mongodb://mongo
+            - NODE_ENV=production
+        links:
+            - mongo
+        volumes:
+            - ./app:/app/app
+            - ./src:/app/src
+    mongo:
+        image: mongo

@@ -1,0 +1,79 @@
+{
+  "name": "rapidrest",
+  "description": "The official CLI tool for RapidREST projects",
+  "version": "0.1.0",
+  "author": "Jean-Philippe Steinmetz",
+  "bin": "./bin/run.js",
+  "bugs": "https://github.com/rapidrest/cli/issues",
+  "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6",
+    "@oclif/plugin-plugins": "^5",
+    "fs-extra": "^11.3.6",
+    "handlebars": "^4.7.9"
+  },
+  "devDependencies": {
+    "@eslint/compat": "^1",
+    "@oclif/prettier-config": "^0.2.1",
+    "@oclif/test": "^4",
+    "@types/chai": "^4",
+    "@types/debug": "^4",
+    "@types/fs-extra": "^11.0.4",
+    "@types/mocha": "^10",
+    "@types/node": "^26.0.1",
+    "@vitest/coverage-v8": "4.1.9",
+    "ansis": "^4.3.1",
+    "debug": "^4.4.3",
+    "eslint": "^9",
+    "eslint-config-oclif": "^6",
+    "eslint-config-prettier": "^10",
+    "oclif": "^4",
+    "shx": "^0.3.3",
+    "ts-node": "^10.9.2",
+    "typescript": "^5",
+    "vitest": "^4.1.9"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "./bin",
+    "./dist",
+    "./oclif.manifest.json",
+    "./templates"
+  ],
+  "homepage": "https://github.com/rapidrest/cli",
+  "keywords": [
+    "oclif"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "type": "module",
+  "oclif": {
+    "bin": "rapidrest",
+    "dirname": "rapidrest",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-plugins"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "generate": {
+        "description": "Generate RapidREST projects, models, and routes"
+      }
+    }
+  },
+  "repository": "rapidrest/cli",
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "yarn lint",
+    "prepack": "oclif manifest && oclif readme",
+    "test": "vitest run",
+    "version": "oclif readme && git add README.md"
+  },
+  "types": "dist/index.d.ts"
+}

@@ -1,0 +1,19 @@
+{{- if $.Values.redis.create }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+    name: db-redis-info
+type: Opaque
+data:
+    {{- $secret := (lookup "v1" "Secret" .Release.Namespace "db-cache-info") | default dict }}
+    {{- $secretData := (get $secret "data") | default dict }}
+    datastores__cache__type: {{ print "redis" | b64enc | quote }}
+    datastores__cache__url: {{ (get $secretData "datastores__cache__url") | default (tpl .Values.redis.url . | b64enc | quote) }}
+    datastores__events__type: {{ print "redis" | b64enc | quote }}
+    datastores__events__url: {{ (get $secretData "datastores__events__url") | default (tpl .Values.redis.url . | b64enc | quote) }}
+    datastores__events_publish__type: {{ print "redis" | b64enc | quote }}
+    datastores__events_publish__url: {{ (get $secretData "datastores__events__url") | default (tpl .Values.redis.url . | b64enc | quote) }}
+    datastores__logs__type: {{ print "redis" | b64enc | quote }}
+    datastores__logs__url: {{ (get $secretData "datastores__logs__url") | default (tpl .Values.redis.url . | b64enc | quote) }}
+{{- end }}
