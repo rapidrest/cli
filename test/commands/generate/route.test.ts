@@ -22,6 +22,10 @@ vi.mock('../../../src/lib/project.js', () => ({
   readProjectDatastores: vi.fn(),
 }));
 
+vi.mock('../../../src/commands/generate/model.js', () => ({
+  default: { run: vi.fn() },
+}));
+
 import { input, select } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
 import {
@@ -30,6 +34,7 @@ import {
   readModelDatastore,
   readProjectDatastores,
 } from '../../../src/lib/project.js';
+import GenerateModel from '../../../src/commands/generate/model.js';
 import GenerateRoute from '../../../src/commands/generate/route.js';
 
 const ROOT = process.cwd();
@@ -62,6 +67,7 @@ describe('generate route', () => {
     vi.mocked(readProjectModels).mockResolvedValue(['Product', 'User']);
     vi.mocked(readModelDatastore).mockResolvedValue('acl');
     vi.mocked(readProjectDatastores).mockResolvedValue([{ name: 'acl', type: 'mongodb' }]);
+    (GenerateModel as any).run.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -127,16 +133,42 @@ describe('generate route', () => {
   });
 
   describe('model selection', () => {
-    it('shows a select with "(none)" plus all project model names', async () => {
+    it('shows a select with "(none)", project models, and a "+ New model..." option', async () => {
       stubPrompts({ author: 'Author' });
       await GenerateRoute.run(['ProductRoute', '--no-test'], ROOT);
 
       const firstSelectCall = vi.mocked(select).mock.calls[0][0] as any;
-      expect(firstSelectCall.choices).toEqual([
-        { name: '(none)', value: '' },
-        { name: 'Product', value: 'Product' },
-        { name: 'User', value: 'User' },
-      ]);
+      expect(firstSelectCall.choices).toEqual(
+        expect.arrayContaining([
+          { name: '(none)', value: '' },
+          { name: 'Product', value: 'Product' },
+          { name: 'User', value: 'User' },
+          { name: '+ New model...', value: '__new__' },
+        ]),
+      );
+    });
+
+    it('runs generate model inline when "+ New model..." is selected and uses the newly created model', async () => {
+      // readProjectModels is called three times: choices, "before" snapshot, "after" generation
+      vi.mocked(readProjectModels)
+        .mockResolvedValueOnce(['Product', 'User'])
+        .mockResolvedValueOnce(['Product', 'User'])
+        .mockResolvedValueOnce(['Product', 'User', 'Order']);
+      vi.mocked(input)
+        .mockResolvedValueOnce('A desc')
+        .mockResolvedValueOnce('/api/v1/x')
+        .mockResolvedValueOnce('Author');
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__' as any) // model select
+        .mockResolvedValueOnce(false as any);     // protect
+
+      await GenerateRoute.run(['OrderRoute', '--no-test'], ROOT);
+
+      expect((GenerateModel as any).run).toHaveBeenCalledOnce();
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.model).toBe('Order');
+      expect(context.datastore).toBe('acl');
+      expect(context.datastoreType).toBe('mongodb');
     });
 
     it('falls back to a free-form input when no models exist in the project', async () => {
@@ -153,6 +185,24 @@ describe('generate route', () => {
 
       expect(vi.mocked(input)).toHaveBeenCalledTimes(4);
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // protect only (no model select)
+    });
+
+    it('--no-model skips all model prompts and leaves model undefined in context', async () => {
+      vi.mocked(input)
+        .mockResolvedValueOnce('A desc')
+        .mockResolvedValueOnce('/api/v1/x')
+        .mockResolvedValueOnce('Author');
+      vi.mocked(select).mockResolvedValueOnce(false as any); // protect only
+
+      await GenerateRoute.run(['OrderRoute', '--no-test', '--no-model'], ROOT);
+
+      expect(readProjectModels).not.toHaveBeenCalled();
+      expect(readModelDatastore).not.toHaveBeenCalled();
+      expect(vi.mocked(select)).toHaveBeenCalledTimes(1);
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.model).toBeUndefined();
+      expect(context.datastore).toBe('');
+      expect(context.datastoreType).toBe('');
     });
   });
 

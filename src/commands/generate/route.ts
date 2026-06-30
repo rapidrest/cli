@@ -1,4 +1,4 @@
-import { input, select } from '@inquirer/prompts';
+import { input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
@@ -8,6 +8,7 @@ import {
   readProjectModels,
   readModelDatastore,
 } from '../../lib/project.js';
+import GenerateModel from './model.js';
 
 export default class GenerateRoute extends Command {
   static override args = {
@@ -59,13 +60,25 @@ export default class GenerateRoute extends Command {
       } else {
         const projectModels = await readProjectModels(cwd);
         if (projectModels.length > 0) {
-          model = await select<string>({
+          const selected = await select<string>({
             message: 'Select the model class this route will serve [optional]',
             choices: [
               { name: '(none)', value: '' },
               ...projectModels.map((m) => ({ name: m, value: m })),
+              new Separator(),
+              { name: '+ New model...', value: '__new__' },
             ],
           });
+          if (selected === '__new__') {
+            this.log('');
+            const modelsBefore = new Set(await readProjectModels(cwd));
+            await GenerateModel.run([], this.config.root);
+            this.log('');
+            const modelsAfter = await readProjectModels(cwd);
+            model = modelsAfter.find((m) => !modelsBefore.has(m)) ?? '';
+          } else {
+            model = selected;
+          }
         } else {
           model = await input({
             message: 'Enter the name of the model class this route will serve data for (will extend ModelRoute) [optional]',
