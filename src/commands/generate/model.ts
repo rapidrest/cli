@@ -2,7 +2,7 @@ import { input, select } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectAuthor, readProjectDatastores } from '../../lib/project.js';
+import { readProjectAuthor, readProjectDatastores, readProjectName } from '../../lib/project.js';
 
 export default class GenerateModel extends Command {
   static override args = {
@@ -108,6 +108,11 @@ export default class GenerateModel extends Command {
       datastoreType,
       protect,
       year: new Date().getFullYear(),
+      project_name: await readProjectName(process.cwd()),
+      isMongoDb:    datastoreType === 'mongodb',
+      isPostgreSql: datastoreType === 'postgresql',
+      isSqlite:     datastoreType === 'sqlite',
+      isRedis:      datastoreType === 'redis',
     };
 
     // The model template has a single file at src/models/{{name}}.ts
@@ -116,7 +121,7 @@ export default class GenerateModel extends Command {
     const templateDir = join(this.config.root, 'templates', 'model', 'src', 'models');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force });
+      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
       this.log(`\nModel "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));

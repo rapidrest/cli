@@ -2,6 +2,7 @@ import Handlebars from 'handlebars';
 import fsExtra from 'fs-extra';
 import { readFile, writeFile, mkdir, readdir, copyFile } from 'fs/promises';
 import { join, relative, dirname, extname } from 'path';
+import { type PatchEntry, applyPatches } from './patch.js';
 
 const BINARY_EXTENSIONS = new Set([
   '.cjs', '.gz', '.png', '.jpg', '.jpeg', '.gif', '.ico',
@@ -18,6 +19,7 @@ interface TemplateConfig {
   // Paths (relative to templateDir) whose files use [[ ]] delimiters instead of
   // Handlebars {{ }} so that Helm Go-template expressions are preserved as-is.
   helmPaths?: string[];
+  patches?: PatchEntry[];
 }
 
 async function walk(dir: string): Promise<string[]> {
@@ -91,7 +93,7 @@ export async function processTemplate(
   templateDir: string,
   outputDir: string,
   context: Record<string, unknown>,
-  opts?: { force?: boolean },
+  opts?: { force?: boolean; projectDir?: string },
 ): Promise<void> {
   let config: TemplateConfig = {};
   const manifestPath = join(templateDir, 'template.config.json');
@@ -102,12 +104,18 @@ export async function processTemplate(
   const conditionalFiles = config.conditionalFiles ?? [];
   const helmPaths = config.helmPaths ?? [];
 
+  // Build exclusion set: patch fragment files must not be copied as normal output files
+  const patchTemplates = new Set(
+    (config.patches ?? []).map((p) => p.template.replace(/\\/g, '/')),
+  );
+
   const allFiles = await walk(templateDir);
 
   for (const filePath of allFiles) {
     const relPath = relative(templateDir, filePath);
 
     if (relPath === 'template.config.json') continue;
+    if (patchTemplates.has(relPath.replace(/\\/g, '/'))) continue;
     if (isExcluded(relPath, conditionalFiles, context)) continue;
 
     const useHelm = helmPaths.length > 0 && isHelmPath(relPath, helmPaths);
@@ -145,5 +153,10 @@ export async function processTemplate(
       }
       await writeFile(outPath, content, 'utf-8');
     }
+  }
+
+  if (config.patches?.length) {
+    const cwd = opts?.projectDir ?? process.cwd();
+    await applyPatches(templateDir, cwd, context, config.patches);
   }
 }

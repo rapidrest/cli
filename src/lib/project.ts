@@ -112,6 +112,16 @@ export async function detectReact(cwd: string): Promise<boolean> {
   }
 }
 
+export async function readProjectName(cwd: string): Promise<string> {
+  try {
+    const raw = await readFile(join(cwd, 'package.json'), 'utf-8');
+    const pkg = JSON.parse(raw) as { name?: string };
+    return pkg.name ?? '';
+  } catch {
+    return '';
+  }
+}
+
 // Reads the `author` field from the project's package.json in the given directory.
 // Handles both string and { name, email } object forms. Returns undefined on any failure.
 export async function readProjectAuthor(cwd: string): Promise<string | undefined> {

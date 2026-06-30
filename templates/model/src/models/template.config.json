@@ -1,0 +1,32 @@
+{
+  "conditionalFiles": [],
+  "helmPaths": [],
+  "patches": [
+    {
+      "template": "patches/config-datastore.ts.hbs",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "datastores",
+      "idempotencyKey": "{{datastore}}",
+      "condition": "datastore"
+    },
+    {
+      "template": "patches/package-mongodb.json",
+      "target": "package.json",
+      "strategy": "json-merge",
+      "condition": "isMongoDb"
+    },
+    {
+      "template": "patches/package-postgresql.json",
+      "target": "package.json",
+      "strategy": "json-merge",
+      "condition": "isPostgreSql"
+    },
+    {
+      "template": "patches/package-sqlite.json",
+      "target": "package.json",
+      "strategy": "json-merge",
+      "condition": "isSqlite"
+    }
+  ]
+}

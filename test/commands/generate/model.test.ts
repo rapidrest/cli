@@ -18,11 +18,12 @@ vi.mock('../../../src/lib/template.js', () => ({
 vi.mock('../../../src/lib/project.js', () => ({
   readProjectAuthor: vi.fn(),
   readProjectDatastores: vi.fn(),
+  readProjectName: vi.fn(),
 }));
 
 import { input, select } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
-import { readProjectAuthor, readProjectDatastores } from '../../../src/lib/project.js';
+import { readProjectAuthor, readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
 import GenerateModel from '../../../src/commands/generate/model.js';
 
 const ROOT = process.cwd();
@@ -61,6 +62,7 @@ describe('generate model', () => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
     vi.mocked(readProjectAuthor).mockResolvedValue(undefined);
     vi.mocked(readProjectDatastores).mockResolvedValue(DEFAULT_DATASTORES);
+    vi.mocked(readProjectName).mockResolvedValue('my-app');
   });
 
   afterEach(() => {
@@ -92,6 +94,25 @@ describe('generate model', () => {
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe(false);
       expect(context.protect).toBe(false);
+    });
+
+    it('sets isMongoDb true and other db booleans false when datastoreType is mongodb', async () => {
+      stubPrompts({ datastore: 'acl', author: 'Author' }); // acl → mongodb
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.isMongoDb).toBe(true);
+      expect(context.isPostgreSql).toBe(false);
+      expect(context.isSqlite).toBe(false);
+      expect(context.isRedis).toBe(false);
+    });
+
+    it('includes project_name from package.json in the context', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.project_name).toBe('my-app');
     });
   });
 

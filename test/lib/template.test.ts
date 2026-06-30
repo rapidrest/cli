@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll, afterEach } from 'vitest';
 import { mkdtemp, rm, writeFile, mkdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import os from 'os';
@@ -124,6 +124,147 @@ describe('processTemplate', () => {
     await processTemplate(templateDir, outputDir, { name: 'User' });
     const out = await readFile(join(outputDir, 'src', 'models', 'User.ts'), 'utf-8');
     expect(out).toBe('class User {}');
+  });
+
+  describe('patches', () => {
+    let projectDir: string;
+
+    beforeEach(async () => {
+      projectDir = await tmpDir();
+    });
+
+    afterEach(async () => {
+      // cleanup handled by afterAll via cleanupDirs
+    });
+
+    it('does not copy patch template files into the output directory', async () => {
+      await mkdir(join(templateDir, 'patches'), { recursive: true });
+      await writeFile(join(templateDir, '{{name}}.ts'), 'class {{name}} {}');
+      await writeFile(join(templateDir, 'patches', 'config.ts.hbs'), 'should not be copied');
+      await writeFile(
+        join(templateDir, 'template.config.json'),
+        JSON.stringify({
+          patches: [{
+            template: 'patches/config.ts.hbs',
+            target: 'src/config.ts',
+            strategy: 'ts-block-insert',
+            insertInto: 'datastores',
+            condition: 'never',  // condition is falsy — skips the patch itself
+          }],
+        }),
+      );
+
+      await processTemplate(templateDir, outputDir, { name: 'Widget', never: false }, { projectDir });
+
+      // The patch template should NOT appear in the output directory
+      await expect(readFile(join(outputDir, 'patches', 'config.ts.hbs'), 'utf-8')).rejects.toThrow();
+      // Normal template file should still be written
+      const out = await readFile(join(outputDir, 'Widget.ts'), 'utf-8');
+      expect(out).toBe('class Widget {}');
+    });
+
+    it('applies a json-merge patch to the project directory after file generation', async () => {
+      await mkdir(join(projectDir, 'src'), { recursive: true });
+      const existingPkg = { name: 'my-app', dependencies: { lodash: '^4.0.0' }, devDependencies: {} };
+      await writeFile(join(projectDir, 'package.json'), JSON.stringify(existingPkg));
+
+      await mkdir(join(templateDir, 'patches'), { recursive: true });
+      await writeFile(join(templateDir, '{{name}}.ts'), 'class {{name}} {}');
+      await writeFile(
+        join(templateDir, 'patches', 'package-mongo.json'),
+        JSON.stringify({ dependencies: { mongodb: '^7.3.0' }, devDependencies: { 'mongodb-memory-server': '^11.2.0' } }),
+      );
+      await writeFile(
+        join(templateDir, 'template.config.json'),
+        JSON.stringify({
+          patches: [{
+            template: 'patches/package-mongo.json',
+            target: 'package.json',
+            strategy: 'json-merge',
+            condition: 'isMongoDb',
+          }],
+        }),
+      );
+
+      await processTemplate(
+        templateDir, outputDir,
+        { name: 'Widget', isMongoDb: true },
+        { projectDir },
+      );
+
+      const pkg = JSON.parse(await readFile(join(projectDir, 'package.json'), 'utf-8')) as Record<string, unknown>;
+      expect((pkg.dependencies as Record<string, unknown>)['mongodb']).toBe('^7.3.0');
+      expect((pkg.dependencies as Record<string, unknown>)['lodash']).toBe('^4.0.0');
+    });
+
+    it('skips a patch when its condition is falsy in the context', async () => {
+      const existingPkg = { name: 'my-app', dependencies: {} };
+      await writeFile(join(projectDir, 'package.json'), JSON.stringify(existingPkg));
+
+      await mkdir(join(templateDir, 'patches'), { recursive: true });
+      await writeFile(join(templateDir, '{{name}}.ts'), 'class {{name}} {}');
+      await writeFile(
+        join(templateDir, 'patches', 'package-mongo.json'),
+        JSON.stringify({ dependencies: { mongodb: '^7.3.0' } }),
+      );
+      await writeFile(
+        join(templateDir, 'template.config.json'),
+        JSON.stringify({
+          patches: [{
+            template: 'patches/package-mongo.json',
+            target: 'package.json',
+            strategy: 'json-merge',
+            condition: 'isMongoDb',
+          }],
+        }),
+      );
+
+      // isMongoDb is false — patch should be skipped
+      await processTemplate(
+        templateDir, outputDir,
+        { name: 'Widget', isMongoDb: false },
+        { projectDir },
+      );
+
+      const pkg = JSON.parse(await readFile(join(projectDir, 'package.json'), 'utf-8')) as Record<string, unknown>;
+      expect((pkg.dependencies as Record<string, unknown>)['mongodb']).toBeUndefined();
+    });
+
+    it('applies a ts-block-insert patch to src/config.ts in the project directory', async () => {
+      await mkdir(join(projectDir, 'src'), { recursive: true });
+      const configSrc = `export default conf.defaults({\n  datastores: {\n    mongo: { type: "mongodb" },\n  },\n});\n`;
+      await writeFile(join(projectDir, 'src', 'config.ts'), configSrc);
+
+      await mkdir(join(templateDir, 'patches'), { recursive: true });
+      await writeFile(join(templateDir, '{{name}}.ts'), 'class {{name}} {}');
+      await writeFile(
+        join(templateDir, 'patches', 'config.hbs'),
+        '    {{datastore}}: { type: "postgresql" },\n',
+      );
+      await writeFile(
+        join(templateDir, 'template.config.json'),
+        JSON.stringify({
+          patches: [{
+            template: 'patches/config.hbs',
+            target: 'src/config.ts',
+            strategy: 'ts-block-insert',
+            insertInto: 'datastores',
+            idempotencyKey: '{{datastore}}',
+            condition: 'datastore',
+          }],
+        }),
+      );
+
+      await processTemplate(
+        templateDir, outputDir,
+        { name: 'Widget', datastore: 'postgres' },
+        { projectDir },
+      );
+
+      const result = await readFile(join(projectDir, 'src', 'config.ts'), 'utf-8');
+      expect(result).toContain('postgres: { type: "postgresql" }');
+      expect(result).toContain('mongo: { type: "mongodb" }');
+    });
   });
 
   describe('Helm-safe mode (helmPaths)', () => {
