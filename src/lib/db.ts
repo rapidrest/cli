@@ -70,6 +70,7 @@ export async function startDatabases(
       servers.push(result);
       // Override standard mongodb datastore host/port via nconf env vars
       for (const name of ['acl', 'mongo']) {
+        env[`datastores__${name}__type`] = result.type;
         env[`datastores__${name}__url`] = result.uri;
       }
       log(`MongoDB is ready at uri: ${result.uri}`);
@@ -87,6 +88,7 @@ export async function startDatabases(
       servers.push(result);
       // Override standard redis datastore host/port via nconf env vars
       for (const name of ['cache','events','logs']) {
+        env[`datastores__${name}__type`] = result.type;
         env[`datastores__${name}__url`] = result.uri;
       }
       log(`Redis is ready at uri: ${result.uri}`);
@@ -103,8 +105,10 @@ export async function startDatabases(
       const result = await startPostgres();
       servers.push(result);
       // Override standard postgres datastore host/port via nconf env vars
+      env[`datastores__postgres__type`] = result.type;
       env[`datastores__postgres__url`] = result.uri;
       if (!databases.mongodb) {
+        env[`datastores__acl__type`] = result.type;
         env[`datastores__acl__url`] = result.uri;
       }
       log(`Postgres is ready at uri: ${result.uri}`);
