@@ -72,7 +72,7 @@ export async function startDatabases(
       for (const name of ['acl', 'mongo']) {
         env[`datastores__${name}__url`] = result.uri;
       }
-      log(`MongoDB is ready at url: ${result.uri}`);
+      log(`MongoDB is ready at uri: ${result.uri}`);
     } catch (e) {
       throw new Error(
         `Failed to start MongoDB: ${e instanceof Error ? e.message : String(e)}\n`,
@@ -89,7 +89,7 @@ export async function startDatabases(
       for (const name of ['cache','events','logs']) {
         env[`datastores__${name}__url`] = result.uri;
       }
-      log(`Redis is ready at ${result.uri}`);
+      log(`Redis is ready at uri: ${result.uri}`);
     } catch (e) {
       throw new Error(
         `Failed to start Redis: ${e instanceof Error ? e.message : String(e)}\n`,
@@ -107,7 +107,7 @@ export async function startDatabases(
       if (!databases.mongodb) {
         env[`datastores__acl__url`] = result.uri;
       }
-      log(`Postgres is ready at url: ${result.uri}`);
+      log(`Postgres is ready at uri: ${result.uri}`);
     } catch (e) {
       throw new Error(
         `Failed to start Postgres: ${e instanceof Error ? e.message : String(e)}\n`,
