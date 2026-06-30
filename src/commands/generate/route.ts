@@ -1,8 +1,13 @@
-import { input } from '@inquirer/prompts';
+import { input, select } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectAuthor } from '../../lib/project.js';
+import {
+  readProjectAuthor,
+  readProjectDatastores,
+  readProjectModels,
+  readModelDatastore,
+} from '../../lib/project.js';
 
 export default class GenerateRoute extends Command {
   static override args = {
@@ -17,39 +22,93 @@ export default class GenerateRoute extends Command {
   ];
 
   static override flags = {
-    force: Flags.boolean({ description: 'Overwrite existing files.' }),
+    force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
+    description: Flags.string({ alias: 'd', description: "The short description of the route."}),
+    model: Flags.string({ alias: 'm', description: "The name of the model class this route will serve data for (will extend ModelRoute)."}),
+    'no-model': Flags.boolean({ description: 'Skip all prompts concerning associating a model class.' }),
     'no-test': Flags.boolean({ description: 'Skip generating the test file.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated route into. Defaults to ./src/routes.' }),
+    path: Flags.string({ description: 'The base path of the route (e.g. /api/v1/products).' }),
+    protect: Flags.boolean({ char: 'p', description: "Enable RBAC-based protection of this route."}),
   };
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(GenerateRoute);
-    const outputDir = flags['output-dir'] ?? join(process.cwd(), 'src', 'routes');
-    const testDir = join(process.cwd(), 'test');
+    const cwd = process.cwd();
+    const outputDir = flags['output-dir'] ?? join(cwd, 'src', 'routes');
+    const testDir = join(cwd, 'test');
 
     this.log(`Generating route "${args.name}"...\n`);
 
-    const description = await input({
+    const description = flags.description ?? await input({
       message: 'Enter a short description of this route',
       required: true,
     });
 
-    const routePath = await input({
+    const routePath = flags.path ?? await input({
       message: 'Enter the base route path (e.g. /api/v1/products)',
       required: true,
     });
 
-    const author =
-      (await readProjectAuthor(process.cwd())) ??
+    // Model selection — offer existing project models via a select when available.
+    let model: string | undefined = undefined;
+    if (!flags['no-model']) {
+      if (flags.model !== undefined) {
+        model = flags.model;
+      } else {
+        const projectModels = await readProjectModels(cwd);
+        if (projectModels.length > 0) {
+          model = await select<string>({
+            message: 'Select the model class this route will serve [optional]',
+            choices: [
+              { name: '(none)', value: '' },
+              ...projectModels.map((m) => ({ name: m, value: m })),
+            ],
+          });
+        } else {
+          model = await input({
+            message: 'Enter the name of the model class this route will serve data for (will extend ModelRoute) [optional]',
+            required: false,
+          });
+        }
+      }
+    }
+
+    // Resolve the datastore binding and its type from the selected model's source file.
+    let datastore = '';
+    let datastoreType = '';
+    if (model) {
+      datastore = await readModelDatastore(cwd, model);
+      if (datastore) {
+        const configured = await readProjectDatastores(cwd);
+        datastoreType = configured.find((d) => d.name === datastore)?.type ?? '';
+      }
+    }
+
+    const protect = flags.protect ?? await select<boolean>({
+      message: 'Enable RBAC-based protection for this route',
+      choices: [
+        { name: 'yes', value: true },
+        { name: 'no', value: false },
+      ],
+    });
+
+    const author = flags.author ??
+      (await readProjectAuthor(cwd)) ??
       (await input({ message: 'Enter the author name', required: true }));
 
     const generateTest = !flags['no-test'];
 
     const context: Record<string, unknown> = {
+      author,
       name: args.name,
       description,
+      model,
+      datastore,
+      datastoreType,
       path: routePath,
-      author,
+      protect,
       year: new Date().getFullYear(),
     };
 

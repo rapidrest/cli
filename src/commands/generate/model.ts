@@ -1,8 +1,8 @@
-import { input } from '@inquirer/prompts';
+import { input, select } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectAuthor } from '../../lib/project.js';
+import { readProjectAuthor, readProjectDatastores } from '../../lib/project.js';
 
 export default class GenerateModel extends Command {
   static override args = {
@@ -17,8 +17,13 @@ export default class GenerateModel extends Command {
   ];
 
   static override flags = {
-    force: Flags.boolean({ description: 'Overwrite existing files.' }),
-    'output-dir': Flags.string({ description: 'Directory to write the generated model into. Defaults to ./src/models.' }),
+    force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
+    cache: Flags.boolean({ char: 'c', description: "Enable caching of this model."}),
+    datastore: Flags.string({ alias: 'ds', description: "The name of the datastore that the model will be bound to."}),
+    description: Flags.string({ alias: 'd', description: "The short description of the model."}),
+    'output-dir': Flags.string({ alias: 'o', description: 'Directory to write the generated model into. Defaults to ./src/models.' }),
+    protect: Flags.boolean({ char: 'p', description: "Enable RBAC-based protection of this model."}),
   };
 
   async run(): Promise<void> {
@@ -27,26 +32,81 @@ export default class GenerateModel extends Command {
 
     this.log(`Generating model "${args.name}"...\n`);
 
-    const description = await input({
+    const description = flags.description ?? await input({
       message: 'Enter a short description of this model',
       required: true,
     });
 
-    const datastore = await input({
-      message: 'Enter the datastore name (e.g. mongo, postgres)',
-      default: 'mongo',
-      required: true,
+    const configured = await readProjectDatastores(process.cwd());
+
+    let datastore: string;
+    let datastoreType: string;
+
+    if (flags.datastore !== undefined) {
+      datastore = flags.datastore;
+      datastoreType = configured.find((d) => d.name === flags.datastore)?.type ?? '';
+    } else if (configured.length > 0) {
+      const selectedName = await select<string>({
+        message: 'Select the datastore for this model',
+        choices: configured.map((d) => ({ name: `${d.name} (${d.type})`, value: d.name })),
+      });
+      datastore = selectedName;
+      datastoreType = configured.find((d) => d.name === selectedName)?.type ?? '';
+    } else {
+      const setupNew = await select<boolean>({
+        message: 'No datastores configured in this project. Set up a new database?',
+        choices: [
+          { name: 'yes', value: true },
+          { name: 'no', value: false },
+        ],
+        default: true
+      });
+      if (setupNew) {
+        datastoreType = await select<string>({
+          message: 'Select database type',
+          choices: [
+            { name: 'MongoDB', value: 'mongodb' },
+            { name: 'PostgreSQL', value: 'postgres' },
+            { name: 'sqlite', value: 'sqlite' },
+          ],
+          default: 'mongodb',
+        });
+        datastore = datastoreType;
+      } else {
+        datastore = '';
+        datastoreType = '';
+      }
+    }
+
+    const cache = flags.cache ?? await select<boolean>({
+      message: 'Enable caching for this model',
+      choices: [
+        { name: 'yes', value: true },
+        { name: 'no', value: false },
+      ],
+      default: true
     });
 
-    const author =
+    const protect = flags.protect ?? await select<boolean>({
+      message: 'Enable RBAC-based protection for this model',
+      choices: [
+        { name: 'yes', value: true },
+        { name: 'no', value: false },
+      ],
+    });
+
+    const author = flags.author ??
       (await readProjectAuthor(process.cwd())) ??
       (await input({ message: 'Enter the author name', required: true }));
 
     const context: Record<string, unknown> = {
+      author,
+      cache,
       name: args.name,
       description,
       datastore,
-      author,
+      datastoreType,
+      protect,
       year: new Date().getFullYear(),
     };
 
