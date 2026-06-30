@@ -49,8 +49,8 @@ async function startPostgres(): Promise<StartedDatabase> {
 
 async function startRedis(): Promise<StartedDatabase> {
   const server = new RedisMemoryServer();
-  const host = server.getHost();
-  const port = server.getPort();
+  const host = await server.getHost();
+  const port = await server.getPort();
   return { server, type: "redis", uri: `redis://${host}:${port}` };
 }
 
@@ -92,7 +92,7 @@ export async function startDatabases(
       log(`Redis is ready at ${result.uri}`);
     } catch (e) {
       throw new Error(
-        `Failed to start MongoDB: ${e instanceof Error ? e.message : String(e)}\n`,
+        `Failed to start Redis: ${e instanceof Error ? e.message : String(e)}\n`,
       );
     }
   }
@@ -110,7 +110,7 @@ export async function startDatabases(
       log(`Postgres is ready at url: ${result.uri}`);
     } catch (e) {
       throw new Error(
-        `Failed to start MongoDB: ${e instanceof Error ? e.message : String(e)}\n`,
+        `Failed to start Postgres: ${e instanceof Error ? e.message : String(e)}\n`,
       );
     }
   }
