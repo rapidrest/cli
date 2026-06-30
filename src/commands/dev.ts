@@ -55,7 +55,7 @@ export default class Dev extends Command {
     const server = spawn(
       tsxExec,
       tsxArgs,
-      { cwd, stdio: 'inherit', env: serverEnv },
+      { cwd, stdio: 'inherit', env: serverEnv, shell: process.platform === 'win32' },
     );
     childProcesses.push(server);
 
@@ -63,7 +63,7 @@ export default class Dev extends Command {
     if (await detectReact(cwd)) {
       this.log('Starting Vite in watch mode...');
       const viteBin = join(projectBin, `vite${ext}`);
-      const viteProc = spawn(viteBin, ['build', '--watch'], { cwd, stdio: 'inherit', env: serverEnv });
+      const viteProc = spawn(viteBin, ['build', '--watch'], { cwd, stdio: 'inherit', env: serverEnv, shell: process.platform === 'win32' });
       childProcesses.push(viteProc);
     }
 

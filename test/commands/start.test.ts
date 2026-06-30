@@ -132,6 +132,16 @@ describe('start', () => {
       expect(args[0]).toContain('server.js');
     });
 
+    it('checks for server files relative to the project cwd, not the node binary path', async () => {
+      await Start.run(['--no-build'], ROOT);
+
+      const checkedPaths = vi.mocked(existsSync).mock.calls.map(([p]) => String(p));
+      for (const p of checkedPaths) {
+        expect(p.startsWith(ROOT)).toBe(true);
+        expect(p).not.toContain(process.execPath);
+      }
+    });
+
     it('falls back to dist/server.js when no specific layout is detected', async () => {
       vi.mocked(existsSync).mockReturnValue(false);
 

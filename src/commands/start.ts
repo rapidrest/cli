@@ -94,7 +94,7 @@ export default class Start extends Command {
     }
 
     // 3. Start server
-    const serverPath: string = detectServerPath(process.execPath);
+    const serverPath: string = detectServerPath(cwd);
     this.log('\nStarting RapidREST server...');
     const serverEnv = { ...process.env, ...dbEnv };
     const server = spawn(process.execPath, [serverPath], {
