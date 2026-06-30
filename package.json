@@ -3,7 +3,10 @@
   "description": "The official CLI tool for RapidREST projects",
   "version": "0.1.0",
   "author": "Jean-Philippe Steinmetz",
-  "bin": "./bin/run.js",
+  "bin": {
+    "rapidrest": "./bin/run.js",
+    "rr": "./bin/run.js"
+  },
   "bugs": "https://github.com/rapidrest/cli/issues",
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
@@ -52,6 +55,7 @@
   "type": "module",
   "oclif": {
     "bin": "rapidrest",
+    "binAliases": ["rr"],
     "dirname": "rapidrest",
     "commands": "./dist/commands",
     "plugins": [
