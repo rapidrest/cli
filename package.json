@@ -79,7 +79,7 @@
     "posttest": "yarn lint",
     "prepack": "yarn build && yarn oclif manifest && yarn oclif readme",
     "test": "vitest run",
-    "version": "yarn build && yarn oclif readme && git add README.md"
+    "version": "yarn oclif readme && git add README.md"
   },
   "types": "dist/index.d.ts"
 }
