@@ -27,6 +27,28 @@
       "target": "package.json",
       "strategy": "json-merge",
       "condition": "isSqlite"
+    },
+    {
+      "template": "patches/config-cache-datastore.ts.hbs",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "datastores",
+      "idempotencyKey": "cache",
+      "condition": "cache"
+    },
+    {
+      "template": "patches/package-redis.json",
+      "target": "package.json",
+      "strategy": "json-merge",
+      "condition": "cache"
+    },
+    {
+      "template": "patches/config-rbac-enable.txt",
+      "target": "src/config.ts",
+      "strategy": "ts-property-set",
+      "insertInto": "rbac",
+      "property": "enabled",
+      "condition": "protect"
     }
   ]
 }

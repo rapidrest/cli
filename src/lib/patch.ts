@@ -5,8 +5,9 @@ import { join } from 'path';
 export interface PatchEntry {
   template: string;
   target: string;
-  strategy: 'ts-block-insert' | 'json-merge';
+  strategy: 'ts-block-insert' | 'ts-property-set' | 'json-merge';
   insertInto?: string;
+  property?: string;
   idempotencyKey?: string;
   condition?: string;
 }
@@ -86,6 +87,90 @@ export function tsBlockInsert(
   return source.slice(0, blockEnd) + snippet + source.slice(blockEnd);
 }
 
+// Finds `propertyName` at depth 1 inside the named block and replaces its value with `newValue`.
+// Returns source unchanged when the property is already set to `newValue` (idempotent).
+// Returns source unchanged when the property does not exist inside the block (graceful no-op).
+// Throws if the block itself cannot be found.
+export function tsPropertySet(
+  source: string,
+  blockName: string,
+  propertyName: string,
+  newValue: string,
+): string {
+  const blockPattern = new RegExp(`\\b${blockName}\\s*:\\s*\\{`);
+  const match = source.match(blockPattern);
+  if (!match || match.index === undefined) {
+    throw new Error(`Could not find '${blockName}' block in source`);
+  }
+
+  let i = match.index + match[0].length; // first char after opening {
+  let depth = 1;
+  const propPattern = new RegExp(`^${propertyName}\\s*:\\s*`);
+
+  while (i < source.length && depth > 0) {
+    // Skip // line comments
+    if (source[i] === '/' && source[i + 1] === '/') {
+      while (i < source.length && source[i] !== '\n') i++;
+      continue;
+    }
+    // Skip string literals
+    if (source[i] === '"' || source[i] === "'" || source[i] === '`') {
+      const q = source[i++];
+      while (i < source.length && source[i] !== q) {
+        if (source[i] === '\\') i++;
+        i++;
+      }
+      i++;
+      continue;
+    }
+
+    if (source[i] === '{') { depth++; i++; continue; }
+    if (source[i] === '}') {
+      depth--;
+      if (depth === 0) break;
+      i++;
+      continue;
+    }
+
+    if (depth === 1) {
+      const propMatch = source.slice(i).match(propPattern);
+      if (propMatch) {
+        const valueStart = i + propMatch[0].length;
+        // Walk to find the end of this property's value
+        let j = valueStart;
+        let innerDepth = 0;
+        while (j < source.length) {
+          if (source[j] === '"' || source[j] === "'" || source[j] === '`') {
+            const q = source[j++];
+            while (j < source.length && source[j] !== q) {
+              if (source[j] === '\\') j++;
+              j++;
+            }
+            if (j < source.length) j++;
+            continue;
+          }
+          if (source[j] === '{' || source[j] === '[') { innerDepth++; j++; continue; }
+          if (source[j] === '}' || source[j] === ']') {
+            if (innerDepth === 0) break; // closes parent block — value ends here
+            innerDepth--;
+            j++;
+            continue;
+          }
+          if (source[j] === ',' && innerDepth === 0) break; // end of this property's value
+          j++;
+        }
+        // j points to the terminating ',' or '}' — value is source[valueStart..j]
+        const currentValue = source.slice(valueStart, j).trim();
+        if (currentValue === newValue) return source; // already correct — no-op
+        return source.slice(0, valueStart) + newValue + source.slice(j);
+      }
+    }
+    i++;
+  }
+
+  return source; // property not found in block — no-op
+}
+
 // Recursively merges `patch` into a shallow copy of `target`.
 // Plain objects at the same key recurse; arrays and scalars — patch value wins.
 // Does not mutate either argument.
@@ -141,6 +226,16 @@ export async function applyPatches(
         ? Handlebars.compile(entry.idempotencyKey, { noEscape: true })(context)
         : '';
       const updated = tsBlockInsert(targetSource, entry.insertInto!, renderedPatch, idempotencyKey);
+      await writeFile(targetPath, updated, 'utf-8');
+
+    } else if (entry.strategy === 'ts-property-set') {
+      let targetSource: string;
+      try {
+        targetSource = await readFile(targetPath, 'utf-8');
+      } catch {
+        throw new Error(`Patch target file not found: ${targetPath}`);
+      }
+      const updated = tsPropertySet(targetSource, entry.insertInto!, entry.property!, renderedPatch.trim());
       await writeFile(targetPath, updated, 'utf-8');
 
     } else if (entry.strategy === 'json-merge') {

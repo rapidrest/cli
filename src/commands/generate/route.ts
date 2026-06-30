@@ -129,11 +129,11 @@ export default class GenerateRoute extends Command {
     const testTemplateDir = join(this.config.root, 'templates', 'route', 'test');
 
     try {
-      await processTemplate(routeTemplateDir, outputDir, context, { force: flags.force });
+      await processTemplate(routeTemplateDir, outputDir, context, { force: flags.force, projectDir: cwd });
       this.log(`\nRoute "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
 
       if (generateTest) {
-        await processTemplate(testTemplateDir, testDir, context, { force: flags.force });
+        await processTemplate(testTemplateDir, testDir, context, { force: flags.force, projectDir: cwd });
         this.log(`Test file generated at: ${join(testDir, args.name + '.test.ts')}`);
       }
     } catch (err) {

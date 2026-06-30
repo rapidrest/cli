@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdir, mkdtemp, rm, writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import os from 'os';
-import { tsBlockInsert, jsonMerge, applyPatches } from '../../src/lib/patch.js';
+import { tsBlockInsert, tsPropertySet, jsonMerge, applyPatches } from '../../src/lib/patch.js';
 import type { PatchEntry } from '../../src/lib/patch.js';
 
 // ---------------------------------------------------------------------------
@@ -80,6 +80,86 @@ describe('tsBlockInsert', () => {
     const snippet = '    postgres: { type: "postgresql" },\n';
     const result = tsBlockInsert(src, 'datastores', snippet, 'postgres');
     expect(result).toContain('    postgres: { type: "postgresql" }');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// tsPropertySet
+// ---------------------------------------------------------------------------
+
+describe('tsPropertySet', () => {
+  const baseSource = `conf.defaults({
+  rbac: {
+    enabled: false,
+  },
+  logger: {
+    level: "info",
+  },
+});`;
+
+  it('replaces the value of the named property inside the block', () => {
+    const result = tsPropertySet(baseSource, 'rbac', 'enabled', 'true');
+    expect(result).toContain('enabled: true');
+    expect(result).not.toContain('enabled: false');
+  });
+
+  it('is a no-op when the value is already the desired value', () => {
+    const src = `conf.defaults({ rbac: { enabled: true, }, });`;
+    const result = tsPropertySet(src, 'rbac', 'enabled', 'true');
+    expect(result).toBe(src);
+  });
+
+  it('preserves all other content outside the changed property', () => {
+    const result = tsPropertySet(baseSource, 'rbac', 'enabled', 'true');
+    expect(result).toContain('logger:');
+    expect(result).toContain('level: "info"');
+  });
+
+  it('throws when the named block does not exist', () => {
+    expect(() =>
+      tsPropertySet('conf.defaults({ port: 3000 });', 'rbac', 'enabled', 'true'),
+    ).toThrow("Could not find 'rbac' block");
+  });
+
+  it('returns source unchanged when the property does not exist in the block', () => {
+    const src = `conf.defaults({ rbac: { someOther: false } });`;
+    const result = tsPropertySet(src, 'rbac', 'enabled', 'true');
+    expect(result).toBe(src);
+  });
+
+  it('does not affect same-named properties inside sibling blocks', () => {
+    const src = `conf.defaults({
+  rbac: {
+    enabled: false,
+  },
+  metrics: {
+    enabled: true,
+  },
+});`;
+    const result = tsPropertySet(src, 'rbac', 'enabled', 'true');
+    // rbac.enabled set to true
+    expect(result).toMatch(/rbac:\s*\{[^}]*enabled:\s*true/s);
+    // metrics.enabled stays true (was already true, no change needed there)
+    expect(result).toContain('metrics:');
+  });
+
+  it('handles an object-valued property without corrupting it', () => {
+    const src = `conf.defaults({ session: { options: { secure: false } } });`;
+    // Setting options to a new object value
+    const result = tsPropertySet(src, 'session', 'options', '{ secure: true }');
+    expect(result).toContain('options: { secure: true }');
+  });
+
+  it('skips // comments when scanning for property names', () => {
+    const src = `conf.defaults({
+  rbac: {
+    // enabled: true,
+    enabled: false,
+  },
+});`;
+    const result = tsPropertySet(src, 'rbac', 'enabled', 'true');
+    expect(result).toContain('// enabled: true,');  // comment unchanged
+    expect(result).not.toContain('\n    enabled: false,'); // real property replaced
   });
 });
 
@@ -293,6 +373,47 @@ describe('applyPatches', () => {
     const after2 = await readFile(join(projectDir, 'package.json'), 'utf-8');
 
     expect(after1).toBe(after2);
+  });
+
+  // --- ts-property-set ---
+
+  it('ts-property-set: replaces a property value in the named block', async () => {
+    const configSource = `conf.defaults({ rbac: { enabled: false, } });`;
+    await writeFile(join(projectDir, 'src', 'config.ts'), configSource);
+    await writeFile(join(templateDir, 'patches', 'rbac.txt'), 'true');
+
+    const patches: PatchEntry[] = [{
+      template: 'patches/rbac.txt',
+      target: 'src/config.ts',
+      strategy: 'ts-property-set',
+      insertInto: 'rbac',
+      property: 'enabled',
+    }];
+
+    await applyPatches(templateDir, projectDir, {}, patches);
+
+    const result = await readFile(join(projectDir, 'src', 'config.ts'), 'utf-8');
+    expect(result).toContain('enabled: true');
+    expect(result).not.toContain('enabled: false');
+  });
+
+  it('ts-property-set: is idempotent when property already has the desired value', async () => {
+    const configSource = `conf.defaults({ rbac: { enabled: true, } });`;
+    await writeFile(join(projectDir, 'src', 'config.ts'), configSource);
+    await writeFile(join(templateDir, 'patches', 'rbac.txt'), 'true');
+
+    const patches: PatchEntry[] = [{
+      template: 'patches/rbac.txt',
+      target: 'src/config.ts',
+      strategy: 'ts-property-set',
+      insertInto: 'rbac',
+      property: 'enabled',
+    }];
+
+    await applyPatches(templateDir, projectDir, {}, patches);
+
+    const result = await readFile(join(projectDir, 'src', 'config.ts'), 'utf-8');
+    expect(result).toBe(configSource);
   });
 
   // --- condition gate ---

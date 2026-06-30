@@ -1,0 +1,14 @@
+{
+  "conditionalFiles": [],
+  "helmPaths": [],
+  "patches": [
+    {
+      "template": "patches/config-rbac-enable.txt",
+      "target": "src/config.ts",
+      "strategy": "ts-property-set",
+      "insertInto": "rbac",
+      "property": "enabled",
+      "condition": "protect"
+    }
+  ]
+}
