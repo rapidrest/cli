@@ -6904,6 +6904,7 @@ __metadata:
     vitest: "npm:^4.1.9"
   bin:
     rapidrest: ./bin/run.js
+    rr: ./bin/run.js
   languageName: unknown
   linkType: soft
 
