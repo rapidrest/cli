@@ -1,4 +1,6 @@
 import { Command } from '@oclif/core';
+import { join } from 'path';
+import { access, readFile } from 'fs/promises';
 
 async function detectPackageManager(cwd: string): Promise<'npm' | 'yarn'> {
   try {

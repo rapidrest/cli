@@ -1,6 +1,5 @@
 import { Command, Flags } from '@oclif/core';
-import { access } from 'fs/promises';
-import { readFile } from 'fs/promises';
+import { access, readFile } from 'fs/promises';
 import { join, delimiter } from 'path';
 import { spawn } from 'child_process';
 import { detectDatabases, startDatabases } from '../lib/db.js';
