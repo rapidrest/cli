@@ -1,4 +1,4 @@
-import { input, select } from '@inquirer/prompts';
+import { input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
@@ -38,6 +38,7 @@ export default class GenerateModel extends Command {
     });
 
     const configured = await readProjectDatastores(process.cwd());
+    const selectable = configured.filter((d) => d.name !== 'acl');
 
     let datastore: string;
     let datastoreType: string;
@@ -45,13 +46,30 @@ export default class GenerateModel extends Command {
     if (flags.datastore !== undefined) {
       datastore = flags.datastore;
       datastoreType = configured.find((d) => d.name === flags.datastore)?.type ?? '';
-    } else if (configured.length > 0) {
+    } else if (selectable.length > 0) {
       const selectedName = await select<string>({
         message: 'Select the datastore for this model',
-        choices: configured.map((d) => ({ name: `${d.name} (${d.type})`, value: d.name })),
+        choices: [
+          ...selectable.map((d) => ({ name: `${d.name} (${d.type})`, value: d.name })),
+          new Separator(),
+          { name: '+ New datastore...', value: '__new__' },
+        ],
       });
-      datastore = selectedName;
-      datastoreType = configured.find((d) => d.name === selectedName)?.type ?? '';
+      if (selectedName === '__new__') {
+        datastoreType = await select<string>({
+          message: 'Select database type',
+          choices: [
+            { name: 'MongoDB', value: 'mongodb' },
+            { name: 'PostgreSQL', value: 'postgres' },
+            { name: 'sqlite', value: 'sqlite' },
+          ],
+          default: 'mongodb',
+        });
+        datastore = datastoreType;
+      } else {
+        datastore = selectedName;
+        datastoreType = configured.find((d) => d.name === selectedName)?.type ?? '';
+      }
     } else {
       const setupNew = await select<boolean>({
         message: 'No datastores configured in this project. Set up a new database?',

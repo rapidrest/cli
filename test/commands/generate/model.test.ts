@@ -71,14 +71,14 @@ describe('generate model', () => {
 
   describe('context building', () => {
     it('builds the correct context from prompts and passes it to processTemplate', async () => {
-      stubPrompts({ description: 'A product entity', datastore: 'acl', cache: true, protect: true, author: 'Jane Doe' });
+      stubPrompts({ description: 'A product entity', datastore: 'mongo', cache: true, protect: true, author: 'Jane Doe' });
       await GenerateModel.run(['Product', '--output-dir', '/tmp/test-models'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context).toMatchObject({
         name: 'Product',
         description: 'A product entity',
-        datastore: 'acl',
+        datastore: 'mongo',
         datastoreType: 'mongodb',
         cache: true,
         protect: true,
@@ -97,7 +97,7 @@ describe('generate model', () => {
     });
 
     it('sets isMongoDb true and other db booleans false when datastoreType is mongodb', async () => {
-      stubPrompts({ datastore: 'acl', author: 'Author' }); // acl → mongodb
+      stubPrompts({ datastore: 'mongo', author: 'Author' });
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
@@ -117,25 +117,40 @@ describe('generate model', () => {
   });
 
   describe('datastore selection — configured datastores present', () => {
-    it('shows each datastore as "name (type)" in the select choices', async () => {
+    it('shows only non-acl datastores in the select choices, plus a new option', async () => {
       stubPrompts({ datastore: 'mongo', author: 'Author' });
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
-      // First select call is the datastore select
       const firstSelectCall = vi.mocked(select).mock.calls[0][0] as any;
-      expect(firstSelectCall.choices).toEqual([
-        { name: 'acl (mongodb)', value: 'acl' },
-        { name: 'mongo (mongodb)', value: 'mongo' },
-      ]);
+      const choices = firstSelectCall.choices;
+      expect(choices[0]).toEqual({ name: 'mongo (mongodb)', value: 'mongo' });
+      expect(choices[choices.length - 1]).toEqual({ name: '+ New datastore...', value: '__new__' });
+      expect(choices.some((c: any) => c.value === 'acl')).toBe(false);
     });
 
     it('resolves datastoreType from the config list for the selected name', async () => {
-      stubPrompts({ datastore: 'acl', author: 'Author' });
+      stubPrompts({ datastore: 'mongo', author: 'Author' });
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.datastore).toBe('acl');
+      expect(context.datastore).toBe('mongo');
       expect(context.datastoreType).toBe('mongodb');
+    });
+
+    it('selecting "+ New datastore..." prompts for db type and uses it as both name and type', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__' as any)  // datastore select → new
+        .mockResolvedValueOnce('sqlite' as any)   // db type
+        .mockResolvedValueOnce(false as any)       // cache
+        .mockResolvedValueOnce(false as any);      // protect
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.datastore).toBe('sqlite');
+      expect(context.datastoreType).toBe('sqlite');
+      expect(vi.mocked(select)).toHaveBeenCalledTimes(4); // datastore + type + cache + protect
     });
 
     it('does not show the "set up new database" prompt when datastores are configured', async () => {
@@ -189,10 +204,10 @@ describe('generate model', () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
       vi.mocked(select).mockResolvedValueOnce(false as any).mockResolvedValueOnce(false as any);
 
-      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'acl'], ROOT);
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'mongo'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.datastore).toBe('acl');
+      expect(context.datastore).toBe('mongo');
       expect(context.datastoreType).toBe('mongodb');
       expect(readProjectDatastores).toHaveBeenCalledOnce();
       expect(vi.mocked(select)).toHaveBeenCalledTimes(2); // cache + protect only
