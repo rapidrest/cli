@@ -49,7 +49,7 @@ export default class GenerateServer extends Command {
       choices: [
         { name: 'MongoDB', value: 'mongodb', checked: true },
         { name: 'PostgreSQL', value: 'postgresql' },
-        { name: 'Redis', value: 'redis', description: 'Required for cache support.' },
+        { name: 'Redis (cache)', value: 'redis', checked: true, description: 'Required for cache support.' },
         { name: 'SQLite', value: 'sqlite' },
       ],
     });
@@ -75,6 +75,7 @@ export default class GenerateServer extends Command {
         { name: 'Git (local)', value: 'git' },
         { name: 'Perforce (Helix)', value: 'p4' },
         { name: 'Subversion', value: 'svn' },
+        { name: '(none)', value: '' },
       ],
     });
 
