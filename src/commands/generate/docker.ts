@@ -1,7 +1,7 @@
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectDatastores, readProjectName } from '../../lib/project.js';
+import { detectPackageManager, readProjectDatastores, readProjectName } from '../../lib/project.js';
 
 export default class GenerateDocker extends Command {
   static override args = {};
@@ -24,8 +24,11 @@ export default class GenerateDocker extends Command {
 
     this.log(`Generating Docker files...\n`);
 
-    const datastores = await readProjectDatastores(cwd);
-    const projectName = await readProjectName(cwd);
+    const [datastores, projectName, pkgManager] = await Promise.all([
+      readProjectDatastores(cwd),
+      readProjectName(cwd),
+      detectPackageManager(cwd),
+    ]);
 
     const hasMongoDB = datastores.some((ds) => ds.type === 'mongodb');
     const hasPostgres = datastores.some((ds) => ds.type === 'postgresql');
@@ -38,6 +41,10 @@ export default class GenerateDocker extends Command {
       hasMongoDB,
       hasPostgres,
       hasRedis,
+      pkgMgr: {
+        yarn: pkgManager === 'yarn',
+        npm: pkgManager === 'npm',
+      },
     };
 
     const templateDir = join(this.config.root, 'templates', 'docker');

@@ -4,11 +4,6 @@ import { join } from 'path';
 
 vi.mock('child_process', () => ({ spawn: vi.fn() }));
 
-vi.mock('fs/promises', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('fs/promises')>();
-  return { ...actual, access: vi.fn(), readFile: vi.fn() };
-});
-
 vi.mock('fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('fs')>();
   return { ...actual, existsSync: vi.fn() };
@@ -20,14 +15,14 @@ vi.mock('../../src/lib/db.js', () => ({
 }));
 
 vi.mock('../../src/lib/project.js', () => ({
+  detectPackageManager: vi.fn(),
   detectReact: vi.fn(),
 }));
 
 import { spawn } from 'child_process';
-import { access, readFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import { detectDatabases, startDatabases } from '../../src/lib/db.js';
-import { detectReact } from '../../src/lib/project.js';
+import { detectPackageManager, detectReact } from '../../src/lib/project.js';
 import Start from '../../src/commands/start.js';
 
 const ROOT = process.cwd();
@@ -63,9 +58,7 @@ function shellSpawnCalls() {
 describe('start', () => {
   beforeEach(() => {
     vi.mocked(spawn).mockImplementation(() => makeFakeProcess() as any);
-    // Default: npm (no yarn.lock, no packageManager field in package.json)
-    vi.mocked(readFile).mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
-    vi.mocked(access).mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
+    vi.mocked(detectPackageManager).mockResolvedValue('npm');
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(detectDatabases).mockResolvedValue({ mongodb: false, redis: false, postgresql: false });
     vi.mocked(startDatabases).mockResolvedValue({ databases: [], env: {} });
@@ -102,7 +95,7 @@ describe('start', () => {
     });
 
     it('runs yarn build when yarn.lock is present', async () => {
-      vi.mocked(access).mockResolvedValue(undefined); // yarn.lock accessible
+      vi.mocked(detectPackageManager).mockResolvedValue('yarn');
 
       await Start.run([], ROOT);
 
@@ -112,7 +105,7 @@ describe('start', () => {
     });
 
     it('runs yarn build when packageManager field starts with "yarn"', async () => {
-      vi.mocked(readFile).mockResolvedValue(JSON.stringify({ packageManager: 'yarn@4.5.0' }) as any);
+      vi.mocked(detectPackageManager).mockResolvedValue('yarn');
 
       await Start.run([], ROOT);
 

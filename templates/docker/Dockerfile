@@ -5,8 +5,12 @@ FROM node:lts-trixie-slim AS builder
 WORKDIR /app
 
 # Copy the current directory contents into the container at /app
+{{#if pkgMgr.yarn}}
 COPY package.json yarn.lock .yarnrc.yml tsconfig.json RELEASE_NOTES.md ./
 COPY .yarn/releases ./.yarn/releases
+{{else}}
+COPY package.json package-lock.json tsconfig.json RELEASE_NOTES.md ./
+{{/if}}
 COPY ./app /app/app
 COPY ./public /app/public
 COPY ./src /app/src
@@ -18,14 +22,22 @@ RUN echo Building as $NODE_ENV
 # Install any needed packages specified in requirements.txt
 RUN apt update && apt upgrade -y
 RUN npm install --global nodemon
+{{#if pkgMgr.yarn}}
 RUN corepack enable
 RUN yarn install --immutable
+{{else}}
+RUN npm ci
+{{/if}}
 RUN npx rapidreact build
 
 FROM node:lts-trixie-slim AS runner
 WORKDIR /app
+{{#if pkgMgr.yarn}}
 COPY --from=builder /app/package.json /app/yarn.lock /app/.yarnrc.yml /app/tsconfig.json /app/RELEASE_NOTES.md ./
 COPY --from=builder /app/.yarn/releases ./.yarn/releases
+{{else}}
+COPY --from=builder /app/package.json /app/package-lock.json /app/tsconfig.json /app/RELEASE_NOTES.md ./
+{{/if}}
 COPY --from=builder /app/app ./app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/public ./public
@@ -37,7 +49,9 @@ RUN chmod +x /app/scripts/*.sh
 # Add curl for health check
 RUN apt update && apt upgrade -f && apt install curl -y
 RUN npm install --global nodemon
+{{#if pkgMgr.yarn}}
 RUN corepack enable
+{{/if}}
 
 ARG NODE_ENV=production
 ENV NODE_ENV ${NODE_ENV}
@@ -55,4 +69,8 @@ ENV PORT 3000
 HEALTHCHECK --interval=10s --timeout=60s --start-period=15s --retries=3 CMD curl -f http://localhost:3000/ || exit 1
 
 # Run app.js when the container launches
+{{#if pkgMgr.yarn}}
 CMD ["yarn", "rapidrest", "start", "--docker"]
+{{else}}
+CMD ["npx", "rapidrest", "start", "--docker"]
+{{/if}}

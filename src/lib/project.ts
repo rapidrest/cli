@@ -128,6 +128,19 @@ export async function readProjectName(cwd: string): Promise<string> {
 
 // Reads `user.name` and `user.email` from the global git configuration and combines
 // them as "Name <email>". Returns undefined if git is unavailable or user.name is unset.
+export async function detectPackageManager(cwd: string): Promise<'npm' | 'yarn'> {
+  try {
+    const raw = await readFile(join(cwd, 'package.json'), 'utf-8');
+    const pkg = JSON.parse(raw) as { packageManager?: string };
+    if (pkg.packageManager?.startsWith('yarn')) return 'yarn';
+  } catch { /* ignore */ }
+  try {
+    await access(join(cwd, 'yarn.lock'));
+    return 'yarn';
+  } catch { /* ignore */ }
+  return 'npm';
+}
+
 export async function readGitAuthor(): Promise<string | undefined> {
   try {
     const { stdout: nameOut } = await execFileAsync('git', ['config', 'user.name']);

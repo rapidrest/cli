@@ -1,6 +1,10 @@
 services:
     server:
+{{#if pkgMgr.yarn}}
         command: ["yarn", "dev", "--docker"]
+{{else}}
+        command: ["npm", "run", "dev", "--", "--docker"]
+{{/if}}
         volumes:
             - ./app:/app/app
             - ./src:/app/src

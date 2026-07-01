@@ -1,23 +1,9 @@
 import { Command, Flags } from '@oclif/core';
 import { existsSync } from 'fs';
-import { access, readFile } from 'fs/promises';
 import { join, delimiter } from 'path';
 import { spawn } from 'child_process';
 import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
-import { detectReact } from '../lib/project.js';
-
-async function detectPackageManager(cwd: string): Promise<'npm' | 'yarn'> {
-  try {
-    const raw = await readFile(join(cwd, 'package.json'), 'utf-8');
-    const pkg = JSON.parse(raw) as { packageManager?: string };
-    if (pkg.packageManager?.startsWith('yarn')) return 'yarn';
-  } catch { /* ignore */ }
-  try {
-    await access(join(cwd, 'yarn.lock'));
-    return 'yarn';
-  } catch { /* ignore */ }
-  return 'npm';
-}
+import { detectPackageManager, detectReact } from '../lib/project.js';
 
 function detectServerPath(cwd: string): string {
   if (existsSync(join(cwd, "dist", "server", "server.js"))) {

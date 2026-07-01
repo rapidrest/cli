@@ -6,12 +6,13 @@ vi.mock('../../../src/lib/template.js', () => ({
 }));
 
 vi.mock('../../../src/lib/project.js', () => ({
+  detectPackageManager: vi.fn(),
   readProjectDatastores: vi.fn(),
   readProjectName: vi.fn(),
 }));
 
 import { processTemplate } from '../../../src/lib/template.js';
-import { readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
+import { detectPackageManager, readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
 import GenerateDocker from '../../../src/commands/generate/docker.js';
 
 const ROOT = process.cwd();
@@ -19,6 +20,7 @@ const ROOT = process.cwd();
 describe('generate docker', () => {
   beforeEach(() => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
+    vi.mocked(detectPackageManager).mockResolvedValue('npm');
     vi.mocked(readProjectDatastores).mockResolvedValue([]);
     vi.mocked(readProjectName).mockResolvedValue('my-app');
   });
@@ -176,6 +178,32 @@ describe('generate docker', () => {
       await GenerateDocker.run([], ROOT);
 
       expect(readProjectName).toHaveBeenCalledWith(process.cwd());
+    });
+  });
+
+  describe('package manager context', () => {
+    it('sets pkgMgr.npm true and pkgMgr.yarn false when detectPackageManager returns npm', async () => {
+      vi.mocked(detectPackageManager).mockResolvedValue('npm');
+
+      await GenerateDocker.run([], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.pkgMgr).toEqual({ yarn: false, npm: true });
+    });
+
+    it('sets pkgMgr.yarn true and pkgMgr.npm false when detectPackageManager returns yarn', async () => {
+      vi.mocked(detectPackageManager).mockResolvedValue('yarn');
+
+      await GenerateDocker.run([], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.pkgMgr).toEqual({ yarn: true, npm: false });
+    });
+
+    it('calls detectPackageManager with the project cwd', async () => {
+      await GenerateDocker.run(['--output-dir', '/custom/project'], ROOT);
+
+      expect(detectPackageManager).toHaveBeenCalledWith('/custom/project');
     });
   });
 });
