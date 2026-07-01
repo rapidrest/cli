@@ -4,6 +4,7 @@ import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
 import { readGitAuthor } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
+import GenerateDocker from './docker.js';
 
 export default class GenerateServer extends Command {
   static override args = {
@@ -114,6 +115,15 @@ export default class GenerateServer extends Command {
 
     try {
       await processTemplate(templateDir, outputDir, context, { force: flags.force });
+
+      if (allFeatures.includes('docker')) {
+        this.log('\nAdding Docker support...');
+        await GenerateDocker.run([
+          '--output-dir', outputDir,
+          ...(flags.force ? ['--force'] : []),
+        ], this.config.root);
+      }
+
       this.log(`\nProject "${args.name}" generated at: ${outputDir}`);
       this.log(`\nNext steps:`);
       this.log(`  cd ${args.name}`);

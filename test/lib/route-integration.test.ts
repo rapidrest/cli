@@ -208,16 +208,6 @@ describe('generate server', () => {
     });
   });
 
-  it('includes docker files when features.docker is enabled', async () => {
-    await withTmpDir(async (dir) => {
-      const ctx = makeServerContext({ features: { docker: true, react: false, k8s: false, redis: false, hasDatabase: false } });
-      await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
-      const files = await listFiles(dir);
-      expect(files.some(f => f.includes('Dockerfile'))).toBe(true);
-      expect(files.some(f => f.includes('docker-compose.yml'))).toBe(true);
-    });
-  });
-
   it('includes GitHub CI workflow when scm.github is enabled', async () => {
     await withTmpDir(async (dir) => {
       const ctx = makeServerContext({ scm: { github: true, gitlab: false, git: false } });

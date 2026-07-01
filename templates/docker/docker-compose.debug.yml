@@ -1,0 +1,6 @@
+services:
+    server:
+        command: ["yarn", "dev"]
+        volumes:
+            - ./app:/app/app
+            - ./src:/app/src

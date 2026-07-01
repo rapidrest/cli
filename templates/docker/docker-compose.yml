@@ -1,0 +1,41 @@
+services:
+    server:
+        build:
+            context: .
+        ports:
+            - "3000:3000"
+            - "9229:9229"
+        environment:
+{{#each datastores}}
+            - datastores__{{name}}__type={{type}}
+{{#if (eq type "mongodb")}}
+            - datastores__{{name}}__url=mongodb://mongo
+{{else if (eq type "postgresql")}}
+            - datastores__{{name}}__url=postgres://postgres
+{{else if (eq type "redis")}}
+            - datastores__{{name}}__url=redis://redis
+{{/if}}
+{{/each}}
+            - NODE_ENV=dev
+        links:
+            {{#if hasMongoDB}}
+            - mongo
+            {{/if}}
+            {{#if hasPostgres}}
+            - postgres
+            {{/if}}
+            {{#if hasRedis}}
+            - redis
+            {{/if}}
+    {{#if hasMongoDB}}
+    mongo:
+        image: mongo
+    {{/if}}
+    {{#if hasPostgres}}
+    postgres:
+        image: postgres
+    {{/if}}
+    {{#if hasRedis}}
+    redis:
+        image: redis
+    {{/if}}

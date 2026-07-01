@@ -25,9 +25,14 @@ vi.mock('../../../src/lib/prompts.js', () => ({
   inputAuthor: vi.fn(),
 }));
 
+vi.mock('../../../src/commands/generate/docker.js', () => ({
+  default: { run: vi.fn() },
+}));
+
 import { input, select, checkbox } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
 import { inputAuthor } from '../../../src/lib/prompts.js';
+import GenerateDocker from '../../../src/commands/generate/docker.js';
 import GenerateServer from '../../../src/commands/generate/server.js';
 
 const ROOT = process.cwd();
@@ -59,6 +64,7 @@ describe('generate server', () => {
   beforeEach(() => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
     vi.mocked(inputAuthor).mockResolvedValue('Default Author');
+    (GenerateDocker as any).run.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -101,6 +107,7 @@ describe('generate server', () => {
       vi.clearAllMocks();
       vi.mocked(processTemplate).mockResolvedValue(undefined);
       vi.mocked(inputAuthor).mockResolvedValue('Default Author');
+      (GenerateDocker as any).run.mockResolvedValue(undefined);
       stubPrompts({ dbFeatures: [db], otherFeatures: [] });
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
@@ -190,6 +197,46 @@ describe('generate server', () => {
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.author).toBe('Git Author <git@example.com>');
       expect(inputAuthor).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('docker subcommand', () => {
+    it('runs GenerateDocker with --output-dir after server generation when docker is selected', async () => {
+      stubPrompts({ otherFeatures: ['docker'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
+      expect((GenerateDocker as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out'],
+        expect.any(String),
+      );
+    });
+
+    it('does not run GenerateDocker when docker is not selected', async () => {
+      stubPrompts({ otherFeatures: [] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateDocker as any).run).not.toHaveBeenCalled();
+    });
+
+    it('passes --force to GenerateDocker when --force is set on the server command', async () => {
+      stubPrompts({ otherFeatures: ['docker'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
+
+      expect((GenerateDocker as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--force'],
+        expect.any(String),
+      );
+    });
+
+    it('uses the default output directory (./<name>) when --output-dir is not set', async () => {
+      stubPrompts({ otherFeatures: ['docker'] });
+      await GenerateServer.run(['my-project'], ROOT);
+
+      expect((GenerateDocker as any).run).toHaveBeenCalledWith(
+        ['--output-dir', join(process.cwd(), 'my-project')],
+        expect.any(String),
+      );
     });
   });
 });
