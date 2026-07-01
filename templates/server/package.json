@@ -11,7 +11,8 @@
 	],
 	"scripts": {
 		"build": "rimraf dist && tsc{{#if features.react}} && tsc -p tsconfig.client.json && vite build{{/if}}",
-		"debug": "npx rapidrest dev",
+		"debug": "rapidrest dev --inspect",
+		"dev": "rapidrest dev",
 		"docs": "typedoc --plugin typedoc-plugin-markdown --out docs/reference --target esnext --mode file src",
 		"lint": "eslint ./src ./test",
 		"local-audit": "{{#if pkgMgr.yarn}}yarn{{else}}npm{{/if}} install && yarn npm audit -A -R \"$@\"",
@@ -20,7 +21,7 @@
 		"report-coverage": "cat ./coverage/lcov.info | coveralls",
 		"profile:process": "node --prof-process --call-graph",
 		"profile:view": "npx speedscope",
-		"start": "npx rapidrest start",
+		"start": "rapidrest start",
 		"test": "vitest run --coverage",
 		"test:prod": "{{#if pkgMgr.yarn}}yarn{{else}}npm run{{/if}} lint && {{#if pkgMgr.yarn}}yarn{{else}}npm run{{/if}} test",
 		"test:watch": "vitest --coverage",
@@ -53,6 +54,7 @@
 		"winston-transport": "^4.9.0"
 	},
 	"devDependencies": {
+		"@rapidrest/cli": "^0.3.0",
 		"@swc/core": "^1.15.41",
 		"@types/nconf": "^0.10.7",
 		{{#if features.react}}"@types/react": "^19",{{/if}}
