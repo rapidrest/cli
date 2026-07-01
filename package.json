@@ -88,7 +88,8 @@
     "posttest": "yarn lint",
     "prepack": "yarn build && yarn oclif manifest && yarn oclif readme",
     "test": "vitest run",
-    "version": "yarn oclif readme && git add README.md"
+    "version": "yarn oclif readme && node scripts/postversion.js && git add README.md templates/server/package.json",
+    "postversion": "git push --follow-tags"
   },
   "types": "dist/index.d.ts"
 }
