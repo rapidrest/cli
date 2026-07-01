@@ -1,4 +1,4 @@
-import { input, select } from '@inquirer/prompts';
+import { confirm, input, select } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
@@ -36,12 +36,8 @@ export default class GenerateReact extends Command {
       required: true,
     });
 
-    const hydrate = flags.hydrate ?? await select<boolean>({
+    const hydrate = flags.hydrate ?? await confirm({
       message: 'Enable client-side hydration? (required for interactive apps):',
-      choices: [
-        { name: 'yes', value: true },
-        { name: 'no', value: false },
-      ],
       default: false
     });
 

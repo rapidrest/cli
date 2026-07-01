@@ -4,7 +4,7 @@ import { join } from 'path';
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
   select: vi.fn(),
-  checkbox: vi.fn(),
+  confirm: vi.fn(),
   Separator: class {
     separator: string;
     constructor(separator: string) { this.separator = separator; }
@@ -26,10 +26,25 @@ vi.mock('../../../src/lib/prompts.js', () => ({
   inputAuthor: vi.fn(),
 }));
 
-import { input, select } from '@inquirer/prompts';
+vi.mock('fs', () => ({
+  existsSync: vi.fn(),
+}));
+
+vi.mock('../../../src/commands/generate/docker.js', () => ({
+  default: { run: vi.fn() },
+}));
+
+vi.mock('../../../src/commands/generate/k8s.js', () => ({
+  default: { run: vi.fn() },
+}));
+
+import { input, select, confirm } from '@inquirer/prompts';
+import { existsSync } from 'fs';
 import { processTemplate } from '../../../src/lib/template.js';
 import { readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
 import { inputAuthor } from '../../../src/lib/prompts.js';
+import GenerateDocker from '../../../src/commands/generate/docker.js';
+import GenerateHelm from '../../../src/commands/generate/k8s.js';
 import GenerateModel from '../../../src/commands/generate/model.js';
 
 const ROOT = process.cwd();
@@ -40,7 +55,7 @@ const DEFAULT_DATASTORES = [
 ];
 
 // Default stub order when configured datastores are present (the normal case):
-//   input(description) → select(datastore name) → select(cache) → select(protect) → inputAuthor(cwd)
+//   input(description) → select(datastore name) → confirm(cache) → confirm(protect) → inputAuthor(cwd)
 function stubPrompts({
   description = 'A test model',
   datastore = 'mongo',
@@ -55,10 +70,8 @@ function stubPrompts({
   author?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(description);
-  vi.mocked(select)
-    .mockResolvedValueOnce(datastore as any)
-    .mockResolvedValueOnce(cache as any)
-    .mockResolvedValueOnce(protect as any);
+  vi.mocked(select).mockResolvedValueOnce(datastore as any);
+  vi.mocked(confirm).mockResolvedValueOnce(cache).mockResolvedValueOnce(protect);
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
 
@@ -68,6 +81,9 @@ describe('generate model', () => {
     vi.mocked(inputAuthor).mockResolvedValue('Default Author');
     vi.mocked(readProjectDatastores).mockResolvedValue(DEFAULT_DATASTORES);
     vi.mocked(readProjectName).mockResolvedValue('my-app');
+    vi.mocked(existsSync).mockReturnValue(false);
+    (GenerateDocker as any).run.mockResolvedValue(undefined);
+    (GenerateHelm as any).run.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -146,24 +162,27 @@ describe('generate model', () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
         .mockResolvedValueOnce('__new__' as any)  // datastore select → new
-        .mockResolvedValueOnce('sqlite' as any)   // db type
-        .mockResolvedValueOnce(false as any)       // cache
-        .mockResolvedValueOnce(false as any);      // protect
+        .mockResolvedValueOnce('sqlite' as any);   // db type
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)              // cache
+        .mockResolvedValueOnce(false);             // protect
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.datastore).toBe('sqlite');
       expect(context.datastoreType).toBe('sqlite');
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(4); // datastore + type + cache + protect
+      expect(vi.mocked(select)).toHaveBeenCalledTimes(2);  // datastore + db type
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(2); // cache + protect
     });
 
     it('does not show the "set up new database" prompt when datastores are configured', async () => {
       stubPrompts({ author: 'Author' });
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
-      // 3 selects: datastore + cache + protect (no "set up new?" select)
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(3);
+      // 1 select (datastore name) + 2 confirms (cache + protect) — no "set up new?" confirm
+      expect(vi.mocked(select)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -174,40 +193,42 @@ describe('generate model', () => {
 
     it('asks to set up a new database and selects the type when the user says yes', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select)
-        .mockResolvedValueOnce(true as any)       // "set up new?" → yes
-        .mockResolvedValueOnce('postgres' as any) // db type
-        .mockResolvedValueOnce(false as any)      // cache
-        .mockResolvedValueOnce(false as any);     // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // "set up new?" → yes
+        .mockResolvedValueOnce(false)  // cache
+        .mockResolvedValueOnce(false); // protect
+      vi.mocked(select).mockResolvedValueOnce('postgres' as any); // db type
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.datastore).toBe('postgres');
       expect(context.datastoreType).toBe('postgres');
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(4); // setup? + type + cache + protect
+      expect(vi.mocked(select)).toHaveBeenCalledTimes(1);   // db type only
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(3);  // setup? + cache + protect
     });
 
     it('sets datastore and datastoreType to empty string when the user declines', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select)
-        .mockResolvedValueOnce(false as any)  // "set up new?" → no
-        .mockResolvedValueOnce(false as any)  // cache
-        .mockResolvedValueOnce(false as any); // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // "set up new?" → no
+        .mockResolvedValueOnce(false)  // cache
+        .mockResolvedValueOnce(false); // protect
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.datastore).toBe('');
       expect(context.datastoreType).toBe('');
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(3); // setup? + cache + protect
+      expect(vi.mocked(select)).not.toHaveBeenCalled();
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(3); // setup? + cache + protect
     });
   });
 
   describe('flag shortcuts bypass prompts', () => {
     it('--datastore skips the datastore select but still resolves datastoreType from config', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select).mockResolvedValueOnce(false as any).mockResolvedValueOnce(false as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'mongo'], ROOT);
 
@@ -215,12 +236,12 @@ describe('generate model', () => {
       expect(context.datastore).toBe('mongo');
       expect(context.datastoreType).toBe('mongodb');
       expect(readProjectDatastores).toHaveBeenCalledOnce();
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(2); // cache + protect only
+      expect(vi.mocked(select)).not.toHaveBeenCalled();
     });
 
     it('--datastore leaves datastoreType empty when the name is not in the project config', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select).mockResolvedValueOnce(false as any).mockResolvedValueOnce(false as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'unknown'], ROOT);
 
@@ -229,50 +250,44 @@ describe('generate model', () => {
     });
 
     it('--description skips the description input prompt', async () => {
-      vi.mocked(select)
-        .mockResolvedValueOnce('mongo' as any)
-        .mockResolvedValueOnce(false as any)
-        .mockResolvedValueOnce(false as any);
+      vi.mocked(select).mockResolvedValueOnce('mongo' as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--description', 'From flag'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.description).toBe('From flag');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(0); // description from flag, author via inputAuthor
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
     });
 
-    it('--cache skips the cache select prompt', async () => {
+    it('--cache skips the cache confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select)
-        .mockResolvedValueOnce('mongo' as any)  // datastore
-        .mockResolvedValueOnce(false as any);   // protect only
+      vi.mocked(select).mockResolvedValueOnce('mongo' as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect only
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe(true);
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(2); // datastore + protect
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1); // protect only
     });
 
-    it('--protect skips the protect select prompt', async () => {
+    it('--protect skips the protect confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select)
-        .mockResolvedValueOnce('mongo' as any)  // datastore
-        .mockResolvedValueOnce(false as any);   // cache only
+      vi.mocked(select).mockResolvedValueOnce('mongo' as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false); // cache only
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--protect'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.protect).toBe(true);
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(2); // datastore + cache
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1); // cache only
     });
 
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select)
-        .mockResolvedValueOnce('mongo' as any)
-        .mockResolvedValueOnce(false as any)
-        .mockResolvedValueOnce(false as any);
+      vi.mocked(select).mockResolvedValueOnce('mongo' as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--author', 'Flag Author'], ROOT);
 
@@ -297,7 +312,7 @@ describe('generate model', () => {
   });
 
   describe('output and template options', () => {
-    it('uses ./src/models as the default output directory', async () => {
+    it('uses process.cwd() as the default output directory', async () => {
       stubPrompts({ author: 'Author' });
       await GenerateModel.run(['Widget'], ROOT);
 
@@ -319,6 +334,94 @@ describe('generate model', () => {
 
       const [templateDir] = vi.mocked(processTemplate).mock.calls[0];
       expect(templateDir).toContain(join('templates', 'model'));
+    });
+  });
+
+  describe('docker and helm subcommands after new datastore', () => {
+    it('does not call GenerateDocker or GenerateHelm when an existing datastore is selected', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      expect((GenerateDocker as any).run).not.toHaveBeenCalled();
+      expect((GenerateHelm as any).run).not.toHaveBeenCalled();
+    });
+
+    it('offers to update docker when a new datastore is added and docker-compose.yml exists', async () => {
+      vi.mocked(existsSync).mockImplementation((p) =>
+        String(p).endsWith('docker-compose.yml'),
+      );
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__' as any)
+        .mockResolvedValueOnce('mongodb' as any);
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // cache
+        .mockResolvedValueOnce(false)  // protect
+        .mockResolvedValueOnce(true);  // update docker?
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      expect((GenerateDocker as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/m', '--force'],
+        expect.any(String),
+      );
+    });
+
+    it('skips docker update when the user declines', async () => {
+      vi.mocked(existsSync).mockImplementation((p) =>
+        String(p).endsWith('docker-compose.yml'),
+      );
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__' as any)
+        .mockResolvedValueOnce('mongodb' as any);
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // cache
+        .mockResolvedValueOnce(false)  // protect
+        .mockResolvedValueOnce(false); // update docker? → no
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      expect((GenerateDocker as any).run).not.toHaveBeenCalled();
+    });
+
+    it('offers to update helm when a new datastore is added and helm/Chart.yaml exists', async () => {
+      vi.mocked(existsSync).mockImplementation((p) =>
+        String(p).endsWith('Chart.yaml'),
+      );
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__' as any)
+        .mockResolvedValueOnce('mongodb' as any);
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // cache
+        .mockResolvedValueOnce(false)  // protect
+        .mockResolvedValueOnce(true);  // update helm?
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      expect((GenerateHelm as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/m', '--force'],
+        expect.any(String),
+      );
+    });
+
+    it('offers to update both docker and helm when both exist for a new datastore', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__' as any)
+        .mockResolvedValueOnce('mongodb' as any);
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // cache
+        .mockResolvedValueOnce(false)  // protect
+        .mockResolvedValueOnce(true)   // update docker?
+        .mockResolvedValueOnce(true);  // update helm?
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
+      expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
     });
   });
 });

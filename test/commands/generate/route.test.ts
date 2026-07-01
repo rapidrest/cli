@@ -4,6 +4,7 @@ import { join } from 'path';
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
   select: vi.fn(),
+  confirm: vi.fn(),
   checkbox: vi.fn(),
   Separator: class {
     separator: string;
@@ -31,7 +32,7 @@ vi.mock('../../../src/commands/generate/model.js', () => ({
   default: { run: vi.fn() },
 }));
 
-import { input, select } from '@inquirer/prompts';
+import { input, select, confirm } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
 import {
   readProjectModels,
@@ -45,7 +46,7 @@ import GenerateRoute from '../../../src/commands/generate/route.js';
 const ROOT = process.cwd();
 
 // Default prompt order when project models are found (the normal case):
-//   input(description) → input(path) → select(model) → select(protect) → inputAuthor(cwd)
+//   input(description) → input(path) → select(model) → confirm(protect) → inputAuthor(cwd)
 // readModelDatastore returns 'acl' by default; readProjectDatastores maps 'acl' → 'mongodb'.
 function stubPrompts({
   description = 'Handles products',
@@ -61,7 +62,8 @@ function stubPrompts({
   author?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(description).mockResolvedValueOnce(path);
-  vi.mocked(select).mockResolvedValueOnce(model as any).mockResolvedValueOnce(protect as any);
+  vi.mocked(select).mockResolvedValueOnce(model as any);
+  vi.mocked(confirm).mockResolvedValueOnce(protect);
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
 
@@ -162,9 +164,8 @@ describe('generate route', () => {
       vi.mocked(input)
         .mockResolvedValueOnce('A desc')
         .mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select)
-        .mockResolvedValueOnce('__new__' as any) // model select
-        .mockResolvedValueOnce(false as any);     // protect
+      vi.mocked(select).mockResolvedValueOnce('__new__' as any); // model select
+      vi.mocked(confirm).mockResolvedValueOnce(false);            // protect
 
       await GenerateRoute.run(['OrderRoute'], ROOT);
 
@@ -182,25 +183,25 @@ describe('generate route', () => {
         .mockResolvedValueOnce('A desc')
         .mockResolvedValueOnce('/api/v1/x')
         .mockResolvedValueOnce(''); // model (free-form)
-      vi.mocked(select).mockResolvedValueOnce(false as any); // protect
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['ProductRoute'], ROOT);
 
       expect(vi.mocked(input)).toHaveBeenCalledTimes(3);
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // protect only (no model select)
+      expect(vi.mocked(select)).not.toHaveBeenCalled(); // no model select, protect is confirm
     });
 
     it('--no-model skips all model prompts and leaves model undefined in context', async () => {
       vi.mocked(input)
         .mockResolvedValueOnce('A desc')
         .mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce(false as any); // protect only
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['OrderRoute', '--no-model'], ROOT);
 
       expect(readProjectModels).not.toHaveBeenCalled();
       expect(readModelDatastore).not.toHaveBeenCalled();
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(select)).not.toHaveBeenCalled();
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.model).toBeUndefined();
       expect(context.datastore).toBe('');
@@ -211,7 +212,7 @@ describe('generate route', () => {
   describe('flag shortcuts bypass prompts', () => {
     it('--model skips the model select and resolves datastore from the named model file', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce(false as any); // protect only
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['OrderRoute', '--model', 'Product'], ROOT);
 
@@ -221,12 +222,13 @@ describe('generate route', () => {
       expect(context.datastoreType).toBe('mongodb');
       expect(readProjectModels).not.toHaveBeenCalled();
       expect(readModelDatastore).toHaveBeenCalledWith(expect.any(String), 'Product');
-      expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // protect only
+      expect(vi.mocked(select)).not.toHaveBeenCalled(); // no model select (from flag), protect is confirm
     });
 
     it('--description skips the description input prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
+      vi.mocked(select).mockResolvedValueOnce('Product' as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateRoute.run(['OrderRoute', '--description', 'From flag'], ROOT);
 
@@ -237,7 +239,8 @@ describe('generate route', () => {
 
     it('--path skips the route path input prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
+      vi.mocked(select).mockResolvedValueOnce('Product' as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateRoute.run(['OrderRoute', '--path', '/api/v2/orders'], ROOT);
 
@@ -246,7 +249,7 @@ describe('generate route', () => {
       expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only
     });
 
-    it('--protect skips the protect select prompt', async () => {
+    it('--protect skips the protect confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
       vi.mocked(select).mockResolvedValueOnce('Product' as any); // model only
 
@@ -254,12 +257,14 @@ describe('generate route', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.protect).toBe(true);
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // model only
     });
 
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
+      vi.mocked(select).mockResolvedValueOnce('Product' as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateRoute.run(['OrderRoute', '--author', 'Flag Author'], ROOT);
 

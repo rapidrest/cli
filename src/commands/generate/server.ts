@@ -5,6 +5,7 @@ import { processTemplate } from '../../lib/template.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
 import GenerateHelm from './k8s.js';
+import GenerateReact from './react.js';
 
 export default class GenerateServer extends Command {
   static override args = {
@@ -127,6 +128,14 @@ export default class GenerateServer extends Command {
       if (allFeatures.includes('k8s')) {
         this.log('\nAdding Kubernetes (Helm) support...');
         await GenerateHelm.run([
+          '--output-dir', outputDir,
+          ...(flags.force ? ['--force'] : []),
+        ], this.config.root);
+      }
+
+      if (allFeatures.includes('react')) {
+        this.log('\nAdding React support...');
+        await GenerateReact.run([
           '--output-dir', outputDir,
           ...(flags.force ? ['--force'] : []),
         ], this.config.root);

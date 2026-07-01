@@ -1,9 +1,12 @@
-import { input, select, Separator } from '@inquirer/prompts';
+import { confirm, input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
+import { existsSync } from "fs";
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readGitAuthor, readProjectAuthor, readProjectDatastores, readProjectName } from '../../lib/project.js';
+import { readProjectDatastores, readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
+import GenerateDocker from './docker.js';
+import GenerateHelm from './k8s.js';
 
 export default class GenerateModel extends Command {
   static override args = {
@@ -43,6 +46,7 @@ export default class GenerateModel extends Command {
 
     let datastore: string;
     let datastoreType: string;
+    let newDatastore: boolean = false;
 
     if (flags.datastore !== undefined) {
       datastore = flags.datastore;
@@ -67,17 +71,14 @@ export default class GenerateModel extends Command {
           default: 'mongodb',
         });
         datastore = datastoreType;
+        newDatastore = true;
       } else {
         datastore = selectedName;
         datastoreType = configured.find((d) => d.name === selectedName)?.type ?? '';
       }
     } else {
-      const setupNew = await select<boolean>({
+      const setupNew = await confirm({
         message: 'No datastores configured in this project. Set up a new database?',
-        choices: [
-          { name: 'yes', value: true },
-          { name: 'no', value: false },
-        ],
         default: true
       });
       if (setupNew) {
@@ -97,21 +98,14 @@ export default class GenerateModel extends Command {
       }
     }
 
-    const cache = flags.cache ?? await select<boolean>({
+    const cache = flags.cache ?? await confirm({
       message: 'Enable caching for this model:',
-      choices: [
-        { name: 'yes', value: true },
-        { name: 'no', value: false },
-      ],
       default: true
     });
 
-    const protect = flags.protect ?? await select<boolean>({
+    const protect = flags.protect ?? await confirm({
       message: 'Enable RBAC-based protection for this model:',
-      choices: [
-        { name: 'yes', value: true },
-        { name: 'no', value: false },
-      ],
+      default: true
     });
 
     const author = flags.author ?? (await inputAuthor(process.cwd()));
@@ -137,6 +131,34 @@ export default class GenerateModel extends Command {
     try {
       await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
       this.log(`\nModel "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
+
+      if (newDatastore) {
+        if (existsSync(join(outputDir, "docker-compose.yml"))) {
+          const answer = await confirm({
+            message: "Update docker files? (this will overwrite all files)",
+            default: true
+          });
+          if (answer) {
+            this.log('\nUpdating Docker support...');
+            await GenerateDocker.run([
+              '--output-dir', outputDir, '--force'
+            ], this.config.root);
+          }
+        }
+
+        if (existsSync(join(outputDir, "helm", "Chart.yaml"))) {
+          const answer = await confirm({
+            message: "Update Kubernetes (Helm) files? (this will overwrite all files)",
+            default: true
+          });
+          if (answer) {
+            this.log('\nUpdating Kubernetes (Helm) support...');
+            await GenerateHelm.run([
+              '--output-dir', outputDir, '--force'
+            ], this.config.root);
+          }
+        }
+      }
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

@@ -1,4 +1,4 @@
-import { input, select, Separator } from '@inquirer/prompts';
+import { confirm, input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
@@ -100,12 +100,9 @@ export default class GenerateRoute extends Command {
       }
     }
 
-    const protect = flags.protect ?? await select<boolean>({
+    const protect = flags.protect ?? await confirm({
       message: 'Enable RBAC-based protection for this route:',
-      choices: [
-        { name: 'yes', value: true },
-        { name: 'no', value: false },
-      ],
+      default: false
     });
 
     const author = flags.author ?? (await inputAuthor(cwd));

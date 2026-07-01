@@ -4,6 +4,7 @@ import { join } from 'path';
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
   select: vi.fn(),
+  confirm: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/template.js', () => ({
@@ -20,7 +21,7 @@ vi.mock('../../../src/lib/prompts.js', () => ({
   inputAuthor: vi.fn(),
 }));
 
-import { input, select } from '@inquirer/prompts';
+import { input, select, confirm } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
 import { readProjectName } from '../../../src/lib/project.js';
 import { inputAuthor } from '../../../src/lib/prompts.js';
@@ -29,7 +30,7 @@ import GenerateReact from '../../../src/commands/generate/react.js';
 const ROOT = process.cwd();
 
 // Default prompt order (no flags):
-//   input(path) → select(hydrate) → inputAuthor(cwd)
+//   input(path) → confirm(hydrate) → inputAuthor(cwd)
 function stubPrompts({
   path = '/app',
   hydrate = false,
@@ -40,7 +41,7 @@ function stubPrompts({
   author?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(path);
-  vi.mocked(select).mockResolvedValueOnce(hydrate as any);
+  vi.mocked(confirm).mockResolvedValueOnce(hydrate);
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
 
@@ -98,28 +99,28 @@ describe('generate react', () => {
 
   describe('flag shortcuts bypass prompts', () => {
     it('--path skips the path input prompt', async () => {
-      vi.mocked(select).mockResolvedValueOnce(false as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateReact.run(['app', '--path', '/fixed-path'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.path).toBe('/fixed-path');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(0); // path from flag, author via inputAuthor
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(0); // path from flag, hydrate via confirm
     });
 
-    it('--hydrate skips the hydrate select prompt', async () => {
+    it('--hydrate skips the hydrate confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('/app');
 
       await GenerateReact.run(['app', '--hydrate'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.hydrate).toBe(true);
-      expect(vi.mocked(select)).not.toHaveBeenCalled();
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
     });
 
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('/app');
-      vi.mocked(select).mockResolvedValueOnce(false as any);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateReact.run(['app', '--author', 'Flag Author'], ROOT);
 
