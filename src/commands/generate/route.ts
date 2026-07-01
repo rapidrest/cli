@@ -3,12 +3,14 @@ import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
 import {
+  readGitAuthor,
   readProjectAuthor,
   readProjectDatastores,
   readProjectModels,
   readModelDatastore,
 } from '../../lib/project.js';
 import GenerateModel from './model.js';
+import { inputAuthor } from '../../lib/prompts.js';
 
 export default class GenerateRoute extends Command {
   static override args = {
@@ -42,12 +44,12 @@ export default class GenerateRoute extends Command {
     this.log(`Generating route "${args.name}"...\n`);
 
     const description = flags.description ?? await input({
-      message: 'Enter a short description of this route',
+      message: 'Enter a short description of this route:',
       required: true,
     });
 
     const routePath = flags.path ?? await input({
-      message: 'Enter the base route path (e.g. /api/v1/products)',
+      message: 'Enter the base route path (e.g. /api/v1/products):',
       required: true,
     });
 
@@ -60,7 +62,7 @@ export default class GenerateRoute extends Command {
         const projectModels = await readProjectModels(cwd);
         if (projectModels.length > 0) {
           const selected = await select<string>({
-            message: 'Select the model class this route will serve [optional]',
+            message: 'Select the model class this route will serve [optional]:',
             choices: [
               { name: '(none)', value: '' },
               ...projectModels.map((m) => ({ name: m, value: m })),
@@ -80,7 +82,7 @@ export default class GenerateRoute extends Command {
           }
         } else {
           model = await input({
-            message: 'Enter the name of the model class this route will serve data for (will extend ModelRoute) [optional]',
+            message: 'Enter the name of the model class this route will serve data for (will extend ModelRoute) [optional]:',
             required: false,
           });
         }
@@ -99,16 +101,14 @@ export default class GenerateRoute extends Command {
     }
 
     const protect = flags.protect ?? await select<boolean>({
-      message: 'Enable RBAC-based protection for this route',
+      message: 'Enable RBAC-based protection for this route:',
       choices: [
         { name: 'yes', value: true },
         { name: 'no', value: false },
       ],
     });
 
-    const author = flags.author ??
-      (await readProjectAuthor(cwd)) ??
-      (await input({ message: 'Enter the author name', required: true }));
+    const author = flags.author ?? (await inputAuthor(cwd));
 
     const generateTest = !flags['no-test'];
 

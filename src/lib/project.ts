@@ -1,5 +1,9 @@
+import { execFile } from 'child_process';
 import { access, readFile, readdir } from 'fs/promises';
 import { join } from 'path';
+import { promisify } from 'util';
+
+const execFileAsync = promisify(execFile);
 
 export interface DatastoreInfo {
   name: string;
@@ -119,6 +123,25 @@ export async function readProjectName(cwd: string): Promise<string> {
     return pkg.name ?? '';
   } catch {
     return '';
+  }
+}
+
+// Reads `user.name` and `user.email` from the global git configuration and combines
+// them as "Name <email>". Returns undefined if git is unavailable or user.name is unset.
+export async function readGitAuthor(): Promise<string | undefined> {
+  try {
+    const { stdout: nameOut } = await execFileAsync('git', ['config', 'user.name']);
+    const name = nameOut.trim();
+    if (!name) return undefined;
+    try {
+      const { stdout: emailOut } = await execFileAsync('git', ['config', 'user.email']);
+      const email = emailOut.trim();
+      return email ? `${name} <${email}>` : name;
+    } catch {
+      return name;
+    }
+  } catch {
+    return undefined;
   }
 }
 

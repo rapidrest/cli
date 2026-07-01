@@ -2,7 +2,8 @@ import { input, select } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectAuthor, readProjectName } from '../../lib/project.js';
+import { readGitAuthor, readProjectAuthor, readProjectName } from '../../lib/project.js';
+import { inputAuthor } from '../../lib/prompts.js';
 
 export default class GenerateReact extends Command {
   static override args = {
@@ -30,13 +31,13 @@ export default class GenerateReact extends Command {
     this.log(`Generating model "${args.name}"...\n`);
 
     const routePath = flags.path ?? await input({
-      message: 'Enter the base path the React application will route to',
+      message: 'Enter the base path the React application will route to:',
       default: `/${args.name}`,
       required: true,
     });
 
     const hydrate = flags.hydrate ?? await select<boolean>({
-      message: 'Enable client-side hydration? (required for interactive apps)',
+      message: 'Enable client-side hydration? (required for interactive apps):',
       choices: [
         { name: 'yes', value: true },
         { name: 'no', value: false },
@@ -44,9 +45,7 @@ export default class GenerateReact extends Command {
       default: false
     });
 
-    const author = flags.author ??
-      (await readProjectAuthor(process.cwd())) ??
-      (await input({ message: 'Enter the author name', required: true }));
+    const author = flags.author ?? (await inputAuthor(process.cwd()));
 
     const context: Record<string, unknown> = {
       author,

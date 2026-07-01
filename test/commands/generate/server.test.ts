@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { join } from 'path';
 
 vi.mock('@inquirer/prompts', () => ({
@@ -17,12 +17,23 @@ vi.mock('../../../src/lib/template.js', () => ({
   processTemplate: vi.fn(),
 }));
 
+vi.mock('../../../src/lib/project.js', () => ({
+  readGitAuthor: vi.fn(),
+}));
+
+vi.mock('../../../src/lib/prompts.js', () => ({
+  inputAuthor: vi.fn(),
+}));
+
 import { input, select, checkbox } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
+import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateServer from '../../../src/commands/generate/server.js';
 
 const ROOT = process.cwd();
 
+// Prompt order: input(description) → inputAuthor() → select(pkgMgr) → checkbox(dbFeatures)
+//               → checkbox(otherFeatures) → select(scm)
 function stubPrompts({
   description = 'My API',
   author = 'Test Author',
@@ -38,7 +49,8 @@ function stubPrompts({
   otherFeatures?: string[];
   scm?: string;
 } = {}) {
-  vi.mocked(input).mockResolvedValueOnce(description).mockResolvedValueOnce(author);
+  vi.mocked(input).mockResolvedValueOnce(description);
+  vi.mocked(inputAuthor).mockResolvedValueOnce(author);
   vi.mocked(select).mockResolvedValueOnce(pkgMgr).mockResolvedValueOnce(scm);
   vi.mocked(checkbox).mockResolvedValueOnce(dbFeatures).mockResolvedValueOnce(otherFeatures);
 }
@@ -46,6 +58,11 @@ function stubPrompts({
 describe('generate server', () => {
   beforeEach(() => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
+    vi.mocked(inputAuthor).mockResolvedValue('Default Author');
+  });
+
+  afterEach(() => {
+    vi.clearAllMocks();
   });
 
   it('builds the correct base context from prompts', async () => {
@@ -83,6 +100,7 @@ describe('generate server', () => {
     for (const db of ['mongodb', 'postgresql', 'sqlite']) {
       vi.clearAllMocks();
       vi.mocked(processTemplate).mockResolvedValue(undefined);
+      vi.mocked(inputAuthor).mockResolvedValue('Default Author');
       stubPrompts({ dbFeatures: [db], otherFeatures: [] });
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
@@ -158,5 +176,20 @@ describe('generate server', () => {
 
     const [, , , opts] = vi.mocked(processTemplate).mock.calls[0];
     expect(opts).toMatchObject({ force: true });
+  });
+
+  describe('author resolution', () => {
+    it('calls inputAuthor and uses its return value as the author', async () => {
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Git Author <git@example.com>');
+      vi.mocked(input).mockResolvedValueOnce('My API');
+      vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+      vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.author).toBe('Git Author <git@example.com>');
+      expect(inputAuthor).toHaveBeenCalledOnce();
+    });
   });
 });

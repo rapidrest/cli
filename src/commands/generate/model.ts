@@ -2,7 +2,8 @@ import { input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectAuthor, readProjectDatastores, readProjectName } from '../../lib/project.js';
+import { readGitAuthor, readProjectAuthor, readProjectDatastores, readProjectName } from '../../lib/project.js';
+import { inputAuthor } from '../../lib/prompts.js';
 
 export default class GenerateModel extends Command {
   static override args = {
@@ -48,7 +49,7 @@ export default class GenerateModel extends Command {
       datastoreType = configured.find((d) => d.name === flags.datastore)?.type ?? '';
     } else if (selectable.length > 0) {
       const selectedName = await select<string>({
-        message: 'Select the datastore for this model',
+        message: 'Select the datastore for this model:',
         choices: [
           ...selectable.map((d) => ({ name: `${d.name} (${d.type})`, value: d.name })),
           new Separator(),
@@ -57,7 +58,7 @@ export default class GenerateModel extends Command {
       });
       if (selectedName === '__new__') {
         datastoreType = await select<string>({
-          message: 'Select database type',
+          message: 'Select database type:',
           choices: [
             { name: 'MongoDB', value: 'mongodb' },
             { name: 'PostgreSQL', value: 'postgres' },
@@ -81,7 +82,7 @@ export default class GenerateModel extends Command {
       });
       if (setupNew) {
         datastoreType = await select<string>({
-          message: 'Select database type',
+          message: 'Select database type:',
           choices: [
             { name: 'MongoDB', value: 'mongodb' },
             { name: 'PostgreSQL', value: 'postgres' },
@@ -97,7 +98,7 @@ export default class GenerateModel extends Command {
     }
 
     const cache = flags.cache ?? await select<boolean>({
-      message: 'Enable caching for this model',
+      message: 'Enable caching for this model:',
       choices: [
         { name: 'yes', value: true },
         { name: 'no', value: false },
@@ -106,16 +107,14 @@ export default class GenerateModel extends Command {
     });
 
     const protect = flags.protect ?? await select<boolean>({
-      message: 'Enable RBAC-based protection for this model',
+      message: 'Enable RBAC-based protection for this model:',
       choices: [
         { name: 'yes', value: true },
         { name: 'no', value: false },
       ],
     });
 
-    const author = flags.author ??
-      (await readProjectAuthor(process.cwd())) ??
-      (await input({ message: 'Enter the author name', required: true }));
+    const author = flags.author ?? (await inputAuthor(process.cwd()));
 
     const context: Record<string, unknown> = {
       author,

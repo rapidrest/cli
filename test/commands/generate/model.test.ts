@@ -16,14 +16,20 @@ vi.mock('../../../src/lib/template.js', () => ({
 }));
 
 vi.mock('../../../src/lib/project.js', () => ({
+  readGitAuthor: vi.fn(),
   readProjectAuthor: vi.fn(),
   readProjectDatastores: vi.fn(),
   readProjectName: vi.fn(),
 }));
 
+vi.mock('../../../src/lib/prompts.js', () => ({
+  inputAuthor: vi.fn(),
+}));
+
 import { input, select } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
-import { readProjectAuthor, readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
+import { readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
+import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateModel from '../../../src/commands/generate/model.js';
 
 const ROOT = process.cwd();
@@ -34,8 +40,7 @@ const DEFAULT_DATASTORES = [
 ];
 
 // Default stub order when configured datastores are present (the normal case):
-//   input(description) → select(datastore name) → select(cache) → select(protect) → input(author)?
-// The datastore select returns the name string; datastoreType is looked up from the configured list.
+//   input(description) → select(datastore name) → select(cache) → select(protect) → inputAuthor(cwd)
 function stubPrompts({
   description = 'A test model',
   datastore = 'mongo',
@@ -54,13 +59,13 @@ function stubPrompts({
     .mockResolvedValueOnce(datastore as any)
     .mockResolvedValueOnce(cache as any)
     .mockResolvedValueOnce(protect as any);
-  if (author !== undefined) vi.mocked(input).mockResolvedValueOnce(author);
+  if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
 
 describe('generate model', () => {
   beforeEach(() => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
-    vi.mocked(readProjectAuthor).mockResolvedValue(undefined);
+    vi.mocked(inputAuthor).mockResolvedValue('Default Author');
     vi.mocked(readProjectDatastores).mockResolvedValue(DEFAULT_DATASTORES);
     vi.mocked(readProjectName).mockResolvedValue('my-app');
   });
@@ -138,7 +143,7 @@ describe('generate model', () => {
     });
 
     it('selecting "+ New datastore..." prompts for db type and uses it as both name and type', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
         .mockResolvedValueOnce('__new__' as any)  // datastore select → new
         .mockResolvedValueOnce('sqlite' as any)   // db type
@@ -168,7 +173,7 @@ describe('generate model', () => {
     });
 
     it('asks to set up a new database and selects the type when the user says yes', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
         .mockResolvedValueOnce(true as any)       // "set up new?" → yes
         .mockResolvedValueOnce('postgres' as any) // db type
@@ -184,7 +189,7 @@ describe('generate model', () => {
     });
 
     it('sets datastore and datastoreType to empty string when the user declines', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
         .mockResolvedValueOnce(false as any)  // "set up new?" → no
         .mockResolvedValueOnce(false as any)  // cache
@@ -201,7 +206,7 @@ describe('generate model', () => {
 
   describe('flag shortcuts bypass prompts', () => {
     it('--datastore skips the datastore select but still resolves datastoreType from config', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select).mockResolvedValueOnce(false as any).mockResolvedValueOnce(false as any);
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'mongo'], ROOT);
@@ -214,7 +219,7 @@ describe('generate model', () => {
     });
 
     it('--datastore leaves datastoreType empty when the name is not in the project config', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select).mockResolvedValueOnce(false as any).mockResolvedValueOnce(false as any);
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'unknown'], ROOT);
@@ -224,7 +229,6 @@ describe('generate model', () => {
     });
 
     it('--description skips the description input prompt', async () => {
-      vi.mocked(input).mockResolvedValueOnce('Author');
       vi.mocked(select)
         .mockResolvedValueOnce('mongo' as any)
         .mockResolvedValueOnce(false as any)
@@ -234,11 +238,11 @@ describe('generate model', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.description).toBe('From flag');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // only author
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(0); // description from flag, author via inputAuthor
     });
 
     it('--cache skips the cache select prompt', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
         .mockResolvedValueOnce('mongo' as any)  // datastore
         .mockResolvedValueOnce(false as any);   // protect only
@@ -251,7 +255,7 @@ describe('generate model', () => {
     });
 
     it('--protect skips the protect select prompt', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
         .mockResolvedValueOnce('mongo' as any)  // datastore
         .mockResolvedValueOnce(false as any);   // cache only
@@ -263,7 +267,7 @@ describe('generate model', () => {
       expect(vi.mocked(select)).toHaveBeenCalledTimes(2); // datastore + cache
     });
 
-    it('--author skips all author resolution (package.json and input prompt)', async () => {
+    it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
         .mockResolvedValueOnce('mongo' as any)
@@ -274,45 +278,21 @@ describe('generate model', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.author).toBe('Flag Author');
-      expect(readProjectAuthor).not.toHaveBeenCalled();
+      expect(inputAuthor).not.toHaveBeenCalled();
       expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // only description
-    });
-
-    it('--author takes precedence over package.json author', async () => {
-      vi.mocked(readProjectAuthor).mockResolvedValue('Package Author');
-      vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select)
-        .mockResolvedValueOnce('mongo' as any)
-        .mockResolvedValueOnce(false as any)
-        .mockResolvedValueOnce(false as any);
-
-      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--author', 'Flag Author'], ROOT);
-
-      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.author).toBe('Flag Author');
     });
   });
 
-  describe('author resolution priority', () => {
-    it('uses package.json author without prompting when no --author flag', async () => {
-      vi.mocked(readProjectAuthor).mockResolvedValue('Package Author');
-      stubPrompts(); // no author arg — author input prompt should not fire
+  describe('author resolution', () => {
+    it('calls inputAuthor with the project cwd and uses its return value', async () => {
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Git Author <git@example.com>');
+      stubPrompts();
 
       await GenerateModel.run(['Product', '--output-dir', '/tmp/test-models'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.author).toBe('Package Author');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only
-    });
-
-    it('falls back to the author input prompt when package.json has no author', async () => {
-      stubPrompts({ author: 'Prompted Author' });
-
-      await GenerateModel.run(['Product', '--output-dir', '/tmp/test-models'], ROOT);
-
-      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.author).toBe('Prompted Author');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + author
+      expect(context.author).toBe('Git Author <git@example.com>');
+      expect(inputAuthor).toHaveBeenCalledWith(process.cwd());
     });
   });
 

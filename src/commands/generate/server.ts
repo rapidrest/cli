@@ -2,6 +2,8 @@ import { checkbox, confirm, input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
+import { readGitAuthor } from '../../lib/project.js';
+import { inputAuthor } from '../../lib/prompts.js';
 
 export default class GenerateServer extends Command {
   static override args = {
@@ -27,17 +29,14 @@ export default class GenerateServer extends Command {
     this.log(`Generating RapidREST server project "${args.name}"...\n`);
 
     const description = await input({
-      message: 'Enter a short project description',
+      message: 'Enter a short project description:',
       required: true,
     });
 
-    const author = await input({
-      message: 'Enter the author name',
-      required: true,
-    });
+    const author = flags.author ?? (await inputAuthor());
 
     const pkgMgr = await select<'npm' | 'yarn'>({
-      message: 'Select a package manager',
+      message: 'Select a package manager:',
       choices: [
         { name: 'yarn', value: 'yarn' },
         { name: 'npm', value: 'npm' },
@@ -45,7 +44,7 @@ export default class GenerateServer extends Command {
     });
 
     const dbFeatures = await checkbox<string>({
-      message: 'Select the databases you will be using',
+      message: 'Select the databases you will be using:',
       choices: [
         { name: 'MongoDB', value: 'mongodb', checked: true },
         { name: 'PostgreSQL', value: 'postgresql' },
@@ -55,7 +54,7 @@ export default class GenerateServer extends Command {
     });
 
     const otherFeatures = await checkbox<string>({
-      message: 'Select additional features',
+      message: 'Select additional features:',
       choices: [
         new Separator('-- Frontend --'),
         { name: 'React', value: 'react' },
@@ -68,7 +67,7 @@ export default class GenerateServer extends Command {
     });
 
     const scmChoice = await select<string>({
-      message: 'Select your Source Control Manager (SCM)',
+      message: 'Select your Source Control Manager (SCM):',
       choices: [
         { name: 'GitHub', value: 'github' },
         { name: 'GitLab', value: 'gitlab' },

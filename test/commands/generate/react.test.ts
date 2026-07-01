@@ -11,19 +11,25 @@ vi.mock('../../../src/lib/template.js', () => ({
 }));
 
 vi.mock('../../../src/lib/project.js', () => ({
+  readGitAuthor: vi.fn(),
   readProjectAuthor: vi.fn(),
   readProjectName: vi.fn(),
 }));
 
+vi.mock('../../../src/lib/prompts.js', () => ({
+  inputAuthor: vi.fn(),
+}));
+
 import { input, select } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
-import { readProjectAuthor, readProjectName } from '../../../src/lib/project.js';
+import { readProjectName } from '../../../src/lib/project.js';
+import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateReact from '../../../src/commands/generate/react.js';
 
 const ROOT = process.cwd();
 
-// Default prompt order (no flags, no project author):
-//   input(path) → select(hydrate) → input(author)?
+// Default prompt order (no flags):
+//   input(path) → select(hydrate) → inputAuthor(cwd)
 function stubPrompts({
   path = '/app',
   hydrate = false,
@@ -35,13 +41,13 @@ function stubPrompts({
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(path);
   vi.mocked(select).mockResolvedValueOnce(hydrate as any);
-  if (author !== undefined) vi.mocked(input).mockResolvedValueOnce(author);
+  if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
 
 describe('generate react', () => {
   beforeEach(() => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
-    vi.mocked(readProjectAuthor).mockResolvedValue(undefined);
+    vi.mocked(inputAuthor).mockResolvedValue('Default Author');
     vi.mocked(readProjectName).mockResolvedValue('my-app');
   });
 
@@ -93,17 +99,16 @@ describe('generate react', () => {
   describe('flag shortcuts bypass prompts', () => {
     it('--path skips the path input prompt', async () => {
       vi.mocked(select).mockResolvedValueOnce(false as any);
-      vi.mocked(input).mockResolvedValueOnce('Flag Author');
 
       await GenerateReact.run(['app', '--path', '/fixed-path'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.path).toBe('/fixed-path');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // author only
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(0); // path from flag, author via inputAuthor
     });
 
     it('--hydrate skips the hydrate select prompt', async () => {
-      vi.mocked(input).mockResolvedValueOnce('/app').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('/app');
 
       await GenerateReact.run(['app', '--hydrate'], ROOT);
 
@@ -112,7 +117,7 @@ describe('generate react', () => {
       expect(vi.mocked(select)).not.toHaveBeenCalled();
     });
 
-    it('--author skips all author resolution (package.json and input prompt)', async () => {
+    it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('/app');
       vi.mocked(select).mockResolvedValueOnce(false as any);
 
@@ -120,42 +125,21 @@ describe('generate react', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.author).toBe('Flag Author');
-      expect(readProjectAuthor).not.toHaveBeenCalled();
+      expect(inputAuthor).not.toHaveBeenCalled();
       expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // path only
-    });
-
-    it('--author takes precedence over package.json author', async () => {
-      vi.mocked(readProjectAuthor).mockResolvedValue('Package Author');
-      vi.mocked(input).mockResolvedValueOnce('/app');
-      vi.mocked(select).mockResolvedValueOnce(false as any);
-
-      await GenerateReact.run(['app', '--author', 'Flag Author'], ROOT);
-
-      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.author).toBe('Flag Author');
     });
   });
 
-  describe('author resolution priority', () => {
-    it('uses package.json author without prompting when no --author flag', async () => {
-      vi.mocked(readProjectAuthor).mockResolvedValue('Package Author');
-      stubPrompts(); // no author arg — author input prompt should not fire
+  describe('author resolution', () => {
+    it('calls inputAuthor with the project cwd and uses its return value', async () => {
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Git Author <git@example.com>');
+      stubPrompts();
 
       await GenerateReact.run(['app'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.author).toBe('Package Author');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // path only
-    });
-
-    it('falls back to the author input prompt when package.json has no author', async () => {
-      stubPrompts({ author: 'Prompted Author' });
-
-      await GenerateReact.run(['app'], ROOT);
-
-      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.author).toBe('Prompted Author');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // path + author
+      expect(context.author).toBe('Git Author <git@example.com>');
+      expect(inputAuthor).toHaveBeenCalledWith(process.cwd());
     });
   });
 

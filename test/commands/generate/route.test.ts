@@ -16,10 +16,15 @@ vi.mock('../../../src/lib/template.js', () => ({
 }));
 
 vi.mock('../../../src/lib/project.js', () => ({
+  readGitAuthor: vi.fn(),
   readProjectAuthor: vi.fn(),
   readProjectModels: vi.fn(),
   readModelDatastore: vi.fn(),
   readProjectDatastores: vi.fn(),
+}));
+
+vi.mock('../../../src/lib/prompts.js', () => ({
+  inputAuthor: vi.fn(),
 }));
 
 vi.mock('../../../src/commands/generate/model.js', () => ({
@@ -29,18 +34,18 @@ vi.mock('../../../src/commands/generate/model.js', () => ({
 import { input, select } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
 import {
-  readProjectAuthor,
   readProjectModels,
   readModelDatastore,
   readProjectDatastores,
 } from '../../../src/lib/project.js';
+import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateModel from '../../../src/commands/generate/model.js';
 import GenerateRoute from '../../../src/commands/generate/route.js';
 
 const ROOT = process.cwd();
 
 // Default prompt order when project models are found (the normal case):
-//   input(description) → input(path) → select(model) → select(protect) → input(author)?
+//   input(description) → input(path) → select(model) → select(protect) → inputAuthor(cwd)
 // readModelDatastore returns 'acl' by default; readProjectDatastores maps 'acl' → 'mongodb'.
 function stubPrompts({
   description = 'Handles products',
@@ -57,13 +62,13 @@ function stubPrompts({
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(description).mockResolvedValueOnce(path);
   vi.mocked(select).mockResolvedValueOnce(model as any).mockResolvedValueOnce(protect as any);
-  if (author !== undefined) vi.mocked(input).mockResolvedValueOnce(author);
+  if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
 
 describe('generate route', () => {
   beforeEach(() => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
-    vi.mocked(readProjectAuthor).mockResolvedValue(undefined);
+    vi.mocked(inputAuthor).mockResolvedValue('Default Author');
     vi.mocked(readProjectModels).mockResolvedValue(['Product', 'User']);
     vi.mocked(readModelDatastore).mockResolvedValue('acl');
     vi.mocked(readProjectDatastores).mockResolvedValue([{ name: 'acl', type: 'mongodb' }]);
@@ -156,8 +161,7 @@ describe('generate route', () => {
         .mockResolvedValueOnce(['Product', 'User', 'Order']);
       vi.mocked(input)
         .mockResolvedValueOnce('A desc')
-        .mockResolvedValueOnce('/api/v1/x')
-        .mockResolvedValueOnce('Author');
+        .mockResolvedValueOnce('/api/v1/x');
       vi.mocked(select)
         .mockResolvedValueOnce('__new__' as any) // model select
         .mockResolvedValueOnce(false as any);     // protect
@@ -173,25 +177,23 @@ describe('generate route', () => {
 
     it('falls back to a free-form input when no models exist in the project', async () => {
       vi.mocked(readProjectModels).mockResolvedValue([]);
-      // With no models: input order becomes description → path → model → [author]
+      // With no models: input order becomes description → path → model (free-form)
       vi.mocked(input)
         .mockResolvedValueOnce('A desc')
         .mockResolvedValueOnce('/api/v1/x')
-        .mockResolvedValueOnce('') // model (free-form)
-        .mockResolvedValueOnce('Author');
+        .mockResolvedValueOnce(''); // model (free-form)
       vi.mocked(select).mockResolvedValueOnce(false as any); // protect
 
       await GenerateRoute.run(['ProductRoute'], ROOT);
 
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(4);
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(3);
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // protect only (no model select)
     });
 
     it('--no-model skips all model prompts and leaves model undefined in context', async () => {
       vi.mocked(input)
         .mockResolvedValueOnce('A desc')
-        .mockResolvedValueOnce('/api/v1/x')
-        .mockResolvedValueOnce('Author');
+        .mockResolvedValueOnce('/api/v1/x');
       vi.mocked(select).mockResolvedValueOnce(false as any); // protect only
 
       await GenerateRoute.run(['OrderRoute', '--no-model'], ROOT);
@@ -208,7 +210,7 @@ describe('generate route', () => {
 
   describe('flag shortcuts bypass prompts', () => {
     it('--model skips the model select and resolves datastore from the named model file', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
       vi.mocked(select).mockResolvedValueOnce(false as any); // protect only
 
       await GenerateRoute.run(['OrderRoute', '--model', 'Product'], ROOT);
@@ -223,29 +225,29 @@ describe('generate route', () => {
     });
 
     it('--description skips the description input prompt', async () => {
-      vi.mocked(input).mockResolvedValueOnce('/api/v1/x').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('/api/v1/x');
       vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
 
       await GenerateRoute.run(['OrderRoute', '--description', 'From flag'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.description).toBe('From flag');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // path + author
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // path only
     });
 
     it('--path skips the route path input prompt', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
 
       await GenerateRoute.run(['OrderRoute', '--path', '/api/v2/orders'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.path).toBe('/api/v2/orders');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + author
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only
     });
 
     it('--protect skips the protect select prompt', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x').mockResolvedValueOnce('Author');
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
       vi.mocked(select).mockResolvedValueOnce('Product' as any); // model only
 
       await GenerateRoute.run(['OrderRoute', '--protect'], ROOT);
@@ -255,7 +257,7 @@ describe('generate route', () => {
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // model only
     });
 
-    it('--author skips all author resolution', async () => {
+    it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
       vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
 
@@ -263,31 +265,21 @@ describe('generate route', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.author).toBe('Flag Author');
-      expect(readProjectAuthor).not.toHaveBeenCalled();
+      expect(inputAuthor).not.toHaveBeenCalled();
       expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + path only
     });
   });
 
-  describe('author resolution priority', () => {
-    it('uses package.json author without prompting when no --author flag', async () => {
-      vi.mocked(readProjectAuthor).mockResolvedValue('Package Author');
-      stubPrompts(); // no author arg — author prompt should not fire
+  describe('author resolution', () => {
+    it('calls inputAuthor with the project cwd and uses its return value', async () => {
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Git Author <git@example.com>');
+      stubPrompts();
 
       await GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.author).toBe('Package Author');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + path only
-    });
-
-    it('falls back to the author input prompt when package.json has no author', async () => {
-      stubPrompts({ author: 'Prompted Author' });
-
-      await GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes'], ROOT);
-
-      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.author).toBe('Prompted Author');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(3); // description + path + author
+      expect(context.author).toBe('Git Author <git@example.com>');
+      expect(inputAuthor).toHaveBeenCalledWith(process.cwd());
     });
   });
 
