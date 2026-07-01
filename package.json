@@ -1,7 +1,7 @@
 {
   "name": "@rapidrest/cli",
   "description": "The official CLI tool for RapidREST projects",
-  "version": "0.2.3",
+  "version": "0.3.0",
   "author": "Jean-Philippe Steinmetz",
   "bin": {
     "rapidrest": "./bin/run.js",
