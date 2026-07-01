@@ -55,4 +55,4 @@ ENV PORT 3000
 HEALTHCHECK --interval=10s --timeout=60s --start-period=15s --retries=3 CMD curl -f http://localhost:3000/ || exit 1
 
 # Run app.js when the container launches
-CMD ["node", "dist/server.js"]
+CMD ["yarn", "rapidrest", "start", "--docker"]

@@ -213,6 +213,104 @@ describe('start', () => {
     });
   });
 
+  describe('--docker flag', () => {
+    it('skips detectDatabases when --docker is set', async () => {
+      await Start.run(['--no-build', '--docker'], ROOT);
+      expect(detectDatabases).not.toHaveBeenCalled();
+    });
+
+    it('skips startDatabases when --docker is set', async () => {
+      await Start.run(['--no-build', '--docker'], ROOT);
+      expect(startDatabases).not.toHaveBeenCalled();
+    });
+
+    it('still spawns the server process when --docker is set', async () => {
+      await Start.run(['--no-build', '--docker'], ROOT);
+      expect(serverSpawnCall()).toBeDefined();
+    });
+
+    it('passes no db env vars to the server process when --docker is set', async () => {
+      await Start.run(['--no-build', '--docker'], ROOT);
+
+      const [, , opts] = serverSpawnCall()!;
+      const env = (opts as any).env as Record<string, string>;
+      const dbKeys = Object.keys(env).filter((k) => k.startsWith('datastores__'));
+      expect(dbKeys).toHaveLength(0);
+    });
+
+    it('still runs the build step when --docker is set without --no-build', async () => {
+      await Start.run(['--docker'], ROOT);
+
+      const builds = shellSpawnCalls();
+      expect(builds.length).toBeGreaterThanOrEqual(1);
+      expect(builds[0][0]).toBe('npm');
+    });
+
+    it('does not stop any database servers on exit when --docker is set', async () => {
+      const mongo = fakeDb('mongodb');
+      vi.mocked(startDatabases).mockResolvedValue({ databases: [mongo as any], env: {} });
+
+      await Start.run(['--no-build', '--docker'], ROOT);
+
+      expect(mongo.server.stop).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('environment variable passthrough', () => {
+    it('passes shell env vars through to the server process', async () => {
+      const testKey = '__RAPIDREST_TEST_VAR__';
+      process.env[testKey] = 'shell-value';
+      try {
+        await Start.run(['--no-build'], ROOT);
+        const [, , opts] = serverSpawnCall()!;
+        expect((opts as any).env).toMatchObject({ [testKey]: 'shell-value' });
+      } finally {
+        delete process.env[testKey];
+      }
+    });
+
+    it('passes shell env vars through to the server process in --docker mode', async () => {
+      const testKey = '__RAPIDREST_TEST_VAR__';
+      process.env[testKey] = 'docker-shell-value';
+      try {
+        await Start.run(['--no-build', '--docker'], ROOT);
+        const [, , opts] = serverSpawnCall()!;
+        expect((opts as any).env).toMatchObject({ [testKey]: 'docker-shell-value' });
+      } finally {
+        delete process.env[testKey];
+      }
+    });
+
+    it('db env vars take precedence over shell env vars of the same name', async () => {
+      const testKey = '__RAPIDREST_TEST_VAR__';
+      process.env[testKey] = 'shell-value';
+      vi.mocked(startDatabases).mockResolvedValue({
+        databases: [],
+        env: { [testKey]: 'db-value' },
+      });
+      try {
+        await Start.run(['--no-build'], ROOT);
+        const [, , opts] = serverSpawnCall()!;
+        expect((opts as any).env[testKey]).toBe('db-value');
+      } finally {
+        delete process.env[testKey];
+      }
+    });
+
+    it('build commands inherit the shell environment implicitly (no explicit env stripping)', async () => {
+      const testKey = '__RAPIDREST_TEST_VAR__';
+      process.env[testKey] = 'build-value';
+      try {
+        await Start.run([], ROOT);
+        // runCommand spawns with no explicit env option — child inherits process.env automatically
+        const [, , buildOpts] = shellSpawnCalls()[0];
+        expect((buildOpts as any).env).toBeUndefined();
+      } finally {
+        delete process.env[testKey];
+      }
+    });
+  });
+
   describe('React / Vite integration', () => {
     it('does not run vite build when detectReact returns false', async () => {
       await Start.run([], ROOT);

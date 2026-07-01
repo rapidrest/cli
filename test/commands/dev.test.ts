@@ -154,4 +154,108 @@ describe('dev', () => {
       expect((viteOpts as any).env).toMatchObject({ datastores__acl__url: 'mongodb://localhost:27017' });
     });
   });
+
+  describe('--docker flag', () => {
+    it('skips detectDatabases when --docker is set', async () => {
+      await Dev.run(['--docker'], ROOT);
+      expect(detectDatabases).not.toHaveBeenCalled();
+    });
+
+    it('skips startDatabases when --docker is set', async () => {
+      await Dev.run(['--docker'], ROOT);
+      expect(startDatabases).not.toHaveBeenCalled();
+    });
+
+    it('still spawns the tsx server when --docker is set', async () => {
+      await Dev.run(['--docker'], ROOT);
+
+      expect(spawn).toHaveBeenCalledTimes(1);
+      const [cmd] = vi.mocked(spawn).mock.calls[0];
+      expect(cmd).toContain(join('node_modules', '.bin', 'tsx'));
+    });
+
+    it('passes no db env vars to the tsx process when --docker is set', async () => {
+      await Dev.run(['--docker'], ROOT);
+
+      const [, , opts] = vi.mocked(spawn).mock.calls[0];
+      const env = (opts as any).env as Record<string, string>;
+      const dbKeys = Object.keys(env).filter((k) => k.startsWith('datastores__'));
+      expect(dbKeys).toHaveLength(0);
+    });
+
+    it('does not stop any database servers on exit when --docker is set', async () => {
+      const mongo = fakeDb('mongodb');
+      vi.mocked(startDatabases).mockResolvedValue({ databases: [mongo as any], env: {} });
+
+      await Dev.run(['--docker'], ROOT);
+
+      expect(mongo.server.stop).not.toHaveBeenCalled();
+    });
+
+    it('still spawns vite in watch mode when --docker is set and React is configured', async () => {
+      vi.mocked(detectReact).mockResolvedValue(true);
+
+      await Dev.run(['--docker'], ROOT);
+
+      expect(spawn).toHaveBeenCalledTimes(2);
+      const [viteCmd, viteArgs] = vi.mocked(spawn).mock.calls[1];
+      expect(viteCmd).toContain('vite');
+      expect(viteArgs).toEqual(['build', '--watch']);
+    });
+  });
+
+  describe('environment variable passthrough', () => {
+    it('passes shell env vars through to the tsx process', async () => {
+      const testKey = '__RAPIDREST_TEST_VAR__';
+      process.env[testKey] = 'shell-value';
+      try {
+        await Dev.run([], ROOT);
+        const [, , opts] = vi.mocked(spawn).mock.calls[0];
+        expect((opts as any).env).toMatchObject({ [testKey]: 'shell-value' });
+      } finally {
+        delete process.env[testKey];
+      }
+    });
+
+    it('passes shell env vars through to the tsx process in --docker mode', async () => {
+      const testKey = '__RAPIDREST_TEST_VAR__';
+      process.env[testKey] = 'docker-shell-value';
+      try {
+        await Dev.run(['--docker'], ROOT);
+        const [, , opts] = vi.mocked(spawn).mock.calls[0];
+        expect((opts as any).env).toMatchObject({ [testKey]: 'docker-shell-value' });
+      } finally {
+        delete process.env[testKey];
+      }
+    });
+
+    it('db env vars take precedence over shell env vars of the same name', async () => {
+      const testKey = '__RAPIDREST_TEST_VAR__';
+      process.env[testKey] = 'shell-value';
+      vi.mocked(startDatabases).mockResolvedValue({
+        databases: [],
+        env: { [testKey]: 'db-value' },
+      });
+      try {
+        await Dev.run([], ROOT);
+        const [, , opts] = vi.mocked(spawn).mock.calls[0];
+        expect((opts as any).env[testKey]).toBe('db-value');
+      } finally {
+        delete process.env[testKey];
+      }
+    });
+
+    it('vite process receives the same shell env vars as the tsx server', async () => {
+      vi.mocked(detectReact).mockResolvedValue(true);
+      const testKey = '__RAPIDREST_TEST_VAR__';
+      process.env[testKey] = 'shell-value';
+      try {
+        await Dev.run([], ROOT);
+        const [, , viteOpts] = vi.mocked(spawn).mock.calls[1];
+        expect((viteOpts as any).env).toMatchObject({ [testKey]: 'shell-value' });
+      } finally {
+        delete process.env[testKey];
+      }
+    });
+  });
 });

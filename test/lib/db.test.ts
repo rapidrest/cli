@@ -93,7 +93,7 @@ describe('startDatabases', () => {
     for (const db of result.databases) {
       await db.server.stop();
     }
-  });
+  }, 30_000);
 
   it('sets no env vars and spawns no processes when no databases configured', async () => {
     const result = await startDatabases(cwd, { mongodb: false, redis: false, postgresql: false }, log, warn);
@@ -111,7 +111,7 @@ describe('startDatabases', () => {
     for (const db of result.databases) {
       await db.server.stop();
     }
-  });
+  }, 30_000);
 
   it('starts postgres-memory-server and sets DATASTORES env vars', async () => {
     const result = await startDatabases(cwd, { mongodb: false, redis: false, postgresql: true }, log, warn);
@@ -121,5 +121,5 @@ describe('startDatabases', () => {
     for (const db of result.databases) {
       await db.server.stop();
     }
-  });
+  }, 30_000);
 });

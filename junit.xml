@@ -1,81 +1,47 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="37" failures="0" errors="0" time="1.3421629">
-    <testsuite name="test/commands/generate/react.test.ts" timestamp="2026-07-01T05:26:50.028Z" hostname="Jane" tests="12" failures="0" errors="0" skipped="0" time="0.5195596">
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.2899423">
+<testsuites name="vitest tests" tests="21" failures="0" errors="0" time="0.7074138">
+    <testsuite name="test/commands/dev.test.ts" timestamp="2026-07-01T05:48:28.436Z" hostname="Jane" tests="21" failures="0" errors="0" skipped="0" time="0.7074138">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; spawns tsx from the project node_modules/.bin with --watch src/server.ts" time="0.2849709">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes hydrate: false when the hydrate select answers no" time="0.0232453">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; prepends --inspect=0.0.0.0:9229 to tsx args when --inspect is passed" time="0.0245166">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes project_name from package.json in the context" time="0.0215311">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; passes db env vars into the tsx process environment" time="0.0230205">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; uses the app name as the default suggestion for the path prompt" time="0.0210812">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; includes project node_modules/.bin in PATH for the server process" time="0.0215064">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --path skips the path input prompt" time="0.0224026">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.0233902">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --hydrate skips the hydrate confirm prompt" time="0.02008">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.0220743">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.0195499">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls server.stop() on each started database after the server exits" time="0.0200097">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.0199249">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; does not throw when no databases are configured" time="0.021994">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; uses the project root as the default output directory" time="0.0223191">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; does not spawn vite when detectReact returns false" time="0.0229991">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.0191525">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; spawns vite build --watch concurrently when detectReact returns true" time="0.0198957">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.0190368">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; vite process receives the same db env vars as the server" time="0.019981">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; points processTemplate at the react template directory" time="0.0199726">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.0200951">
         </testcase>
-    </testsuite>
-    <testsuite name="test/commands/generate/server.test.ts" timestamp="2026-07-01T05:26:50.032Z" hostname="Jane" tests="25" failures="0" errors="0" skipped="0" time="0.8226033">
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; builds the correct base context from prompts" time="0.2836488">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.0196876">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps selected database and feature choices to boolean flags on context.features" time="0.0237846">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns the tsx server when --docker is set" time="0.0196947">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase true when any persistent store is selected" time="0.0664992">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; passes no db env vars to the tsx process when --docker is set" time="0.0213148">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase false when only non-persistent features are selected" time="0.0207894">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.0200754">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the SCM choice to a boolean map on context.scm" time="0.0209127">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns vite in watch mode when --docker is set and React is configured" time="0.020474">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the package manager choice to a boolean map on context.pkgMgr" time="0.0207065">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process" time="0.0208336">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses ./&lt;name&gt; as the default output directory" time="0.0225172">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process in --docker mode" time="0.01978">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses --output-dir when provided" time="0.0193822">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.0197968">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; points processTemplate at the server template directory" time="0.0202415">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; passes force: true when --force is set" time="0.0192879">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; calls inputAuthor and uses its return value as the author" time="0.0195281">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; runs GenerateDocker with --output-dir after server generation when docker is selected" time="0.0211692">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; does not run GenerateDocker when docker is not selected" time="0.0199619">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; passes --force to GenerateDocker when --force is set on the server command" time="0.021471">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.0202541">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs GenerateHelm with --output-dir after server generation when k8s is selected" time="0.0200237">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; does not run GenerateHelm when k8s is not selected" time="0.0194348">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; passes --force to GenerateHelm when --force is set on the server command" time="0.0190328">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.0200105">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs both GenerateDocker and GenerateHelm when both features are selected" time="0.0186743">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs GenerateReact with --output-dir after server generation when react is selected" time="0.020447">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; does not run GenerateReact when react is not selected" time="0.0227091">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; passes --force to GenerateReact when --force is set on the server command" time="0.020927">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.0197643">
-        </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs docker, helm, and react subcommands when all three features are selected" time="0.0198745">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; vite process receives the same shell env vars as the tsx server" time="0.0196872">
         </testcase>
     </testsuite>
 </testsuites>

@@ -1,6 +1,6 @@
 services:
     server:
-        command: ["yarn", "dev"]
+        command: ["yarn", "dev", "--docker"]
         volumes:
             - ./app:/app/app
             - ./src:/app/src

@@ -48,6 +48,7 @@ export default class Start extends Command {
   ];
 
   static override flags = {
+    docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips starting database servers).' }),
     'no-build': Flags.boolean({ description: 'Skip the build step.' }),
   };
 
@@ -82,15 +83,19 @@ export default class Start extends Command {
     this.log('\nStarting RapidREST server...');
 
     // 2. Start databases
-    const databases = await detectDatabases(cwd);
     let dbProcesses: StartedDatabase[] = [];
     let dbEnv: Record<string, string> = {};
-    try {
-      const result = await startDatabases(cwd, databases, (m) => this.log(m), (m) => this.warn(m));
-      dbProcesses = result.databases;
-      dbEnv = result.env;
-    } catch (e) {
-      this.error(e instanceof Error ? e.message : String(e));
+    if (!flags.docker) {
+      const databases = await detectDatabases(cwd);
+      try {
+        const result = await startDatabases(cwd, databases, (m) => this.log(m), (m) => this.warn(m));
+        dbProcesses = result.databases;
+        dbEnv = result.env;
+      } catch (e) {
+        this.error(e instanceof Error ? e.message : String(e));
+      }
+    } else {
+      this.log("Docker mode enabled.");
     }
 
     // 3. Start server

@@ -13,6 +13,7 @@ export default class Dev extends Command {
   ];
 
   static override flags = {
+    docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips starting database servers).' }),
     inspect: Flags.boolean({ description: 'Enable Node.js inspector on port 9229 for debugging.' }),
   };
 
@@ -23,15 +24,19 @@ export default class Dev extends Command {
     this.log('\nStarting RapidREST server in development mode...');
 
     // 1. Start databases (no build step in dev mode)
-    const databases = await detectDatabases(cwd);
     let dbProcesses: StartedDatabase[] = [];
     let dbEnv: Record<string, string> = {};
-    try {
-      const result = await startDatabases(cwd, databases, (m) => this.log(m), (m) => this.warn(m));
-      dbProcesses = result.databases;
-      dbEnv = result.env;
-    } catch (e) {
-      this.error(e instanceof Error ? e.message : String(e));
+    if (!flags.docker) {
+      const databases = await detectDatabases(cwd);
+      try {
+        const result = await startDatabases(cwd, databases, (m) => this.log(m), (m) => this.warn(m));
+        dbProcesses = result.databases;
+        dbEnv = result.env;
+      } catch (e) {
+        this.error(e instanceof Error ? e.message : String(e));
+      }
+    } else {
+      this.log("Docker mode enabled.");
     }
 
     // 2. Add project's .bin to PATH so nodemon can resolve tsx (and vite)
