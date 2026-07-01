@@ -6,20 +6,46 @@ import {
     RouteDecorators,
     DocDecorators,
     {{#if model}}
+    HttpRequest,
+    HttpResponse,
     ModelRoute,
     RepoUtils,
     {{/if}}
 } from "@rapidrest/service-core";
+{{#if model}}
+import {{model}} from "../models/{{model}}.js";
+{{/if}}
 
 const { Init } = ObjectDecorators;
-const { Summary, Description, Returns } = DocDecorators;
 const {
+    Summary,
+    Description,
+    Returns,
+    {{#if model}}
+    TypeInfo,
+    {{/if}}
+} = DocDecorators;
+const {
+    {{#if model}}
+    Auth,
+    Delete,
+    {{/if}}
     Get,
     {{#if model}}
+    Head,
     Model,
+    Param,
+    Post,
+    Put,
+    Query,
+    Request,
+    Response,
     {{/if}}
     Route,
-    User
+    User,
+    {{#if model}}
+    Validate
+    {{/if}}
 } = RouteDecorators;
 
 /**
