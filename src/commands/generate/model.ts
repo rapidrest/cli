@@ -28,7 +28,7 @@ export default class GenerateModel extends Command {
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(GenerateModel);
-    const outputDir = flags['output-dir'] ?? join(process.cwd(), 'src', 'models');
+    const outputDir = flags['output-dir'] ?? process.cwd();
 
     this.log(`Generating model "${args.name}"...\n`);
 
@@ -115,10 +115,7 @@ export default class GenerateModel extends Command {
       isRedis:      datastoreType === 'redis',
     };
 
-    // The model template has a single file at src/models/{{name}}.ts
-    // We point processTemplate at the template root and let it resolve the output path
-    // relative to outputDir (stripping the leading src/models/ prefix by templating directly)
-    const templateDir = join(this.config.root, 'templates', 'model', 'src', 'models');
+    const templateDir = join(this.config.root, 'templates', 'model');
 
     try {
       await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });

@@ -28,7 +28,6 @@ export default class GenerateRoute extends Command {
     description: Flags.string({ alias: 'd', description: "The short description of the route."}),
     model: Flags.string({ alias: 'm', description: "The name of the model class this route will serve data for (will extend ModelRoute)."}),
     'no-model': Flags.boolean({ description: 'Skip all prompts concerning associating a model class.' }),
-    'no-test': Flags.boolean({ description: 'Skip generating the test file.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated route into. Defaults to ./src/routes.' }),
     path: Flags.string({ description: 'The base path of the route (e.g. /api/v1/products).' }),
     protect: Flags.boolean({ char: 'p', description: "Enable RBAC-based protection of this route."}),
@@ -37,7 +36,7 @@ export default class GenerateRoute extends Command {
   async run(): Promise<void> {
     const { args, flags } = await this.parse(GenerateRoute);
     const cwd = process.cwd();
-    const outputDir = flags['output-dir'] ?? join(cwd, 'src', 'routes');
+    const outputDir = flags['output-dir'] ?? cwd;
     const testDir = join(cwd, 'test');
 
     this.log(`Generating route "${args.name}"...\n`);
@@ -125,17 +124,11 @@ export default class GenerateRoute extends Command {
       year: new Date().getFullYear(),
     };
 
-    const routeTemplateDir = join(this.config.root, 'templates', 'route', 'src', 'routes');
-    const testTemplateDir = join(this.config.root, 'templates', 'route', 'test');
+    const templateDir = join(this.config.root, 'templates', 'route');
 
     try {
-      await processTemplate(routeTemplateDir, outputDir, context, { force: flags.force, projectDir: cwd });
+      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
       this.log(`\nRoute "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
-
-      if (generateTest) {
-        await processTemplate(testTemplateDir, testDir, context, { force: flags.force, projectDir: cwd });
-        this.log(`Test file generated at: ${join(testDir, args.name + '.test.ts')}`);
-      }
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

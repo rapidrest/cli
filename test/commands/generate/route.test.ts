@@ -80,7 +80,7 @@ describe('generate route', () => {
       vi.mocked(readModelDatastore).mockResolvedValue('orders');
       vi.mocked(readProjectDatastores).mockResolvedValue([{ name: 'orders', type: 'postgres' }]);
 
-      await GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes', '--no-test'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context).toMatchObject({
@@ -99,7 +99,7 @@ describe('generate route', () => {
     it('resolves datastoreType from the model\'s @DataStore decorator via the project config', async () => {
       stubPrompts({ model: 'Product', author: 'Author' });
 
-      await GenerateRoute.run(['ProductRoute', '--no-test'], ROOT);
+      await GenerateRoute.run(['ProductRoute'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.datastore).toBe('acl');
@@ -110,7 +110,7 @@ describe('generate route', () => {
     it('sets datastore and datastoreType to empty when model is "(none)"', async () => {
       stubPrompts({ model: '', author: 'Author' }); // '' = (none) option
 
-      await GenerateRoute.run(['ProductRoute', '--no-test'], ROOT);
+      await GenerateRoute.run(['ProductRoute'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.model).toBe('');
@@ -123,7 +123,7 @@ describe('generate route', () => {
       vi.mocked(readModelDatastore).mockResolvedValue('');
       stubPrompts({ model: 'Product', author: 'Author' });
 
-      await GenerateRoute.run(['ProductRoute', '--no-test'], ROOT);
+      await GenerateRoute.run(['ProductRoute'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.datastore).toBe('');
@@ -135,7 +135,7 @@ describe('generate route', () => {
   describe('model selection', () => {
     it('shows a select with "(none)", project models, and a "+ New model..." option', async () => {
       stubPrompts({ author: 'Author' });
-      await GenerateRoute.run(['ProductRoute', '--no-test'], ROOT);
+      await GenerateRoute.run(['ProductRoute'], ROOT);
 
       const firstSelectCall = vi.mocked(select).mock.calls[0][0] as any;
       expect(firstSelectCall.choices).toEqual(
@@ -162,7 +162,7 @@ describe('generate route', () => {
         .mockResolvedValueOnce('__new__' as any) // model select
         .mockResolvedValueOnce(false as any);     // protect
 
-      await GenerateRoute.run(['OrderRoute', '--no-test'], ROOT);
+      await GenerateRoute.run(['OrderRoute'], ROOT);
 
       expect((GenerateModel as any).run).toHaveBeenCalledOnce();
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
@@ -181,7 +181,7 @@ describe('generate route', () => {
         .mockResolvedValueOnce('Author');
       vi.mocked(select).mockResolvedValueOnce(false as any); // protect
 
-      await GenerateRoute.run(['ProductRoute', '--no-test'], ROOT);
+      await GenerateRoute.run(['ProductRoute'], ROOT);
 
       expect(vi.mocked(input)).toHaveBeenCalledTimes(4);
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // protect only (no model select)
@@ -194,7 +194,7 @@ describe('generate route', () => {
         .mockResolvedValueOnce('Author');
       vi.mocked(select).mockResolvedValueOnce(false as any); // protect only
 
-      await GenerateRoute.run(['OrderRoute', '--no-test', '--no-model'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--no-model'], ROOT);
 
       expect(readProjectModels).not.toHaveBeenCalled();
       expect(readModelDatastore).not.toHaveBeenCalled();
@@ -211,7 +211,7 @@ describe('generate route', () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x').mockResolvedValueOnce('Author');
       vi.mocked(select).mockResolvedValueOnce(false as any); // protect only
 
-      await GenerateRoute.run(['OrderRoute', '--no-test', '--model', 'Product'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--model', 'Product'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.model).toBe('Product');
@@ -226,7 +226,7 @@ describe('generate route', () => {
       vi.mocked(input).mockResolvedValueOnce('/api/v1/x').mockResolvedValueOnce('Author');
       vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
 
-      await GenerateRoute.run(['OrderRoute', '--no-test', '--description', 'From flag'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--description', 'From flag'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.description).toBe('From flag');
@@ -237,7 +237,7 @@ describe('generate route', () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('Author');
       vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
 
-      await GenerateRoute.run(['OrderRoute', '--no-test', '--path', '/api/v2/orders'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--path', '/api/v2/orders'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.path).toBe('/api/v2/orders');
@@ -248,7 +248,7 @@ describe('generate route', () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x').mockResolvedValueOnce('Author');
       vi.mocked(select).mockResolvedValueOnce('Product' as any); // model only
 
-      await GenerateRoute.run(['OrderRoute', '--no-test', '--protect'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--protect'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.protect).toBe(true);
@@ -259,7 +259,7 @@ describe('generate route', () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
       vi.mocked(select).mockResolvedValueOnce('Product' as any).mockResolvedValueOnce(false as any);
 
-      await GenerateRoute.run(['OrderRoute', '--no-test', '--author', 'Flag Author'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--author', 'Flag Author'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.author).toBe('Flag Author');
@@ -273,7 +273,7 @@ describe('generate route', () => {
       vi.mocked(readProjectAuthor).mockResolvedValue('Package Author');
       stubPrompts(); // no author arg — author prompt should not fire
 
-      await GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes', '--no-test'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.author).toBe('Package Author');
@@ -283,7 +283,7 @@ describe('generate route', () => {
     it('falls back to the author input prompt when package.json has no author', async () => {
       stubPrompts({ author: 'Prompted Author' });
 
-      await GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes', '--no-test'], ROOT);
+      await GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.author).toBe('Prompted Author');
@@ -291,34 +291,13 @@ describe('generate route', () => {
     });
   });
 
-  describe('test file generation', () => {
-    it('calls processTemplate twice by default (route file + test file)', async () => {
-      stubPrompts({ author: 'Author' });
-      await GenerateRoute.run(['ProductRoute', '--output-dir', '/tmp/routes'], ROOT);
-
-      expect(vi.mocked(processTemplate)).toHaveBeenCalledTimes(2);
-      const templateDirs = vi.mocked(processTemplate).mock.calls.map(([td]) => td);
-      expect(templateDirs.some((d) => d.includes(join('route', 'src', 'routes')))).toBe(true);
-      expect(templateDirs.some((d) => d.includes(join('route', 'test')))).toBe(true);
-    });
-
-    it('skips the test file when --no-test is passed', async () => {
-      stubPrompts({ author: 'Author' });
-      await GenerateRoute.run(['ProductRoute', '--output-dir', '/tmp/routes', '--no-test'], ROOT);
-
-      expect(vi.mocked(processTemplate)).toHaveBeenCalledOnce();
-      const [templateDir] = vi.mocked(processTemplate).mock.calls[0];
-      expect(templateDir).toContain(join('route', 'src', 'routes'));
-    });
-  });
-
   describe('output and template options', () => {
-    it('uses ./src/routes as the default output directory for the route file', async () => {
+    it('uses project root as the default output directory for the route file', async () => {
       stubPrompts({ author: 'Author' });
-      await GenerateRoute.run(['ProductRoute', '--no-test'], ROOT);
+      await GenerateRoute.run(['ProductRoute'], ROOT);
 
       const [, outputDir] = vi.mocked(processTemplate).mock.calls[0];
-      expect(outputDir).toBe(join(ROOT, 'src', 'routes'));
+      expect(outputDir).toBe(ROOT);
     });
 
     it('passes force: true to both processTemplate calls when --force is set', async () => {

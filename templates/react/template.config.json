@@ -1,0 +1,12 @@
+{
+  "conditionalFiles": [],
+  "helmPaths": [],
+  "patches": [
+    {
+      "template": "patches/package.json",
+      "target": "package.json",
+      "strategy": "json-merge",
+      "condition": "name"
+    }
+  ]
+}

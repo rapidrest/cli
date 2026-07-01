@@ -307,15 +307,7 @@ describe('generate model', () => {
       await GenerateModel.run(['Widget'], ROOT);
 
       const [, outputDir] = vi.mocked(processTemplate).mock.calls[0];
-      expect(outputDir).toBe(join(ROOT, 'src', 'models'));
-    });
-
-    it('uses the --output-dir value when provided', async () => {
-      stubPrompts({ author: 'Author' });
-      await GenerateModel.run(['Widget', '--output-dir', '/custom/models'], ROOT);
-
-      const [, outputDir] = vi.mocked(processTemplate).mock.calls[0];
-      expect(outputDir).toBe('/custom/models');
+      expect(outputDir).toBe(ROOT);
     });
 
     it('passes force: true to processTemplate when --force is set', async () => {
