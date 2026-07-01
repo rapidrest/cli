@@ -6,7 +6,7 @@ import { request } from "@rapidrest/service-core/dist/lib/test/request.js";
 import {
     {{#if model}}
     ACLRecord,
-    {{#eq datastoreType "mongodb"}}
+    {{#if (eq datastoreType "mongodb")}}
     MongoConnection,
     MongoRepository,
     {{/if}}
@@ -16,7 +16,7 @@ import {
 } from "@rapidrest/service-core";
 import { JWTUtils, Logger } from "@rapidrest/core";
 import * as uuid from "uuid";
-{{#eq datastoreType "mongodb"}}
+{{#if (eq datastoreType "mongodb")}}
 import { MongoMemoryServer } from "mongodb-memory-server";
 
 const mongod: MongoMemoryServer = new MongoMemoryServer({
@@ -33,8 +33,8 @@ describe("Auth Tests", () => {
     const server: Server = new Server(config, "./src", logger, objectFactory);
     const baseUrl = "{{path}}";
     {{#if model}}
-    let repo: {{#eq datastoreType "mongodb"}}Mongo{{/if}}Repository<{{model}}>;
-    let aclRepo: {{#eq datastoreType "mongodb"}}Mongo{{/if}}Repository<any>;
+    let repo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<{{model}}>;
+    let aclRepo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<any>;
     
     const create{{model}} = async function(data?: any): Promise<{{model}}> {
         const obj: {{model}} = new {{model}}({
@@ -92,7 +92,7 @@ describe("Auth Tests", () => {
 
     {{/if}}
     beforeAll(async () => {
-        {{#eq datastoreType "mongodb"}}
+        {{#if (eq datastoreType "mongodb")}}
         await mongod.start();
         {{/if}}
         await server.start();
@@ -100,7 +100,7 @@ describe("Auth Tests", () => {
         
         const connMgr: ConnectionManager | undefined = objectFactory.getInstance(ConnectionManager);
         let conn: any = connMgr?.connections.get("acl");
-        {{#eq datastoreType "mongodb"}}
+        {{#if (eq datastoreType "mongodb")}}
         if (conn instanceof MongoConnection) {
             aclRepo = conn.getMongoRepository("AccessControlListMongo");
         }
@@ -110,7 +110,7 @@ describe("Auth Tests", () => {
         }
         {{/if}}
         conn = connMgr?.connections.get("{{datastore}}");
-        {{#eq datastoreType "mongodb"}}
+        {{#if (eq datastoreType "mongodb")}}
         if (conn instanceof MongoConnection) {
             repo = conn.getMongoRepository("{{model}}");
         {{else}}
@@ -125,7 +125,7 @@ describe("Auth Tests", () => {
 
     afterAll(async () => {
         await server.stop();
-        {{#eq datastoreType "mongodb"}}
+        {{#if (eq datastoreType "mongodb")}}
         await mongod.stop();
         {{/if}}
         await objectFactory.destroy();

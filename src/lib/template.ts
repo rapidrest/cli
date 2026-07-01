@@ -4,6 +4,11 @@ import { readFile, writeFile, mkdir, readdir, copyFile } from 'fs/promises';
 import { join, relative, dirname, extname } from 'path';
 import { type PatchEntry, applyPatches } from './patch.js';
 
+// Register eq as a subexpression helper so templates can write {{#if (eq a "b")}}...{{/if}}.
+// Templates may also use the shorthand {{#eq a "b"}}...{{/if}}; that form is normalised
+// to {{#if (eq ...)}} before compilation (see preprocessTemplate below).
+Handlebars.registerHelper('eq', (a: unknown, b: unknown) => a === b);
+
 const BINARY_EXTENSIONS = new Set([
   '.cjs', '.gz', '.png', '.jpg', '.jpeg', '.gif', '.ico',
   '.woff', '.woff2', '.ttf', '.eot', '.pdf', '.zip', '.tar',

@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
-import { Base{{#eq datastoreType "mongodb"}}Mongo{{/if}}Entity, DocDecorators, ModelDecorators, PersistenceDecorators } from "@rapidrest/service-core";
+import { Base{{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Entity, DocDecorators, ModelDecorators, PersistenceDecorators } from "@rapidrest/service-core";
 const { Column, Entity, Index } = PersistenceDecorators;
 const { Cache, DataStore, Identifier, Protect } = ModelDecorators;
 const { Description } = DocDecorators;
@@ -12,7 +12,7 @@ const { Description } = DocDecorators;
  * @author {{author}}
  */
 @Description("{{description}}")
-@Entity({{#eq datastoreType "mongodb"}}{ collation: { locale: "en", strength: 2 }}{{/if}})
+@Entity({{#if (eq datastoreType "mongodb")}}{ collation: { locale: "en", strength: 2 }}{{/if}})
 {{#if datastore}}
 @DataStore("{{datastore}}")
 {{/if}}
@@ -47,7 +47,7 @@ const { Description } = DocDecorators;
 {{#if cache}}
 @Cache()
 {{/if}}
-export default class {{name}} extends Base{{#eq datastoreType "mongodb"}}Mongo{{/if}}Entity {
+export default class {{name}} extends Base{{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Entity {
     /**
      * The unique name of the {{name}}.
      */

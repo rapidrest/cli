@@ -1,6 +1,9 @@
 {
   "helmPaths": ["helm"],
   "conditionalFiles": [
+    { "file": ".gitattributes",                     "condition": "scm.github" },
+    { "file": ".gitattributes",                     "condition": "scm.gitlab" },
+    { "file": ".gitattributes",                     "condition": "scm.git" },
     { "file": ".github",                            "condition": "scm.github" },
     { "file": ".gitlab-ci.yml",                     "condition": "scm.gitlab" },
     { "file": ".yarn",                              "condition": "pkgMgr.yarn" },
@@ -18,6 +21,8 @@
     { "file": "src/routes/AppRoute.ts",             "condition": "features.react" },
     { "file": "src/routes/AuthRoute.ts",            "condition": "features.hasDatabase" },
     { "file": "src/routes/UserRoute.ts",            "condition": "features.hasDatabase" },
+    { "file": "test/AuthRoute.test.ts",             "condition": "features.hasDatabase" },
+    { "file": "test/UserRoute.test.ts",             "condition": "features.hasDatabase" },
     { "file": "tsconfig.client.json",               "condition": "features.react" },
     { "file": "vite.config.ts",                     "condition": "features.react" }
   ]
