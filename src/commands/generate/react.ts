@@ -1,4 +1,4 @@
-import { confirm, input, select } from '@inquirer/prompts';
+import { confirm, input } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
@@ -21,12 +21,14 @@ export default class GenerateReact extends Command {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
     author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
     hydrate: Flags.boolean({ description: 'Enable client-side hydration. Required for interactive apps.' }),
+    'output-dir': Flags.string({ description: 'Project directory to add React support to. Defaults to the current working directory.' }),
     path: Flags.string({ alias: 'p', description: 'The base path the React application will route to' }),
   };
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(GenerateReact);
-    const outputDir = process.cwd();
+    const cwd = flags['output-dir'] ?? process.cwd();
+    const outputDir = cwd;
 
     this.log(`Generating model "${args.name}"...\n`);
 
@@ -41,21 +43,21 @@ export default class GenerateReact extends Command {
       default: false
     });
 
-    const author = flags.author ?? (await inputAuthor(process.cwd()));
+    const author = flags.author ?? (await inputAuthor(cwd));
 
     const context: Record<string, unknown> = {
       author,
       hydrate,
       name: args.name,
       path: routePath,
-      project_name: await readProjectName(process.cwd()),
+      project_name: await readProjectName(cwd),
       year: new Date().getFullYear(),
     };
 
     const templateDir = join(this.config.root, 'templates', 'react');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
+      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
       this.log(`\nReact app "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));

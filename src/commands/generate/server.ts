@@ -136,6 +136,7 @@ export default class GenerateServer extends Command {
       if (allFeatures.includes('react')) {
         this.log('\nAdding React support...');
         await GenerateReact.run([
+          'app',
           '--output-dir', outputDir,
           ...(flags.force ? ['--force'] : []),
         ], this.config.root);

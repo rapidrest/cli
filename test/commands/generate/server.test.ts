@@ -309,7 +309,7 @@ describe('generate server', () => {
 
       expect((GenerateReact as any).run).toHaveBeenCalledOnce();
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out'],
+        ['app', '--output-dir', '/tmp/out'],
         expect.any(String),
       );
     });
@@ -326,7 +326,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--force'],
+        ['app', '--output-dir', '/tmp/out', '--force'],
         expect.any(String),
       );
     });
@@ -336,7 +336,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['--output-dir', join(process.cwd(), 'my-project')],
+        ['app', '--output-dir', join(process.cwd(), 'my-project')],
         expect.any(String),
       );
     });
