@@ -2,21 +2,21 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: [[name]]-services
+  name: [[project_name]]-services
   labels:
-    app: [[name]]
-    app.kubernetes.io/instance: [[name]]-services
+    app: [[project_name]]
+    app.kubernetes.io/instance: [[project_name]]-services
     environment: {{ $.Values.environment }}
 spec:
   replicas: {{ $.Values.service.replicas }}
   selector:
     matchLabels:
-      app: [[name]]
+      app: [[project_name]]
   template:
     metadata:
       labels:
-        app: [[name]]
-        app.kubernetes.io/instance: [[name]]-services
+        app: [[project_name]]
+        app.kubernetes.io/instance: [[project_name]]-services
         environment: {{ $.Values.environment }}
       annotations:
         prometheus.io/scrape: "true"
@@ -25,7 +25,7 @@ spec:
       imagePullSecrets:
         - name: {{ $.Values.service.imagePullSecret }}
       containers:
-        - name: [[name]]-services
+        - name: [[project_name]]-services
           image: {{ $.Values.service.image.registry }}/{{ $.Values.service.image.repository }}:{{ $.Values.service.image.tag }}
           {{- if (eq $.Values.service.version "latest") }}
           imagePullPolicy: Always

@@ -1,9 +1,9 @@
 apiVersion: v2
-description: Installs [[name]] into a Kubernetes cluster
+description: Installs [[project_name]] into a Kubernetes cluster
 name: [[name]]
 version: 1.0.0
 dependencies:
-[[#if features.mongodb]]
+[[#if hasMongoDB]]
 - name: mongodb
   repository: "@bitnami"
   version: ~18.4.4
@@ -13,7 +13,7 @@ dependencies:
     - mongodb
   alias: mongodb
 [[/if]]
-[[#if features.redis]]
+[[#if hasRedis]]
 - name: redis
   version: ~24.1.3
   repository: "@bitnami"

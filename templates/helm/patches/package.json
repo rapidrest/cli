@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "version": "node scripts/update_helm_version.js && git add helm/* README.md scripts/k3s_install.sh"
+  }
+}

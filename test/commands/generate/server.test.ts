@@ -29,10 +29,15 @@ vi.mock('../../../src/commands/generate/docker.js', () => ({
   default: { run: vi.fn() },
 }));
 
+vi.mock('../../../src/commands/generate/k8s.js', () => ({
+  default: { run: vi.fn() },
+}));
+
 import { input, select, checkbox } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
 import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateDocker from '../../../src/commands/generate/docker.js';
+import GenerateHelm from '../../../src/commands/generate/k8s.js';
 import GenerateServer from '../../../src/commands/generate/server.js';
 
 const ROOT = process.cwd();
@@ -65,6 +70,7 @@ describe('generate server', () => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
     vi.mocked(inputAuthor).mockResolvedValue('Default Author');
     (GenerateDocker as any).run.mockResolvedValue(undefined);
+    (GenerateHelm as any).run.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -108,6 +114,7 @@ describe('generate server', () => {
       vi.mocked(processTemplate).mockResolvedValue(undefined);
       vi.mocked(inputAuthor).mockResolvedValue('Default Author');
       (GenerateDocker as any).run.mockResolvedValue(undefined);
+      (GenerateHelm as any).run.mockResolvedValue(undefined);
       stubPrompts({ dbFeatures: [db], otherFeatures: [] });
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
@@ -237,6 +244,54 @@ describe('generate server', () => {
         ['--output-dir', join(process.cwd(), 'my-project')],
         expect.any(String),
       );
+    });
+  });
+
+  describe('helm subcommand', () => {
+    it('runs GenerateHelm with --output-dir after server generation when k8s is selected', async () => {
+      stubPrompts({ otherFeatures: ['k8s'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
+      expect((GenerateHelm as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out'],
+        expect.any(String),
+      );
+    });
+
+    it('does not run GenerateHelm when k8s is not selected', async () => {
+      stubPrompts({ otherFeatures: [] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateHelm as any).run).not.toHaveBeenCalled();
+    });
+
+    it('passes --force to GenerateHelm when --force is set on the server command', async () => {
+      stubPrompts({ otherFeatures: ['k8s'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
+
+      expect((GenerateHelm as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--force'],
+        expect.any(String),
+      );
+    });
+
+    it('uses the default output directory (./<name>) when --output-dir is not set', async () => {
+      stubPrompts({ otherFeatures: ['k8s'] });
+      await GenerateServer.run(['my-project'], ROOT);
+
+      expect((GenerateHelm as any).run).toHaveBeenCalledWith(
+        ['--output-dir', join(process.cwd(), 'my-project')],
+        expect.any(String),
+      );
+    });
+
+    it('runs both GenerateDocker and GenerateHelm when both features are selected', async () => {
+      stubPrompts({ otherFeatures: ['docker', 'k8s'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
+      expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
     });
   });
 });

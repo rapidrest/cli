@@ -2,10 +2,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: [[name]]-services
+  name: [[project_name]]-services
   labels:
-    app: [[name]]
-    app.kubernetes.io/instance: [[name]]-services
+    app: [[project_name]]
+    app.kubernetes.io/instance: [[project_name]]-services
 spec:
   ports:
     - port: 80
@@ -13,4 +13,4 @@ spec:
       name: nodejs
       protocol: TCP
   selector:
-    app: [[name]]
+    app: [[project_name]]

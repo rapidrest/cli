@@ -18,7 +18,7 @@ gateway:
   namespace: '{{ .Release.Namespace }}'
   hsts: true
   tls: true
-[[#if features.redis]]
+[[#if hasRedis]]
 redis:
   create: true
   url: 'redis://db-redis-master'
@@ -37,7 +37,7 @@ redis:
     enabled: true
     allowExternal: false
 [[/if]]
-[[#if features.mongodb]]
+[[#if hasMongoDB]]
 mongodb:
   create: true
   architecture: standalone
@@ -48,15 +48,15 @@ mongodb:
 service:
   image:
     registry: ghcr.io
-    repository: [[name]]
-    tag: 1.1.2
+    repository: [[project_name]]
+    tag: 1.0.0
   replicas: 1
   mongodb:
     acl:
       name: access_control_lists
       host: ''
     mongo:
-      name: [[name]]
+      name: [[project_name]]
       fullnameOverride: ''
       host: ''
   config:

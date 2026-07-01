@@ -50,7 +50,7 @@ spec:
         type: PathPrefix
         value: /
     backendRefs:
-    - name: [[name]]-services
+    - name: [[project_name]]-services
       port: 80
     {{- if not $.Values.gateway.hsts }}
     filters:

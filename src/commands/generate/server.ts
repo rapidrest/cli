@@ -2,9 +2,9 @@ import { checkbox, confirm, input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readGitAuthor } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
+import GenerateHelm from './k8s.js';
 
 export default class GenerateServer extends Command {
   static override args = {
@@ -61,9 +61,9 @@ export default class GenerateServer extends Command {
         { name: 'React', value: 'react' },
         new Separator('-- Deployment --'),
         { name: 'Docker', value: 'docker', checked: true },
-        { name: 'Kubernetes / Helm', value: 'k8s' },
-        new Separator('-- Desktop --'),
-        { name: 'Electron', value: 'electron' },
+        { name: 'Kubernetes (Helm)', value: 'k8s' },
+        // new Separator('-- Desktop --'),
+        // { name: 'Electron', value: 'electron' },
       ],
     });
 
@@ -119,6 +119,14 @@ export default class GenerateServer extends Command {
       if (allFeatures.includes('docker')) {
         this.log('\nAdding Docker support...');
         await GenerateDocker.run([
+          '--output-dir', outputDir,
+          ...(flags.force ? ['--force'] : []),
+        ], this.config.root);
+      }
+
+      if (allFeatures.includes('k8s')) {
+        this.log('\nAdding Kubernetes (Helm) support...');
+        await GenerateHelm.run([
           '--output-dir', outputDir,
           ...(flags.force ? ['--force'] : []),
         ], this.config.root);

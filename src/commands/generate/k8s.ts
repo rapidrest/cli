@@ -3,10 +3,10 @@ import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
 import { readProjectDatastores, readProjectName } from '../../lib/project.js';
 
-export default class GenerateDocker extends Command {
+export default class GenerateHelm extends Command {
   static override args = {};
 
-  static override description = 'Adds Docker support to the current project.';
+  static override description = 'Adds Kubernetes (Helm) support to the current project.';
 
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
@@ -14,15 +14,15 @@ export default class GenerateDocker extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
-    'output-dir': Flags.string({ description: 'Project directory to add Docker support to. Defaults to the current working directory.' }),
+    'output-dir': Flags.string({ description: 'Project directory to add Kubernetes (Helm) support to. Defaults to the current working directory.' }),
   };
 
   async run(): Promise<void> {
-    const { flags } = await this.parse(GenerateDocker);
+    const { flags } = await this.parse(GenerateHelm);
     const cwd = flags['output-dir'] ?? process.cwd();
     const outputDir = cwd;
 
-    this.log(`Generating Docker files...\n`);
+    this.log(`Generating Kubernetes (Helm) files...\n`);
 
     const datastores = await readProjectDatastores(cwd);
     const projectName = await readProjectName(cwd);
@@ -40,11 +40,11 @@ export default class GenerateDocker extends Command {
       hasRedis,
     };
 
-    const templateDir = join(this.config.root, 'templates', 'docker');
+    const templateDir = join(this.config.root, 'templates', 'helm');
 
     try {
       await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
-      this.log(`\nDocker files generated at: ${outputDir}`);
+      this.log(`\nKubernetes (Helm) files generated at: ${outputDir}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

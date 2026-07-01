@@ -25,7 +25,7 @@
 		"test": "vitest run --coverage",
 		"test:prod": "{{#if pkgMgr.yarn}}yarn{{else}}npm run{{/if}} lint && {{#if pkgMgr.yarn}}yarn{{else}}npm run{{/if}} test",
 		"test:watch": "vitest --coverage",
-		"version": "node scripts/update_helm_version.js && git add helm/* README.md single_node_install.sh",
+		"version": "git add README.md",
 		"postversion": "git push --follow-tags"
 	},
 	"prettier": {
