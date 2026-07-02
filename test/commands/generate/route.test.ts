@@ -62,7 +62,7 @@ function stubPrompts({
   author?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(description).mockResolvedValueOnce(path);
-  vi.mocked(select).mockResolvedValueOnce(model as any);
+  vi.mocked(select).mockResolvedValueOnce(model);
   vi.mocked(confirm).mockResolvedValueOnce(protect);
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
@@ -164,7 +164,7 @@ describe('generate route', () => {
       vi.mocked(input)
         .mockResolvedValueOnce('A desc')
         .mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce('__new__' as any); // model select
+      vi.mocked(select).mockResolvedValueOnce('__new__'); // model select
       vi.mocked(confirm).mockResolvedValueOnce(false);            // protect
 
       await GenerateRoute.run(['OrderRoute'], ROOT);
@@ -227,7 +227,7 @@ describe('generate route', () => {
 
     it('--description skips the description input prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce('Product' as any);
+      vi.mocked(select).mockResolvedValueOnce('Product');
       vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateRoute.run(['OrderRoute', '--description', 'From flag'], ROOT);
@@ -239,7 +239,7 @@ describe('generate route', () => {
 
     it('--path skips the route path input prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select).mockResolvedValueOnce('Product' as any);
+      vi.mocked(select).mockResolvedValueOnce('Product');
       vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateRoute.run(['OrderRoute', '--path', '/api/v2/orders'], ROOT);
@@ -251,7 +251,7 @@ describe('generate route', () => {
 
     it('--protect skips the protect confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce('Product' as any); // model only
+      vi.mocked(select).mockResolvedValueOnce('Product'); // model only
 
       await GenerateRoute.run(['OrderRoute', '--protect'], ROOT);
 
@@ -263,7 +263,7 @@ describe('generate route', () => {
 
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce('Product' as any);
+      vi.mocked(select).mockResolvedValueOnce('Product');
       vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateRoute.run(['OrderRoute', '--author', 'Flag Author'], ROOT);

@@ -2,8 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdir, mkdtemp, rm, writeFile, readFile } from 'fs/promises';
 import { join } from 'path';
 import os from 'os';
-import { tsBlockInsert, tsPropertySet, jsonMerge, applyPatches } from '../../src/lib/patch.js';
-import type { PatchEntry } from '../../src/lib/patch.js';
+import { tsBlockInsert, tsPropertySet, jsonMerge, applyPatches, type PatchEntry } from '../../src/lib/patch.js';
 
 // ---------------------------------------------------------------------------
 // tsBlockInsert

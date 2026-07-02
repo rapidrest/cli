@@ -70,7 +70,7 @@ function stubPrompts({
   author?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(description);
-  vi.mocked(select).mockResolvedValueOnce(datastore as any);
+  vi.mocked(select).mockResolvedValueOnce(datastore);
   vi.mocked(confirm).mockResolvedValueOnce(cache).mockResolvedValueOnce(protect);
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
@@ -161,8 +161,8 @@ describe('generate model', () => {
     it('selecting "+ New datastore..." prompts for db type and uses it as both name and type', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
-        .mockResolvedValueOnce('__new__' as any)  // datastore select → new
-        .mockResolvedValueOnce('sqlite' as any);   // db type
+        .mockResolvedValueOnce('__new__')  // datastore select → new
+        .mockResolvedValueOnce('sqlite');   // db type
       vi.mocked(confirm)
         .mockResolvedValueOnce(false)              // cache
         .mockResolvedValueOnce(false);             // protect
@@ -197,7 +197,7 @@ describe('generate model', () => {
         .mockResolvedValueOnce(true)   // "set up new?" → yes
         .mockResolvedValueOnce(false)  // cache
         .mockResolvedValueOnce(false); // protect
-      vi.mocked(select).mockResolvedValueOnce('postgres' as any); // db type
+      vi.mocked(select).mockResolvedValueOnce('postgres'); // db type
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
@@ -250,7 +250,7 @@ describe('generate model', () => {
     });
 
     it('--description skips the description input prompt', async () => {
-      vi.mocked(select).mockResolvedValueOnce('mongo' as any);
+      vi.mocked(select).mockResolvedValueOnce('mongo');
       vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--description', 'From flag'], ROOT);
@@ -262,7 +262,7 @@ describe('generate model', () => {
 
     it('--cache skips the cache confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select).mockResolvedValueOnce('mongo' as any);
+      vi.mocked(select).mockResolvedValueOnce('mongo');
       vi.mocked(confirm).mockResolvedValueOnce(false); // protect only
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache'], ROOT);
@@ -274,7 +274,7 @@ describe('generate model', () => {
 
     it('--protect skips the protect confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select).mockResolvedValueOnce('mongo' as any);
+      vi.mocked(select).mockResolvedValueOnce('mongo');
       vi.mocked(confirm).mockResolvedValueOnce(false); // cache only
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--protect'], ROOT);
@@ -286,7 +286,7 @@ describe('generate model', () => {
 
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
-      vi.mocked(select).mockResolvedValueOnce('mongo' as any);
+      vi.mocked(select).mockResolvedValueOnce('mongo');
       vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--author', 'Flag Author'], ROOT);
@@ -352,8 +352,8 @@ describe('generate model', () => {
       );
       vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
-        .mockResolvedValueOnce('__new__' as any)
-        .mockResolvedValueOnce('mongodb' as any);
+        .mockResolvedValueOnce('__new__')
+        .mockResolvedValueOnce('mongodb');
       vi.mocked(confirm)
         .mockResolvedValueOnce(false)  // cache
         .mockResolvedValueOnce(false)  // protect
@@ -373,8 +373,8 @@ describe('generate model', () => {
       );
       vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
-        .mockResolvedValueOnce('__new__' as any)
-        .mockResolvedValueOnce('mongodb' as any);
+        .mockResolvedValueOnce('__new__')
+        .mockResolvedValueOnce('mongodb');
       vi.mocked(confirm)
         .mockResolvedValueOnce(false)  // cache
         .mockResolvedValueOnce(false)  // protect
@@ -391,8 +391,8 @@ describe('generate model', () => {
       );
       vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
-        .mockResolvedValueOnce('__new__' as any)
-        .mockResolvedValueOnce('mongodb' as any);
+        .mockResolvedValueOnce('__new__')
+        .mockResolvedValueOnce('mongodb');
       vi.mocked(confirm)
         .mockResolvedValueOnce(false)  // cache
         .mockResolvedValueOnce(false)  // protect
@@ -410,8 +410,8 @@ describe('generate model', () => {
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(input).mockResolvedValueOnce('A desc');
       vi.mocked(select)
-        .mockResolvedValueOnce('__new__' as any)
-        .mockResolvedValueOnce('mongodb' as any);
+        .mockResolvedValueOnce('__new__')
+        .mockResolvedValueOnce('mongodb');
       vi.mocked(confirm)
         .mockResolvedValueOnce(false)  // cache
         .mockResolvedValueOnce(false)  // protect

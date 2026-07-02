@@ -86,6 +86,6 @@ export default class Dev extends Command {
     process.once('SIGTERM', cleanup);
 
     await new Promise<void>((resolve) => { server.once('exit', resolve); });
-    cleanup();
+    await cleanup();
   }
 }

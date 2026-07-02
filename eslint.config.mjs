@@ -5,6 +5,9 @@ import jsdoc from "eslint-plugin-jsdoc";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 export default [
     {
+        ignores: ["dist/**", "templates/**", "coverage/**", ".pnp.cjs", ".pnp.loader.mjs"],
+    },
+    {
         files: ["**/*.ts"],
         languageOptions: {
             ecmaVersion: 2020,
