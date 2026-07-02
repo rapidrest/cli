@@ -37,7 +37,7 @@ export default class GenerateModel extends Command {
     this.log(`Generating model "${args.name}"...\n`);
 
     const description = flags.description ?? await input({
-      message: 'Enter a short description of this model',
+      message: 'Enter a short description of this model:',
       required: true,
     });
 

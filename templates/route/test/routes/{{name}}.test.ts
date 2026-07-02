@@ -16,6 +16,9 @@ import {
 } from "@rapidrest/service-core";
 import { JWTUtils, Logger } from "@rapidrest/core";
 import * as uuid from "uuid";
+{{#if model}}
+import {{model}} from "../../src/models/{{model}}.js";
+{{/if}}
 {{#if (eq datastoreType "mongodb")}}
 import { MongoMemoryServer } from "mongodb-memory-server";
 
@@ -27,7 +30,7 @@ const mongod: MongoMemoryServer = new MongoMemoryServer({
 });
 {{/if}}
 
-describe("Auth Tests", () => {
+describe("Route:{{name}} Tests", () => {
     const logger = Logger();
     const objectFactory: ObjectFactory = new ObjectFactory(config, logger);
     const server: Server = new Server(config, "./src", logger, objectFactory);

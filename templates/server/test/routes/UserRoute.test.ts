@@ -2,12 +2,12 @@
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
 import "reflect-metadata";
-import config from "./config";
+import config from "../config.js";
 import { request } from "@rapidrest/service-core/dist/lib/test/request.js";
 import { Server, ConnectionManager, ACLRecord, ObjectFactory, MongoConnection, MongoRepository } from "@rapidrest/service-core";
 import { EventUtils, JWTUtils, Logger } from "@rapidrest/core";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import User, { UserStatus } from "../src/models/User.js";
+import User, { UserStatus } from "../../src/models/User.js";
 import { v4 as uuidv4 } from "uuid";
 
 const mongod: MongoMemoryServer = new MongoMemoryServer({

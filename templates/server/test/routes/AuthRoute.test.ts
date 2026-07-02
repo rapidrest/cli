@@ -1,12 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
-import config from "./config";
+import config from "../config.js";
 import { request } from "@rapidrest/service-core/dist/lib/test/request.js";
 import { Server, ConnectionManager, ObjectFactory, ACLRecord, MongoConnection, MongoRepository } from "@rapidrest/service-core";
 import { JWTUtils, Logger } from "@rapidrest/core";
 import { MongoMemoryServer } from "mongodb-memory-server";
-import User, { UserStatus } from "../src/models/User.js";
+import User, { UserStatus } from "../../src/models/User.js";
 
 const mongod: MongoMemoryServer = new MongoMemoryServer({
     instance: {

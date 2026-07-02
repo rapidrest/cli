@@ -74,7 +74,7 @@ describe('generate route — test template', () => {
     await withTmpDir(async (dir) => {
       await processTemplate(testTemplateDir, dir, baseContext, { projectDir: dir });
       const files = await listFiles(dir);
-      expect(files).toContain('/ProductRoute.test.ts');
+      expect(files).toContain('/routes/ProductRoute.test.ts');
     });
   });
 
@@ -82,7 +82,7 @@ describe('generate route — test template', () => {
     await withTmpDir(async (dir) => {
       const ctx = { ...baseContext, model: 'Product', datastore: 'products', datastoreType: 'mongodb' };
       await processTemplate(testTemplateDir, dir, ctx, { projectDir: dir });
-      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'ProductRoute.test.ts'), 'utf-8'));
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
       expect(content).toContain('MongoConnection');
       expect(content).toContain('MongoMemoryServer');
     });
@@ -92,7 +92,7 @@ describe('generate route — test template', () => {
     await withTmpDir(async (dir) => {
       const ctx = { ...baseContext, model: 'Product', datastore: 'products', datastoreType: 'postgresql' };
       await processTemplate(testTemplateDir, dir, ctx, { projectDir: dir });
-      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'ProductRoute.test.ts'), 'utf-8'));
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
       expect(content).not.toContain('MongoConnection');
       expect(content).not.toContain('MongoMemoryServer');
     });
@@ -137,6 +137,46 @@ describe('generate model', () => {
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src/models/Product.ts'), 'utf-8'));
       expect(content).not.toContain('BaseMongoEntity');
       expect(content).toContain('BaseEntity');
+    });
+  });
+});
+
+// ─── job ──────────────────────────────────────────────────────────────────────
+
+describe('generate job', () => {
+  const jobTemplateDir = join(TEMPLATES, 'job');
+  const baseContext = {
+    name: 'MetricsCollector', author: 'Test', description: 'Collects metrics',
+    schedule: '* * * * *', project_name: 'my-app', year: 2025,
+  };
+
+  it('generates the job source and test files with no scaffolding artifacts', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(jobTemplateDir, dir, baseContext, { projectDir: dir });
+      const files = await listFiles(dir);
+      expect(files).toContain('/src/jobs/MetricsCollector.ts');
+      expect(files).toContain('/test/jobs/MetricsCollector.test.ts');
+      expect(files).not.toContain('/template.config.json');
+    });
+  });
+
+  it('substitutes description, schedule, and author into the job source', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(jobTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'jobs', 'MetricsCollector.ts'), 'utf-8'));
+      expect(content).toContain('Collects metrics');
+      expect(content).toContain('return "* * * * *";');
+      expect(content).toContain('@author Test');
+      expect(content).toContain('class MetricsCollector extends BackgroundService');
+    });
+  });
+
+  it('references the generated job class from the test file', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(jobTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'test', 'jobs', 'MetricsCollector.test.ts'), 'utf-8'));
+      expect(content).toContain('import MetricsCollector from "../../src/jobs/MetricsCollector.js"');
+      expect(content).toContain('describe("Job:MetricsCollector Tests"');
     });
   });
 });
@@ -224,6 +264,26 @@ describe('generate server', () => {
       const files = await listFiles(dir);
       expect(files.some(f => f.includes('User.ts'))).toBe(true);
       expect(files.some(f => f.includes('AuthRoute.ts'))).toBe(true);
+    });
+  });
+
+  it('includes the database route tests under test/routes when features.hasDatabase is enabled', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = makeServerContext({ features: { hasDatabase: true, react: false, docker: false, k8s: false, redis: false } });
+      await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
+      const files = await listFiles(dir);
+      expect(files).toContain('/test/routes/AuthRoute.test.ts');
+      expect(files).toContain('/test/routes/UserRoute.test.ts');
+    });
+  });
+
+  it('excludes the database route tests when features.hasDatabase is disabled', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = makeServerContext();
+      await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
+      const files = await listFiles(dir);
+      expect(files).not.toContain('/test/routes/AuthRoute.test.ts');
+      expect(files).not.toContain('/test/routes/UserRoute.test.ts');
     });
   });
 
