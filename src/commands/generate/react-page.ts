@@ -5,10 +5,24 @@ import { processTemplate } from '../../lib/template.js';
 import { readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 
+// Converts a (possibly slash-delimited) page path like "my/path/page" into a
+// PascalCase identifier ("MyPathPage") for use as the component/service class name.
+function toPascalCase(path: string): string {
+  return path
+    .split('/')
+    .filter(Boolean)
+    .map((segment) => segment
+      .split(/[-_\s]+/)
+      .filter(Boolean)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(''))
+    .join('');
+}
+
 export default class GenerateReactPage extends Command {
   static override args = {
     app: Args.string({ description: 'The name of the React app (e.g. app).', required: true }),
-    name: Args.string({ description: 'Name of the page (e.g. page).', required: true }),
+    name: Args.string({ description: 'Name of the page, optionally with a subpath (e.g. page, my/path/page).', required: true }),
   };
 
   static override description = 'Adds a new page to an existing React app to the current project.';
@@ -38,10 +52,13 @@ export default class GenerateReactPage extends Command {
       default: true
     }));
 
+    const className = toPascalCase(args.name);
+
     const context: Record<string, unknown> = {
       author,
       app: args.app,
       name: args.name,
+      className,
       project_name: await readProjectName(cwd),
       service,
       year: new Date().getFullYear(),
@@ -51,7 +68,7 @@ export default class GenerateReactPage extends Command {
 
     try {
       await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
-      this.log(`\nReact app page "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
+      this.log(`\nReact app page "${args.name}" generated at: ${join(outputDir, 'apps', args.app, args.name, 'index.tsx')}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

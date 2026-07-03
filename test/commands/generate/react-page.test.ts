@@ -57,6 +57,7 @@ describe('generate react-page', () => {
       expect(context).toMatchObject({
         app: 'app',
         name: 'Dashboard',
+        className: 'Dashboard',
         service: true,
         author: 'Jane Doe',
         project_name: 'my-app',
@@ -80,6 +81,33 @@ describe('generate react-page', () => {
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.project_name).toBe('another-app');
       expect(readProjectName).toHaveBeenCalledWith(process.cwd());
+    });
+  });
+
+  describe('className derivation from a (possibly nested) page path', () => {
+    it('keeps name as the raw path but PascalCases className for a nested path', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateReactPage.run(['app', 'my/path/page'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.name).toBe('my/path/page');
+      expect(context.className).toBe('MyPathPage');
+    });
+
+    it('capitalizes a single lowercase segment', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateReactPage.run(['app', 'dashboard'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.className).toBe('Dashboard');
+    });
+
+    it('joins hyphen- and underscore-separated words within a segment', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateReactPage.run(['app', 'my-cool/page_two'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.className).toBe('MyCoolPageTwo');
     });
   });
 

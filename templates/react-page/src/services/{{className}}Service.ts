@@ -9,8 +9,8 @@ import { ReactService } from "@rapidrest/react";
  * 
  * @author {{author}}
  */
-@ReactService("{{name}}")
-export default class {{name}}Service {
+@ReactService("{{app}}/{{name}}")
+export default class {{className}}Service {
     public async fetchProps(): Promise<any> {
         return {};
     }

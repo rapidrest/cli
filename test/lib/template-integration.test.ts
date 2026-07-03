@@ -219,15 +219,15 @@ describe('generate react', () => {
 describe('generate react-page', () => {
   const reactPageTemplateDir = join(TEMPLATES, 'react-page');
   const baseContext = {
-    app: 'app', name: 'Dashboard', author: 'Test',
+    app: 'app', name: 'Dashboard', className: 'Dashboard', author: 'Test',
     project_name: 'my-app', service: true, year: 2025,
   };
 
-  it('generates the page component and service class with no scaffolding artifacts', async () => {
+  it('generates the page component under apps/<app>/<name>/index.tsx and a flat service class, with no scaffolding artifacts', async () => {
     await withTmpDir(async (dir) => {
       await processTemplate(reactPageTemplateDir, dir, baseContext, { projectDir: dir });
       const files = await listFiles(dir);
-      expect(files).toContain('/apps/app/Dashboard.tsx');
+      expect(files).toContain('/apps/app/Dashboard/index.tsx');
       expect(files).toContain('/src/services/DashboardService.ts');
       expect(files).not.toContain('/template.config.json');
     });
@@ -238,7 +238,7 @@ describe('generate react-page', () => {
       const ctx = { ...baseContext, service: false };
       await processTemplate(reactPageTemplateDir, dir, ctx, { projectDir: dir });
       const files = await listFiles(dir);
-      expect(files).toContain('/apps/app/Dashboard.tsx');
+      expect(files).toContain('/apps/app/Dashboard/index.tsx');
       expect(files).not.toContain('/src/services/DashboardService.ts');
     });
   });
@@ -246,7 +246,7 @@ describe('generate react-page', () => {
   it('omits the client-side fetchProps helper when a service class is used', async () => {
     await withTmpDir(async (dir) => {
       await processTemplate(reactPageTemplateDir, dir, baseContext, { projectDir: dir });
-      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'apps', 'app', 'Dashboard.tsx'), 'utf-8'));
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'apps', 'app', 'Dashboard', 'index.tsx'), 'utf-8'));
       expect(content).not.toContain('export async function fetchProps');
       expect(content).toContain('export default function Dashboard()');
     });
@@ -256,7 +256,7 @@ describe('generate react-page', () => {
     await withTmpDir(async (dir) => {
       const ctx = { ...baseContext, service: false };
       await processTemplate(reactPageTemplateDir, dir, ctx, { projectDir: dir });
-      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'apps', 'app', 'Dashboard.tsx'), 'utf-8'));
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'apps', 'app', 'Dashboard', 'index.tsx'), 'utf-8'));
       expect(content).toContain('export async function fetchProps');
     });
   });
@@ -265,10 +265,35 @@ describe('generate react-page', () => {
     await withTmpDir(async (dir) => {
       await processTemplate(reactPageTemplateDir, dir, baseContext, { projectDir: dir });
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'services', 'DashboardService.ts'), 'utf-8'));
-      expect(content).toContain('@ReactService("Dashboard")');
+      expect(content).toContain('@ReactService("app/Dashboard")');
       expect(content).toContain('export default class DashboardService');
       expect(content).toContain('@author Test');
       expect(content).toContain("app's Dashboard page");
+    });
+  });
+
+  describe('nested page paths', () => {
+    const nestedContext = { ...baseContext, name: 'my/path/page', className: 'MyPathPage' };
+
+    it('nests the page component under the full subpath while keeping the service class flat', async () => {
+      await withTmpDir(async (dir) => {
+        await processTemplate(reactPageTemplateDir, dir, nestedContext, { projectDir: dir });
+        const files = await listFiles(dir);
+        expect(files).toContain('/apps/app/my/path/page/index.tsx');
+        expect(files).toContain('/src/services/MyPathPageService.ts');
+      });
+    });
+
+    it('uses the PascalCased className for the component and service identifiers', async () => {
+      await withTmpDir(async (dir) => {
+        await processTemplate(reactPageTemplateDir, dir, nestedContext, { projectDir: dir });
+        const pageContent = await import('fs/promises').then(fs => fs.readFile(join(dir, 'apps', 'app', 'my', 'path', 'page', 'index.tsx'), 'utf-8'));
+        expect(pageContent).toContain('export default function MyPathPage()');
+
+        const serviceContent = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'services', 'MyPathPageService.ts'), 'utf-8'));
+        expect(serviceContent).toContain('@ReactService("app/my/path/page")');
+        expect(serviceContent).toContain('export default class MyPathPageService');
+      });
     });
   });
 });

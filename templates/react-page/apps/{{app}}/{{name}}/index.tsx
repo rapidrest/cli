@@ -5,6 +5,6 @@ export async function fetchProps() {
 }
 
 {{/unless}}
-export default function {{name}}() {
+export default function {{className}}() {
     return <p>Add your page content here!</p>;
 }

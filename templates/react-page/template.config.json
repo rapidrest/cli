@@ -1,5 +1,5 @@
 {
   "conditionalFiles": [
-    { "file": "src/services/{{name}}Service.ts", "condition": "service" }
+    { "file": "src/services/{{className}}Service.ts", "condition": "service" }
   ]
 }

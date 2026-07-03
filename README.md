@@ -313,7 +313,7 @@ USAGE
 
 ARGUMENTS
   APP   Name of the React app to add the page to (e.g. app)
-  NAME  Name of the page (e.g. Dashboard)
+  NAME  Name of the page, optionally with a subpath (e.g. Dashboard, my/path/page)
 
 FLAGS
   --output-dir <path>  Project directory to add the page to. Defaults to the current working directory
@@ -324,7 +324,9 @@ FLAGS
 
 Unless `--service` is passed, you're asked whether to generate a companion service class. If you decline, the page component instead exports a client-side `fetchProps` helper for retrieving its own data.
 
-Writes `apps/<APP>/<NAME>.tsx`, and `src/services/<NAME>Service.ts` when a service class is created.
+`NAME` may include a subpath (e.g. `my/path/page`), which nests the page component accordingly. The component and service class names are always derived by PascalCasing `NAME` — each `/`-, `-`, or `_`-separated segment is capitalized and joined, so `my/path/page` becomes `MyPathPage`.
+
+Writes `apps/<APP>/<NAME>/index.tsx`. When a service class is created, it's written flat to `src/services/<PascalCase NAME>Service.ts` regardless of NAME's subpath.
 
 **Example:**
 
@@ -332,6 +334,9 @@ Writes `apps/<APP>/<NAME>.tsx`, and `src/services/<NAME>Service.ts` when a servi
 cd my-api
 rapidrest generate react-page app Dashboard
 rapidrest generate react-page app Dashboard --service
+
+# Nested page path — creates apps/app/my/path/page/index.tsx and src/services/MyPathPageService.ts
+rapidrest generate react-page app my/path/page --service
 ```
 
 ---
