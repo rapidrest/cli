@@ -45,7 +45,7 @@ const { Description } = DocDecorators;
 )
 {{/if}}
 {{#if cache}}
-@Cache()
+@Cache({{cache}})
 {{/if}}
 export default class {{name}} extends Base{{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Entity {
     /**

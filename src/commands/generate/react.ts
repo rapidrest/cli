@@ -10,7 +10,7 @@ export default class GenerateReact extends Command {
     name: Args.string({ description: 'Name of the React app (e.g. app).', required: true }),
   };
 
-  static override description = 'Adds RapidREST React support to the current project.';
+  static override description = 'Adds React support to the current project.';
 
   static override examples = [
     '<%= config.bin %> <%= command.id %> app',
@@ -30,7 +30,7 @@ export default class GenerateReact extends Command {
     const cwd = flags['output-dir'] ?? process.cwd();
     const outputDir = cwd;
 
-    this.log(`Generating model "${args.name}"...\n`);
+    this.log(`Generating react app: "${args.name}"...\n`);
 
     const routePath = flags.path ?? await input({
       message: 'Enter the base path the React application will route to:',

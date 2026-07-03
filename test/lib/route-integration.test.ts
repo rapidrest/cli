@@ -214,6 +214,65 @@ describe('generate react', () => {
   });
 });
 
+// ─── react-page ───────────────────────────────────────────────────────────────
+
+describe('generate react-page', () => {
+  const reactPageTemplateDir = join(TEMPLATES, 'react-page');
+  const baseContext = {
+    app: 'app', name: 'Dashboard', author: 'Test',
+    project_name: 'my-app', service: true, year: 2025,
+  };
+
+  it('generates the page component and service class with no scaffolding artifacts', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(reactPageTemplateDir, dir, baseContext, { projectDir: dir });
+      const files = await listFiles(dir);
+      expect(files).toContain('/apps/app/Dashboard.tsx');
+      expect(files).toContain('/src/services/DashboardService.ts');
+      expect(files).not.toContain('/template.config.json');
+    });
+  });
+
+  it('omits the service class when service is disabled', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = { ...baseContext, service: false };
+      await processTemplate(reactPageTemplateDir, dir, ctx, { projectDir: dir });
+      const files = await listFiles(dir);
+      expect(files).toContain('/apps/app/Dashboard.tsx');
+      expect(files).not.toContain('/src/services/DashboardService.ts');
+    });
+  });
+
+  it('omits the client-side fetchProps helper when a service class is used', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(reactPageTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'apps', 'app', 'Dashboard.tsx'), 'utf-8'));
+      expect(content).not.toContain('export async function fetchProps');
+      expect(content).toContain('export default function Dashboard()');
+    });
+  });
+
+  it('includes the client-side fetchProps helper when no service class is used', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = { ...baseContext, service: false };
+      await processTemplate(reactPageTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'apps', 'app', 'Dashboard.tsx'), 'utf-8'));
+      expect(content).toContain('export async function fetchProps');
+    });
+  });
+
+  it('substitutes app, name, and author into the generated service class', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(reactPageTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'services', 'DashboardService.ts'), 'utf-8'));
+      expect(content).toContain('@ReactService("Dashboard")');
+      expect(content).toContain('export default class DashboardService');
+      expect(content).toContain('@author Test');
+      expect(content).toContain("app's Dashboard page");
+    });
+  });
+});
+
 // ─── server ───────────────────────────────────────────────────────────────────
 
 describe('generate server', () => {

@@ -60,6 +60,7 @@ rapidrest dev
 - [`rapidrest generate docker`](#rapidrest-generate-docker)
 - [`rapidrest generate k8s`](#rapidrest-generate-k8s)
 - [`rapidrest generate react NAME`](#rapidrest-generate-react-name)
+- [`rapidrest generate react-page APP NAME`](#rapidrest-generate-react-page-app-name)
 - [`rapidrest dev`](#rapidrest-dev)
 - [`rapidrest start`](#rapidrest-start)
 - [`rapidrest build`](#rapidrest-build)
@@ -111,7 +112,7 @@ Generate a new data model class inside the current project.
 ```
 USAGE
   $ rapidrest generate model NAME [--output-dir <path>] [--author <name>] [--description <text>]
-      [--datastore <name>] [--cache] [--protect] [--force]
+      [--datastore <name>] [--cache [ttl]] [--protect] [--force]
 
 ARGUMENTS
   NAME  Name of the data model class (e.g. Product, UserProfile)
@@ -121,12 +122,18 @@ FLAGS
   -a, --author <name>        Author to attribute the generated code to
   -d, --description <text>   Short description of the model
   -ds, --datastore <name>    Name of the datastore the model will be bound to
-  -c, --cache                Enable caching for this model
+  -c, --cache [ttl]          Cache TTL (in seconds) for this model
   -p, --protect              Enable RBAC-based protection for this model
   -f, --force                Overwrite existing files
 ```
 
 If the project does not contain an existing datastore, or you simply want to want to set up a different datastore than previously configured, this command will help you create a new one.
+
+`--cache` has three forms:
+
+- Omitted entirely — you're prompted interactively for a TTL (blank disables caching)
+- Passed with no value (`--cache`) — caching is enabled with the default TTL of `60` seconds
+- Passed with a value (`--cache 120`) — caching is enabled with that TTL in seconds
 
 **Example:**
 
@@ -134,7 +141,7 @@ If the project does not contain an existing datastore, or you simply want to wan
 rapidrest generate model Product
 # → creates src/models/Product.ts
 
-rapidrest generate model Product --datastore mongo --cache --protect
+rapidrest generate model Product --datastore mongo --cache 120 --protect
 ```
 
 ---
@@ -292,6 +299,39 @@ cd my-api
 rapidrest generate react app
 rapidrest generate react app --path /dashboard --hydrate
 rapidrest dev
+```
+
+---
+
+### `rapidrest generate react-page APP NAME`
+
+Add a new page to an existing React app in the current project.
+
+```
+USAGE
+  $ rapidrest generate react-page APP NAME [--output-dir <path>] [--author <name>] [--service] [--force]
+
+ARGUMENTS
+  APP   Name of the React app to add the page to (e.g. app)
+  NAME  Name of the page (e.g. Dashboard)
+
+FLAGS
+  --output-dir <path>  Project directory to add the page to. Defaults to the current working directory
+  -a, --author <name>  Author to attribute the generated code to
+  -s, --service        Create a service class for server-side data retrieval for the page
+  -f, --force          Overwrite existing files
+```
+
+Unless `--service` is passed, you're asked whether to generate a companion service class. If you decline, the page component instead exports a client-side `fetchProps` helper for retrieving its own data.
+
+Writes `apps/<APP>/<NAME>.tsx`, and `src/services/<NAME>Service.ts` when a service class is created.
+
+**Example:**
+
+```sh
+cd my-api
+rapidrest generate react-page app Dashboard
+rapidrest generate react-page app Dashboard --service
 ```
 
 ---

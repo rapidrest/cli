@@ -41,7 +41,7 @@ export default class GenerateRoute extends Command {
     const outputDir = flags['output-dir'] ?? cwd;
     const testDir = join(cwd, 'test');
 
-    this.log(`Generating route "${args.name}"...\n`);
+    this.log(`Generating route: "${args.name}"...\n`);
 
     const description = flags.description ?? await input({
       message: 'Enter a short description of this route:',

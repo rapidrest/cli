@@ -8,22 +8,40 @@ import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
 import GenerateHelm from './k8s.js';
 
+// Allows `--cache` to be passed with no value (defaulting to '60'), with a value
+// (e.g. `--cache 120`), or omitted entirely (triggering the interactive prompt below).
+// oclif's string flags always consume the next token as their value, so a bare
+// `--cache` at the end of argv or immediately followed by another flag would otherwise
+// throw "Flag --cache expects a value" — this injects the default token in that case.
+function resolveCacheArgv(argv: string[]): string[] {
+  const result = [...argv];
+  for (let i = 0; i < result.length; i++) {
+    if (result[i] !== '--cache' && result[i] !== '-c') continue;
+    const next = result[i + 1];
+    if (next === undefined || next.startsWith('-')) {
+      result.splice(i + 1, 0, '60');
+    }
+    break;
+  }
+  return result;
+}
+
 export default class GenerateModel extends Command {
   static override args = {
     name: Args.string({ description: 'Name of the model class (e.g. Product, UserProfile).', required: true }),
   };
 
-  static override description = 'Generate a RapidREST model class in the current project.';
+  static override description = 'Generate a RapidREST data model in the current project.';
 
   static override examples = [
     '<%= config.bin %> <%= command.id %> Product',
-    '<%= config.bin %> <%= command.id %> UserProfile --output-dir src/models',
+    '<%= config.bin %> <%= command.id %> UserProfile --cache --datastore mongo',
   ];
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
     author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
-    cache: Flags.boolean({ char: 'c', description: "Enable caching of this model."}),
+    cache: Flags.string({ alias: 'c', description: "Set the cache TTL of this model. If passed with no value, defaults to 60." }),
     datastore: Flags.string({ alias: 'ds', description: "The name of the datastore that the model will be bound to."}),
     description: Flags.string({ alias: 'd', description: "The short description of the model."}),
     'output-dir': Flags.string({ alias: 'o', description: 'Directory to write the generated model into. Defaults to ./src/models.' }),
@@ -31,10 +49,10 @@ export default class GenerateModel extends Command {
   };
 
   async run(): Promise<void> {
-    const { args, flags } = await this.parse(GenerateModel);
+    const { args, flags } = await this.parse(GenerateModel, resolveCacheArgv(this.argv));
     const outputDir = flags['output-dir'] ?? process.cwd();
 
-    this.log(`Generating model "${args.name}"...\n`);
+    this.log(`Generating data model: "${args.name}"...\n`);
 
     const description = flags.description ?? await input({
       message: 'Enter a short description of this model:',
@@ -98,9 +116,10 @@ export default class GenerateModel extends Command {
       }
     }
 
-    const cache = flags.cache ?? await confirm({
-      message: 'Enable caching for this model:',
-      default: true
+    const cache = flags.cache ?? await input({
+      message: 'Enter a cache TTL for this model (enter blank to disable caching):',
+      default: '60',
+      required: false
     });
 
     const protect = flags.protect ?? await confirm({

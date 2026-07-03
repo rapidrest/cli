@@ -28,7 +28,7 @@ export default class GenerateServer extends Command {
     const { args, flags } = await this.parse(GenerateServer);
     const outputDir = flags['output-dir'] ?? join(process.cwd(), args.name);
 
-    this.log(`Generating RapidREST server project "${args.name}"...\n`);
+    this.log(`Generating RapidREST server project: "${args.name}"...\n`);
 
     const description = await input({
       message: 'Enter a short project description:',
