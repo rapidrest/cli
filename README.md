@@ -13,7 +13,7 @@ The official CLI tool for [RapidREST](https://github.com/rapidrest) projects.
 `rapidrest` scaffolds and manages RapidREST server projects. It handles the full project lifecycle:
 
 - **Scaffold** a new server project with your choice of databases, frontend, and deployment targets
-- **Generate** models, routes, and add-on support (Docker, Kubernetes, React) inside an existing project
+- **Generate** models, routes, background jobs and add-on support (Docker, Kubernetes, React) inside an existing project
 - **Develop** with hot-reload and automatic in-memory database startup
 - **Build and start** the compiled server in one command
 
@@ -27,7 +27,7 @@ npm install -g @rapidrest/cli
 yarn global add @rapidrest/cli
 ```
 
-Requires Node.js 18 or later.
+RapidREST requires Node.js LTS (24) or later.
 
 Once installed, the CLI is available as both `rapidrest` and the shorter alias `rr`. Every example below works with either name.
 
@@ -42,7 +42,10 @@ rapidrest generate server my-api
 # 2. Install dependencies
 cd my-api && yarn install
 
-# 3. Start the development server
+# 3. Create a new route
+rapidrest generate route MyRoute
+
+# 4. Start the development server
 rapidrest dev
 ```
 
@@ -53,6 +56,7 @@ rapidrest dev
 - [`rapidrest generate server NAME`](#rapidrest-generate-server-name)
 - [`rapidrest generate model NAME`](#rapidrest-generate-model-name)
 - [`rapidrest generate route NAME`](#rapidrest-generate-route-name)
+- [`rapidrest generate job NAME`](#rapidrest-generate-job-name)
 - [`rapidrest generate docker`](#rapidrest-generate-docker)
 - [`rapidrest generate k8s`](#rapidrest-generate-k8s)
 - [`rapidrest generate react NAME`](#rapidrest-generate-react-name)
@@ -64,7 +68,7 @@ rapidrest dev
 
 ### `rapidrest generate server NAME`
 
-Scaffold a new RapidREST server project from the built-in template.
+Scaffold a new RapidREST server project.
 
 ```
 USAGE
@@ -80,18 +84,14 @@ FLAGS
 
 The command walks through an interactive prompt to configure the generated project:
 
-| Prompt | Options |
+| Prompt | Description | Options |
 |--------|---------|
-| Project description | Free text |
-| Author | Auto-filled from your Git config when available; otherwise you're prompted |
-| Package manager | `yarn` \| `npm` |
-| Databases | `MongoDB` (checked), `PostgreSQL`, `Redis` (checked), `SQLite` (multi-select) |
-| Additional features | `React`, `Docker` (checked), `Kubernetes (Helm)` (multi-select) |
-| Source control | `GitHub`, `GitLab`, `Git`, `Perforce (Helix)`, `Subversion`, or none |
-
-**What gets generated depends on your selections.** Files and configuration blocks for unselected features are omitted entirely — for example, selecting only MongoDB means no PostgreSQL config, no Dockerfile, no Helm chart.
-
-If you select **Docker**, **Kubernetes (Helm)**, or **React**, `generate server` automatically runs `generate docker`, `generate k8s`, and/or `generate react` against the newly created project right after scaffolding it, so the add-on files are already in place — you don't need to run those commands separately.
+| Project description | Textual description of your project | Free input |
+| Author | The author of the project | Auto-filled from your Git config when available; otherwise you're prompted |
+| Package manager | The desired Node.js package manager | `yarn` \| `npm` |
+| Databases | Desired database(s) to use in the project | `MongoDB` , `PostgreSQL`, `Redis` , `SQLite` |
+| Additional features | Additional RapidREST features to enable | `React`, `Docker`, `Kubernetes (Helm)` (multi-select) |
+| Source control | The SCM to use for the project | `GitHub`, `GitLab`, `Git`, `Perforce (Helix)`, `Subversion`, or none |
 
 **Example:**
 
@@ -106,7 +106,7 @@ rapidrest generate server my-api --output-dir ~/projects/my-api
 
 ### `rapidrest generate model NAME`
 
-Generate a RapidREST model class inside the current project.
+Generate a new data model class inside the current project.
 
 ```
 USAGE
@@ -114,7 +114,7 @@ USAGE
       [--datastore <name>] [--cache] [--protect] [--force]
 
 ARGUMENTS
-  NAME  Name of the model class (e.g. Product, UserProfile)
+  NAME  Name of the data model class (e.g. Product, UserProfile)
 
 FLAGS
   -o, --output-dir <path>    Directory to write the generated model into. Defaults to ./src/models
@@ -126,15 +126,7 @@ FLAGS
   -f, --force                Overwrite existing files
 ```
 
-Any flag you omit is instead asked for interactively:
-
-- **Datastore** — if the project already has datastores configured, you pick one from a list (or choose "+ New datastore..." to configure MongoDB, PostgreSQL, or SQLite on the fly). If the project has no datastores yet, you're offered to set one up.
-- **Cache** and **Protect (RBAC)** — confirmed with a yes/no prompt (both default to enabled).
-- **Author** — read automatically from your Git config or the project's `package.json` when available; you're only prompted if neither is found.
-
-If you configure a brand-new datastore while generating the model, and the project already has Docker and/or Kubernetes (Helm) support, you'll be asked whether to regenerate those files so they pick up the new datastore (this overwrites the existing Docker/Helm files).
-
-Writes `<output-dir>/<NAME>.ts`.
+If the project does not contain an existing datastore, or you simply want to want to set up a different datastore than previously configured, this command will help you create a new one.
 
 **Example:**
 
@@ -149,7 +141,7 @@ rapidrest generate model Product --datastore mongo --cache --protect
 
 ### `rapidrest generate route NAME`
 
-Generate a RapidREST route handler inside the current project.
+Generate a new route handler inside the current project.
 
 ```
 USAGE
@@ -171,9 +163,16 @@ FLAGS
   -f, --force                Overwrite existing files
 ```
 
-Unless `--model` or `--no-model` is passed, you're offered a list of the project's existing models to bind the route to (or "+ New model..." to run `generate model` inline without leaving the prompt). If the project has no models yet, you can type a model name directly.
+When selecting or creating a data model for the route handler, the resulting class will extend the `ModelRoute` base class and automatically include the following default endpoints:
 
-By default a matching test file is also created under `./test/`.
+* `HEAD /<path>` - Count all documents matching a given query of the specified <model> in the datastore
+* `GET /<path>` - Find all documents matching a given query of the specified <model> in the datastore
+* `POST /<path>` - Create one or more documents of the specified <model> in the datastore
+* `DELETE /<path>` - Deletes all documents matching a given query of the specified <model> in the datastore
+* `GET /<path>/:id` - Retrieve a single document for the given `id`
+* `PUT /<path>/:id` - Updates a single document for the given `id`
+* `PUT /<path>/:id/:property` - Updates a single property of the document with the given `id`
+* `DELETE /<path>/:id` - Deletes a single document for the given `id`
 
 **Example:**
 
@@ -181,7 +180,38 @@ By default a matching test file is also created under `./test/`.
 rapidrest generate route ProductRoute
 # → creates src/routes/ProductRoute.ts and test/ProductRoute.test.ts
 
-rapidrest generate route ProductRoute --model Product --protect --no-test
+rapidrest generate route ProductRoute --model Product --cache --protect
+```
+
+---
+
+### `rapidrest generate job NAME`
+
+Generate a RapidREST background job inside the current project.
+
+```
+USAGE
+  $ rapidrest generate job NAME [--output-dir <path>] [--author <name>] [--description <text>]
+      [--schedule <cron>] [--force]
+
+ARGUMENTS
+  NAME  Name of the background job class (e.g. MetricsCollector, Notificatier)
+
+FLAGS
+  -o, --output-dir <path>   Directory to write the generated job into. Defaults to ./src/jobs
+  -a, --author <name>       Author to attribute the generated code to
+  -d, --description <text>  Short description of the job
+  -s, --schedule <cron>     Crontab-style schedule the job runs on (e.g. `* * * * *` runs every minute)
+  -f, --force               Overwrite existing files
+```
+
+**Example:**
+
+```sh
+rapidrest generate job MetricsCollector
+# → creates src/jobs/MetricsCollector.ts and test/jobs/MetricsCollector.test.ts
+
+rapidrest generate job MetricsCollector --schedule "*/5 * * * *" --description "Collects system metrics"
 ```
 
 ---
@@ -199,13 +229,14 @@ FLAGS
   -f, --force          Overwrite existing files
 ```
 
-Inspects the project's configured datastores and generates a `Dockerfile`, `docker-compose.yml`, and supporting scripts tailored to whichever of MongoDB, PostgreSQL, and Redis are in use. This is the same step `generate server` runs automatically when you select Docker at scaffold time — run it directly when you want to add Docker support later, or to regenerate it after adding a new datastore.
+Generates a set of Docker and Docker Compose files with pre-configured databases based on the existing project configuration.
 
 **Example:**
 
 ```sh
 cd my-api
 rapidrest generate docker
+docker-compose up
 ```
 
 ---
@@ -223,9 +254,7 @@ FLAGS
   -f, --force          Overwrite existing files
 ```
 
-Generates a Helm chart under `helm/`, tailored to the project's configured datastores. The chart templates use `[[ ]]` delimiters for RapidREST template variables, so Helm's own `{{ }}` Go-template expressions are preserved untouched.
-
-Like `generate docker`, this runs automatically from `generate server` when Kubernetes (Helm) is selected — run it directly to add the chart later or regenerate it after adding a new datastore.
+Generates a Helm chart under `helm/`, tailored to the project's configured datastores.
 
 **Example:**
 
@@ -238,7 +267,7 @@ rapidrest generate k8s
 
 ### `rapidrest generate react NAME`
 
-Add a RapidREST-managed React frontend to the current project.
+Add a RapidREST-managed React frontend application to the current project.
 
 ```
 USAGE
@@ -256,14 +285,13 @@ FLAGS
   -f, --force          Overwrite existing files
 ```
 
-Adds a [Vite](https://vitejs.dev/)-based React app under `app/`, wires it into the project's routing, and adds `@rapidrest/react` as a dependency. Once configured, the `dev` and `start` commands automatically detect the frontend and include Vite in the build/watch pipeline.
-
 **Example:**
 
 ```sh
 cd my-api
 rapidrest generate react app
 rapidrest generate react app --path /dashboard --hydrate
+rapidrest dev
 ```
 
 ---
