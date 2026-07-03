@@ -194,7 +194,7 @@ rapidrest generate route ProductRoute --model Product --cache --protect
 
 ### `rapidrest generate job NAME`
 
-Generate a RapidREST background job inside the current project.
+Generate a new background job inside the current project.
 
 ```
 USAGE

@@ -1,698 +1,669 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="317" failures="1" errors="0" time="90.1781412">
-    <testsuite name="test/commands/dev.test.ts" timestamp="2026-07-03T01:18:28.833Z" hostname="Bean" tests="21" failures="0" errors="0" skipped="0" time="8.9969729">
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; spawns tsx from the project node_modules/.bin with --watch src/server.ts" time="0.8005707">
+<testsuites name="vitest tests" tests="317" failures="0" errors="0" time="98.7767625">
+    <testsuite name="test/commands/dev.test.ts" timestamp="2026-07-03T05:42:24.879Z" hostname="Bean" tests="21" failures="0" errors="0" skipped="0" time="9.4927319">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; spawns tsx from the project node_modules/.bin with --watch src/server.ts" time="0.8201524">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; prepends --inspect=0.0.0.0:9229 to tsx args when --inspect is passed" time="0.44968">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; prepends --inspect=0.0.0.0:9229 to tsx args when --inspect is passed" time="0.467682">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; passes db env vars into the tsx process environment" time="0.4025745">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; passes db env vars into the tsx process environment" time="0.4307238">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; includes project node_modules/.bin in PATH for the server process" time="0.4178585">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; includes project node_modules/.bin in PATH for the server process" time="0.434364">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.4052062">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.4357253">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.4017641">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.4257263">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls server.stop() on each started database after the server exits" time="0.42857">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls server.stop() on each started database after the server exits" time="0.4301787">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; does not throw when no databases are configured" time="0.4034316">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; does not throw when no databases are configured" time="0.4278979">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; does not spawn vite when detectReact returns false" time="0.4008844">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; does not spawn vite when detectReact returns false" time="0.4223092">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; spawns vite build --watch concurrently when detectReact returns true" time="0.4046419">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; spawns vite build --watch concurrently when detectReact returns true" time="0.4446865">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; vite process receives the same db env vars as the server" time="0.3997306">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; vite process receives the same db env vars as the server" time="0.4233649">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.416215">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.449007">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.4109062">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.4389663">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns the tsx server when --docker is set" time="0.3988798">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns the tsx server when --docker is set" time="0.4237445">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; passes no db env vars to the tsx process when --docker is set" time="0.4068876">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; passes no db env vars to the tsx process when --docker is set" time="0.4326261">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.4089585">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.4283865">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns vite in watch mode when --docker is set and React is configured" time="0.4112975">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns vite in watch mode when --docker is set and React is configured" time="0.4226331">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process" time="0.4052736">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process" time="0.4204029">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process in --docker mode" time="0.4132052">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process in --docker mode" time="0.4328307">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.4082662">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.4235802">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; vite process receives the same shell env vars as the tsx server" time="0.4000275">
-        </testcase>
-    </testsuite>
-    <testsuite name="test/commands/start.test.ts" timestamp="2026-07-03T01:18:28.839Z" hostname="Bean" tests="27" failures="0" errors="0" skipped="0" time="11.440207">
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --no-build flag &gt; skips the build step entirely and goes straight to starting the server" time="0.7899597">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --no-build flag &gt; does not call detectReact when --no-build is set" time="0.4259696">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs npm run build when no yarn.lock or packageManager field exists" time="0.4076992">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs yarn build when yarn.lock is present" time="0.4039516">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs yarn build when packageManager field starts with &quot;yarn&quot;" time="0.4098689">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; spawns node with a server.js path" time="0.4094607">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; checks for server files relative to the project cwd, not the node binary path" time="0.4096883">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; falls back to dist/server.js when no specific layout is detected" time="0.4025276">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; uses dist/server/server.js when existsSync returns true for that path (first check)" time="0.4081237">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; uses dist/src/server.js when the first check fails but the second succeeds" time="0.4291925">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; passes db env vars into the server process environment" time="0.4097926">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.4018894">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.4207681">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; calls server.stop() on each started database after server exits" time="0.3997258">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.4146423">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.415421">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; still spawns the server process when --docker is set" time="0.4021202">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; passes no db env vars to the server process when --docker is set" time="0.4042885">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; still runs the build step when --docker is set without --no-build" time="0.4041741">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.4089661">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; passes shell env vars through to the server process" time="0.409068">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; passes shell env vars through to the server process in --docker mode" time="0.4189053">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.4079036">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; build commands inherit the shell environment implicitly (no explicit env stripping)" time="0.4027105">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; does not run vite build when detectReact returns false" time="0.4125003">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; runs vite build between the main build and server startup when detectReact is true" time="0.4087034">
-        </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; skips vite build when --no-build is set even if detectReact would return true" time="0.3999206">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; vite process receives the same shell env vars as the tsx server" time="0.4556431">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/db.test.ts" timestamp="2026-07-03T01:18:28.843Z" hostname="Bean" tests="11" failures="0" errors="0" skipped="0" time="5.1853261">
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects mongodb from type: &quot;mongodb&quot; in datastores" time="0.0084073">
+    <testsuite name="test/commands/start.test.ts" timestamp="2026-07-03T05:42:24.886Z" hostname="Bean" tests="27" failures="0" errors="0" skipped="0" time="12.0029883">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --no-build flag &gt; skips the build step entirely and goes straight to starting the server" time="0.815855">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects redis from type: &quot;redis&quot; in datastores" time="0.0028769">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --no-build flag &gt; does not call detectReact when --no-build is set" time="0.4559256">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects postgresql from type: &quot;postgresql&quot; in datastores" time="0.0023743">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs npm run build when no yarn.lock or packageManager field exists" time="0.4431432">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects multiple database types from a single config" time="0.0034801">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs yarn build when yarn.lock is present" time="0.4508303">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; handles single-quoted type values" time="0.0027944">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs yarn build when packageManager field starts with &quot;yarn&quot;" time="0.4227677">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when config has no datastore type strings" time="0.0023428">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; spawns node with a server.js path" time="0.4316514">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when src/config.ts does not exist" time="0.001793">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; checks for server files relative to the project cwd, not the node binary path" time="0.4259298">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts mongodb-memory-server and sets DATASTORES env vars" time="0.5292713">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; falls back to dist/server.js when no specific layout is detected" time="0.4252822">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; sets no env vars and spawns no processes when no databases configured" time="0.0004252">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; uses dist/server/server.js when existsSync returns true for that path (first check)" time="0.4391574">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts redis-memory-server and sets DATASTORES env vars" time="0.7880488">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; uses dist/src/server.js when the first check fails but the second succeeds" time="0.4312928">
         </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts postgres-memory-server and sets DATASTORES env vars" time="3.8413159">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; passes db env vars into the server process environment" time="0.4265566">
         </testcase>
-    </testsuite>
-    <testsuite name="test/lib/patch.test.ts" timestamp="2026-07-03T01:18:28.845Z" hostname="Bean" tests="31" failures="0" errors="0" skipped="0" time="0.0654909">
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; inserts a snippet before the closing brace of the named block" time="0.0021178">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.4273372">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; is a no-op when idempotencyKey already appears as a depth-1 property" time="0.0003796">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.425169">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; inserts when idempotencyKey does not match any existing property" time="0.0001732">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; calls server.stop() on each started database after server exits" time="0.4344893">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; throws a descriptive error when the named block does not exist" time="0.0009303">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.4262679">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; handles an empty block" time="0.0001971">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.422047">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; does not match property names inside string literals" time="0.0001985">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; still spawns the server process when --docker is set" time="0.4282095">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; skips property names inside // comments when checking idempotency" time="0.0001271">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; passes no db env vars to the server process when --docker is set" time="0.4370909">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; replaces the value of the named property inside the block" time="0.000434">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; still runs the build step when --docker is set without --no-build" time="0.4267092">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; is a no-op when the value is already the desired value" time="0.0001806">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.4273574">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; preserves all other content outside the changed property" time="0.0001881">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; passes shell env vars through to the server process" time="0.427634">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; throws when the named block does not exist" time="0.0002263">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; passes shell env vars through to the server process in --docker mode" time="0.422573">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; returns source unchanged when the property does not exist in the block" time="0.0001676">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.4276441">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; does not affect same-named properties inside sibling blocks" time="0.0002065">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; build commands inherit the shell environment implicitly (no explicit env stripping)" time="0.4363514">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; handles an object-valued property without corrupting it" time="0.0001935">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; does not run vite build when detectReact returns false" time="0.4198985">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; skips // comments when scanning for property names" time="0.0001389">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; runs vite build between the main build and server startup when detectReact is true" time="0.4180917">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; merges dependencies into an existing package.json object" time="0.0007794">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; patch value wins on scalar conflicts" time="0.0001336">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; deep-merges nested objects independently" time="0.0002072">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; replaces arrays rather than concatenating" time="0.0001366">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; is idempotent: applying the same patch twice yields the same result" time="0.0001671">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; does not mutate the target argument" time="0.0001168">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; handles an empty patch (no-op)" time="0.0001357">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: inserts rendered snippet into the named block" time="0.0152946">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: skips insertion when idempotencyKey is already present" time="0.0055878">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: throws when target file does not exist" time="0.0051692">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: merges dependency entries into existing package.json" time="0.0052177">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: creates the file if it does not exist" time="0.0046504">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: is idempotent — running twice yields the same result" time="0.0062516">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: replaces a property value in the named block" time="0.0048006">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: is idempotent when property already has the desired value" time="0.0048697">
-        </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; skips a patch entirely when condition evaluates to falsy" time="0.0041308">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; skips vite build when --no-build is set even if detectReact would return true" time="0.425594">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/project.test.ts" timestamp="2026-07-03T01:18:28.850Z" hostname="Bean" tests="27" failures="0" errors="0" skipped="0" time="0.0448298">
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns true when vite.config.ts exists" time="0.0057371">
+    <testsuite name="test/lib/db.test.ts" timestamp="2026-07-03T05:42:24.890Z" hostname="Bean" tests="11" failures="0" errors="0" skipped="0" time="8.3371035">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects mongodb from type: &quot;mongodb&quot; in datastores" time="0.0100507">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false when vite.config.ts does not exist" time="0.0011606">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects redis from type: &quot;redis&quot; in datastores" time="0.0035452">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false for a non-existent directory" time="0.0009735">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects postgresql from type: &quot;postgresql&quot; in datastores" time="0.002758">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns a string author field" time="0.002469">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects multiple database types from a single config" time="0.0030889">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns the name from an object author field" time="0.0019786">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; handles single-quoted type values" time="0.0033412">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author is an empty string" time="0.0018935">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when config has no datastore type strings" time="0.0025395">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author field is absent" time="0.0017019">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when src/config.ts does not exist" time="0.0014078">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json does not exist" time="0.001483">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts mongodb-memory-server and sets DATASTORES env vars" time="1.7247921">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json is invalid JSON" time="0.001949">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; sets no env vars and spawns no processes when no databases configured" time="0.0004564">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; extracts name and type for each top-level datastore property" time="0.0013195">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts redis-memory-server and sets DATASTORES env vars" time="1.3187276">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; handles multi-line datastore objects" time="0.0002027">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; returns an empty array when there is no datastores block" time="0.000109">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; returns empty type when the datastore object has no type field" time="0.000156">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; does not confuse nested type fields with the top-level one" time="0.0001287">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; ignores type values inside string literals" time="0.0001181">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; skips // line comments" time="0.0001108">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectDatastores &gt; reads datastores from src/config.ts" time="0.0027618">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectDatastores &gt; returns an empty array when src/config.ts does not exist" time="0.0013283">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; extracts the datastore name from a @DataStore decorator" time="0.0001948">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; handles double-quoted strings" time="0.0001227">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; returns an empty string when no @DataStore decorator is present" time="0.000097">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; returns the class name (filename without .ts) for each model file" time="0.0034947">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; excludes .d.ts declaration files" time="0.0028804">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; returns an empty array when src/models does not exist" time="0.001728">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; reads the @DataStore value from the named model file" time="0.003695">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; returns an empty string when the model file does not exist" time="0.0019344">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; returns an empty string when the model has no @DataStore decorator" time="0.0031479">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts postgres-memory-server and sets DATASTORES env vars" time="5.2637793">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/prompts.test.ts" timestamp="2026-07-03T01:18:28.855Z" hostname="Bean" tests="8" failures="0" errors="0" skipped="0" time="0.0060853">
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; always calls input() and returns whatever the user enters" time="0.0021918">
+    <testsuite name="test/lib/patch.test.ts" timestamp="2026-07-03T05:42:24.893Z" hostname="Bean" tests="31" failures="0" errors="0" skipped="0" time="0.0666725">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; inserts a snippet before the closing brace of the named block" time="0.0021491">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses git config author as the default value for the prompt" time="0.000225">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; is a no-op when idempotencyKey already appears as a depth-1 property" time="0.0003704">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses package.json author as the default when git config is not set and cwd is provided" time="0.0011456">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; inserts when idempotencyKey does not match any existing property" time="0.0001794">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; prefers git config over package.json when both are available" time="0.0003347">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; throws a descriptive error when the named block does not exist" time="0.0008488">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses undefined as the default when neither git config nor package.json has an author" time="0.0002024">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; handles an empty block" time="0.0001385">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; does not call readProjectAuthor when no cwd is provided" time="0.0001547">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; does not match property names inside string literals" time="0.0001868">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; does not call readProjectAuthor when git config returns an author" time="0.0001628">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; skips property names inside // comments when checking idempotency" time="0.0001328">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; passes the correct message and required flag to input()" time="0.0001669">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; replaces the value of the named property inside the block" time="0.0004097">
         </testcase>
-    </testsuite>
-    <testsuite name="test/lib/template-integration.test.ts" timestamp="2026-07-03T01:18:28.857Z" hostname="Bean" tests="27" failures="1" errors="0" skipped="0" time="0.4659843">
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates the route file and no scaffolding artifacts" time="0.0249367">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; is a no-op when the value is already the desired value" time="0.0001707">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates a model-extended route when model is provided" time="0.0138692">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; preserves all other content outside the changed property" time="0.0002216">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates a plain route (no model class) when model is empty" time="0.0106884">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; throws when the named block does not exist" time="0.0002046">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; generates the test file" time="0.0129254">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; returns source unchanged when the property does not exist in the block" time="0.0002026">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; includes mongo-specific imports when datastoreType is mongodb" time="0.0124254">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; does not affect same-named properties inside sibling blocks" time="0.0002173">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; omits mongo-specific imports when datastoreType is not mongodb" time="0.0105478">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; handles an object-valued property without corrupting it" time="0.0001871">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; generates the model file under src/models/ and no scaffolding artifacts" time="0.0069043">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; skips // comments when scanning for property names" time="0.0001445">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; emits Mongo entity imports when datastoreType is mongodb" time="0.0081579">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; merges dependencies into an existing package.json object" time="0.0007801">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; emits SQL entity imports when datastoreType is not mongodb" time="0.0074597">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; patch value wins on scalar conflicts" time="0.000147">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; generates the job source and test files with no scaffolding artifacts" time="0.0073985">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; deep-merges nested objects independently" time="0.0002209">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; substitutes description, schedule, and author into the job source" time="0.0081234">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; replaces arrays rather than concatenating" time="0.0001475">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; references the generated job class from the test file" time="0.0077679">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; is idempotent: applying the same patch twice yields the same result" time="0.0001776">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react &gt; generates app files, route file, and vite config with no scaffolding artifacts" time="0.0204343">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; does not mutate the target argument" time="0.0001173">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react &gt; merges react dependencies into package.json via patch" time="0.0176776">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; handles an empty patch (no-op)" time="0.0001372">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; generates the page component under apps/&lt;app&gt;/&lt;name&gt;/index.tsx and a flat service class, with no scaffolding artifacts" time="0.0084785">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: inserts rendered snippet into the named block" time="0.0157497">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; omits the service class when service is disabled" time="0.0081155">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: skips insertion when idempotencyKey is already present" time="0.0059396">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; omits the client-side fetchProps helper when a service class is used" time="0.0078817">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: throws when target file does not exist" time="0.0045126">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; includes the client-side fetchProps helper when no service class is used" time="0.0059191">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: merges dependency entries into existing package.json" time="0.0051745">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; substitutes app, name, and author into the generated service class" time="0.0172331">
-            <failure message="expected &apos;/////////////////////////////////////…&apos; to contain &apos;@ReactService(&quot;Dashboard&quot;)&apos;" type="AssertionError">
-AssertionError: expected &apos;/////////////////////////////////////…&apos; to contain &apos;@ReactService(&quot;Dashboard&quot;)&apos;
-
-- Expected
-+ Received
-
-- @ReactService(&quot;Dashboard&quot;)
-+ ///////////////////////////////////////////////////////////////////////////////
-+ // Copyright (C) 2025 Test
-+ ///////////////////////////////////////////////////////////////////////////////
-+ import { ReactService } from &quot;@rapidrest/react&quot;;
-+ 
-+ /**
-+  * Provides DI-compatible server side fetching of data/props for the React app
-+  * app&apos;s Dashboard page. 
-+  * 
-+  * @author Test
-+  */
-+ @ReactService(&quot;app/Dashboard&quot;)
-+ export default class DashboardService {
-+     public async fetchProps(): Promise&lt;any&gt; {
-+         return {};
-+     }
-+ }
-
- ❯ test/lib/template-integration.test.ts:268:23
- ❯ withTmpDir test/lib/template-integration.test.ts:22:9
- ❯ test/lib/template-integration.test.ts:265:5
-            </failure>
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: creates the file if it does not exist" time="0.0048683">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; nested page paths &gt; nests the page component under the full subpath while keeping the service class flat" time="0.0101527">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: is idempotent — running twice yields the same result" time="0.0060776">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; nested page paths &gt; uses the PascalCased className for the component and service identifiers" time="0.0095683">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: replaces a property value in the named block" time="0.0051731">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; generates core server files when all optional features are disabled" time="0.0384532">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: is idempotent when property already has the desired value" time="0.0053992">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes GitHub CI workflow when scm.github is enabled" time="0.040279">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes database model and routes when features.hasDatabase is enabled" time="0.0407029">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes the database route tests under test/routes when features.hasDatabase is enabled" time="0.0420018">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; excludes the database route tests when features.hasDatabase is disabled" time="0.0327694">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; does not include react app files when features.react is disabled" time="0.0323924">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; skips a patch entirely when condition evaluates to falsy" time="0.0041652">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/template.test.ts" timestamp="2026-07-03T01:18:28.863Z" hostname="Bean" tests="21" failures="0" errors="0" skipped="0" time="0.108444">
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{variable}} in file content" time="0.0123679">
+    <testsuite name="test/lib/project.test.ts" timestamp="2026-07-03T05:42:24.899Z" hostname="Bean" tests="27" failures="0" errors="0" skipped="0" time="0.0536811">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns true when vite.config.ts exists" time="0.0064782">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{name}} placeholders in output file paths" time="0.0054779">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false when vite.config.ts does not exist" time="0.0012247">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; evaluates {{#if}} Handlebars conditionals in content" time="0.0056159">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false for a non-existent directory" time="0.0008769">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; copies binary files (.cjs, .gz) byte-for-byte without Handlebars processing" time="0.0029788">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns a string author field" time="0.0026062">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a file when its manifest condition is false" time="0.0045855">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns the name from an object author field" time="0.0023781">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; includes a file when its manifest condition is true" time="0.0034729">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author is an empty string" time="0.0022611">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a directory subtree when its manifest condition is false" time="0.0031125">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author field is absent" time="0.0024959">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; preserves ${{ }} GitHub Actions syntax unchanged" time="0.0034818">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json does not exist" time="0.0015999">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; throws when an output file already exists and force is not set" time="0.0022694">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json is invalid JSON" time="0.0023371">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; overwrites an existing output file when force is true" time="0.0032172">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; extracts name and type for each top-level datastore property" time="0.0010312">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; creates nested output directories for files in subdirectories" time="0.004393">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; handles multi-line datastore objects" time="0.0002453">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; does not copy patch template files into the output directory" time="0.0052581">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; returns an empty array when there is no datastores block" time="0.0001494">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; applies a json-merge patch to the project directory after file generation" time="0.0058983">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; returns empty type when the datastore object has no type field" time="0.0001176">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; skips a patch when its condition is falsy in the context" time="0.0045609">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; does not confuse nested type fields with the top-level one" time="0.000138">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; applies a ts-block-insert patch to src/config.ts in the project directory" time="0.0069224">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; ignores type values inside string literals" time="0.0002471">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ varname ]] in Helm files" time="0.0034055">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; skips // line comments" time="0.0001706">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; resolves [[#if condition]]...[[/if]] blocks in Helm files" time="0.0032881">
+        <testcase classname="test/lib/project.test.ts" name="readProjectDatastores &gt; reads datastores from src/config.ts" time="0.0033326">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; preserves Helm {{ }} Go-template expressions in helmPaths files" time="0.0040473">
+        <testcase classname="test/lib/project.test.ts" name="readProjectDatastores &gt; returns an empty array when src/config.ts does not exist" time="0.0014985">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; handles nested [[#if]] blocks in Helm files" time="0.0033797">
+        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; extracts the datastore name from a @DataStore decorator" time="0.0003074">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ dotted.path ]] from nested context in Helm files" time="0.0034518">
+        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; handles double-quoted strings" time="0.0001861">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; files outside helmPaths still use Handlebars {{ }} normally" time="0.0052646">
+        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; returns an empty string when no @DataStore decorator is present" time="0.0001453">
         </testcase>
-    </testsuite>
-    <testsuite name="test/commands/generate/docker.test.ts" timestamp="2026-07-03T01:18:28.866Z" hostname="Bean" tests="19" failures="0" errors="0" skipped="0" time="8.2162778">
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; passes datastores from the project config into context" time="0.8004723">
+        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; returns the class name (filename without .ts) for each model file" time="0.0039391">
         </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; includes the current year in context" time="0.434802">
+        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; excludes .d.ts declaration files" time="0.0040614">
         </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; includes project_name from package.json in context" time="0.4070743">
+        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; returns an empty array when src/models does not exist" time="0.0021409">
         </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasMongoDB true when any datastore type is mongodb" time="0.4124214">
+        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; reads the @DataStore value from the named model file" time="0.0043563">
         </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasPostgres true when any datastore type is postgresql" time="0.4070493">
+        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; returns an empty string when the model file does not exist" time="0.0024751">
         </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasRedis true when any datastore type is redis" time="0.4049083">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets all boolean flags true when all three types are present" time="0.4231682">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets all boolean flags false when datastores is empty" time="0.4291264">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; ignores unknown datastore types for boolean flags" time="0.4083488">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; uses process.cwd() as the output directory when --output-dir is not set" time="0.4157445">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; uses --output-dir as the output directory and project source when provided" time="0.4151187">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; points processTemplate at the docker template directory" time="0.4048107">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4076412">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.3995295">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; calls readProjectDatastores with the current working directory" time="0.4159517">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; calls readProjectName with the current working directory" time="0.4152924">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; sets pkgMgr.npm true and pkgMgr.yarn false when detectPackageManager returns npm" time="0.3989346">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; sets pkgMgr.yarn true and pkgMgr.npm false when detectPackageManager returns yarn" time="0.4082233">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; calls detectPackageManager with the project cwd" time="0.4056491">
+        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; returns an empty string when the model has no @DataStore decorator" time="0.0045423">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/job.test.ts" timestamp="2026-07-03T01:18:28.869Z" hostname="Bean" tests="12" failures="0" errors="0" skipped="0" time="5.4001835">
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.7933115">
+    <testsuite name="test/lib/prompts.test.ts" timestamp="2026-07-03T05:42:24.903Z" hostname="Bean" tests="8" failures="0" errors="0" skipped="0" time="0.0061839">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; always calls input() and returns whatever the user enters" time="0.0023962">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; context building &gt; includes project_name from the project config in the context" time="0.4306645">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses git config author as the default value for the prompt" time="0.0002334">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.4200555">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses package.json author as the default when git config is not set and cwd is provided" time="0.0011633">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --schedule skips the schedule input prompt" time="0.4149029">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; prefers git config over package.json when both are available" time="0.0003391">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4023364">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses undefined as the default when neither git config nor package.json has an author" time="0.0001815">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; skips all prompts when description, schedule, and author flags are all provided" time="0.420024">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; does not call readProjectAuthor when no cwd is provided" time="0.0001631">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4548823">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; does not call readProjectAuthor when git config returns an author" time="0.0001422">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.4074593">
-        </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; uses --output-dir when provided" time="0.4131157">
-        </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4063082">
-        </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; passes projectDir: cwd to processTemplate" time="0.4288938">
-        </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; points processTemplate at the job template directory" time="0.4064177">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; passes the correct message and required flag to input()" time="0.0001567">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/k8s.test.ts" timestamp="2026-07-03T01:18:28.871Z" hostname="Bean" tests="16" failures="0" errors="0" skipped="0" time="7.1387127">
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; passes datastores from the project config into context" time="0.8003202">
+    <testsuite name="test/lib/template-integration.test.ts" timestamp="2026-07-03T05:42:24.905Z" hostname="Bean" tests="27" failures="0" errors="0" skipped="0" time="0.5995694">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates the route file and no scaffolding artifacts" time="0.0306562">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; includes the current year in context" time="0.4269846">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates a model-extended route when model is provided" time="0.0138177">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; includes project_name from package.json in context" time="0.4220355">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates a plain route (no model class) when model is empty" time="0.0112767">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasMongoDB true when any datastore type is mongodb" time="0.4215663">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; generates the test file" time="0.0138917">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasPostgres true when any datastore type is postgresql" time="0.4100614">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; includes mongo-specific imports when datastoreType is mongodb" time="0.0129554">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasRedis true when any datastore type is redis" time="0.4140144">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; omits mongo-specific imports when datastoreType is not mongodb" time="0.01067">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets all boolean flags true when all three types are present" time="0.4352979">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; generates the model file under src/models/ and no scaffolding artifacts" time="0.0100957">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets all boolean flags false when datastores is empty" time="0.4106976">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; emits Mongo entity imports when datastoreType is mongodb" time="0.0090389">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; ignores unknown datastore types for boolean flags" time="0.4056924">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; emits SQL entity imports when datastoreType is not mongodb" time="0.0086078">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; uses process.cwd() as the output directory when --output-dir is not set" time="0.435925">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; generates the job source and test files with no scaffolding artifacts" time="0.0148948">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; uses --output-dir as the output directory and project source when provided" time="0.4271205">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; substitutes description, schedule, and author into the job source" time="0.0085555">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; points processTemplate at the helm template directory" time="0.4104857">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; references the generated job class from the test file" time="0.0075376">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4163091">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react &gt; generates app files, route file, and vite config with no scaffolding artifacts" time="0.0291508">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.4530521">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react &gt; merges react dependencies into package.json via patch" time="0.0214927">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; calls readProjectDatastores with the current working directory" time="0.4346179">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; generates the page component under apps/&lt;app&gt;/&lt;name&gt;/index.tsx and a flat service class, with no scaffolding artifacts" time="0.0120755">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; calls readProjectName with the current working directory" time="0.4125408">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; omits the service class when service is disabled" time="0.0067959">
         </testcase>
-    </testsuite>
-    <testsuite name="test/commands/generate/model.test.ts" timestamp="2026-07-03T01:18:28.873Z" hostname="Bean" tests="30" failures="0" errors="0" skipped="0" time="13.1162365">
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.8437107">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; omits the client-side fetchProps helper when a service class is used" time="0.009027">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; prompts for a cache TTL when --cache is omitted entirely" time="0.4269815">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; includes the client-side fetchProps helper when no service class is used" time="0.0066667">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; includes protect: false when the protect prompt answers no" time="0.4108925">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; substitutes app, name, and author into the generated service class" time="0.0097317">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; disables caching when the interactive cache prompt returns an empty string" time="0.4620924">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; nested page paths &gt; nests the page component under the full subpath while keeping the service class flat" time="0.0101417">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; sets isMongoDb true and other db booleans false when datastoreType is mongodb" time="0.4585379">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; nested page paths &gt; uses the PascalCased className for the component and service identifiers" time="0.0114403">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; includes project_name from package.json in the context" time="0.4302688">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; generates core server files when all optional features are disabled" time="0.0684312">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; shows only non-acl datastores in the select choices, plus a new option" time="0.45737">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes GitHub CI workflow when scm.github is enabled" time="0.0699304">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; resolves datastoreType from the config list for the selected name" time="0.4507563">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes database model and routes when features.hasDatabase is enabled" time="0.0612192">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; selecting &quot;+ New datastore...&quot; prompts for db type and uses it as both name and type" time="0.4471983">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes the database route tests under test/routes when features.hasDatabase is enabled" time="0.047353">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; does not show the &quot;set up new database&quot; prompt when datastores are configured" time="0.4442615">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; excludes the database route tests when features.hasDatabase is disabled" time="0.036726">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — no configured datastores &gt; asks to set up a new database and selects the type when the user says yes" time="0.4079642">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — no configured datastores &gt; sets datastore and datastoreType to empty string when the user declines" time="0.4061777">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --datastore skips the datastore select but still resolves datastoreType from config" time="0.4385715">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --datastore leaves datastoreType empty when the name is not in the project config" time="0.4237181">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.4097746">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with a value overrides the default TTL and skips the cache prompt" time="0.409417">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with no value defaults to &quot;60&quot; and skips the cache prompt" time="0.4033552">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with no value still resolves to &quot;60&quot; when immediately followed by another flag" time="0.4264556">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; explicitly setting --cache to an empty string disables caching" time="0.4392184">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --protect skips the protect confirm prompt" time="0.4357846">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4152724">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4075819">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.4122563">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4221313">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; points processTemplate at the model template directory" time="0.4152307">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; does not call GenerateDocker or GenerateHelm when an existing datastore is selected" time="0.3958203">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update docker when a new datastore is added and docker-compose.yml exists" time="0.3994126">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; skips docker update when the user declines" time="0.408555">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update helm when a new datastore is added and helm/Chart.yaml exists" time="0.3996454">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update both docker and helm when both exist for a new datastore" time="0.4055597">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; does not include react app files when features.react is disabled" time="0.0444728">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/react-page.test.ts" timestamp="2026-07-03T01:18:28.878Z" hostname="Bean" tests="14" failures="0" errors="0" skipped="0" time="6.1440815">
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.7963146">
+    <testsuite name="test/lib/template.test.ts" timestamp="2026-07-03T05:42:24.909Z" hostname="Bean" tests="21" failures="0" errors="0" skipped="0" time="0.1123214">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{variable}} in file content" time="0.0135419">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; includes service: false when the service prompt answers no" time="0.4350054">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{name}} placeholders in output file paths" time="0.0062651">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; includes project_name from the project config in the context" time="0.4114482">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; evaluates {{#if}} Handlebars conditionals in content" time="0.0055733">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; keeps name as the raw path but PascalCases className for a nested path" time="0.4133215">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; copies binary files (.cjs, .gz) byte-for-byte without Handlebars processing" time="0.0032123">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; capitalizes a single lowercase segment" time="0.4041613">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a file when its manifest condition is false" time="0.0047801">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; joins hyphen- and underscore-separated words within a segment" time="0.4069247">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; includes a file when its manifest condition is true" time="0.0032687">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; flag shortcuts bypass prompts &gt; --service skips the service confirm prompt" time="0.4123576">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a directory subtree when its manifest condition is false" time="0.002808">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.407041">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; preserves ${{ }} GitHub Actions syntax unchanged" time="0.0027444">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4080382">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; throws when an output file already exists and force is not set" time="0.0019959">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.4066569">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; overwrites an existing output file when force is true" time="0.0030252">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; uses --output-dir when provided" time="0.4093159">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; creates nested output directories for files in subdirectories" time="0.0043481">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4092395">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; does not copy patch template files into the output directory" time="0.0053344">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.4077813">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; applies a json-merge patch to the project directory after file generation" time="0.0063308">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; points processTemplate at the react-page template directory" time="0.4146095">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; skips a patch when its condition is falsy in the context" time="0.0049168">
         </testcase>
-    </testsuite>
-    <testsuite name="test/commands/generate/react.test.ts" timestamp="2026-07-03T01:18:28.880Z" hostname="Bean" tests="12" failures="0" errors="0" skipped="0" time="5.3677686">
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.7927738">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; applies a ts-block-insert patch to src/config.ts in the project directory" time="0.0074789">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes hydrate: false when the hydrate select answers no" time="0.4381953">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ varname ]] in Helm files" time="0.0037503">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes project_name from package.json in the context" time="0.4081393">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; resolves [[#if condition]]...[[/if]] blocks in Helm files" time="0.0035707">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; uses the app name as the default suggestion for the path prompt" time="0.4134023">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; preserves Helm {{ }} Go-template expressions in helmPaths files" time="0.0042516">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --path skips the path input prompt" time="0.4095531">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; handles nested [[#if]] blocks in Helm files" time="0.0037691">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --hydrate skips the hydrate confirm prompt" time="0.4009379">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ dotted.path ]] from nested context in Helm files" time="0.003701">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4136257">
-        </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4284381">
-        </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; uses the project root as the default output directory" time="0.4191362">
-        </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4300982">
-        </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.3966121">
-        </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; points processTemplate at the react template directory" time="0.4149537">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; files outside helmPaths still use Handlebars {{ }} normally" time="0.0056354">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/route.test.ts" timestamp="2026-07-03T01:18:28.882Z" hostname="Bean" tests="16" failures="0" errors="0" skipped="0" time="7.0072242">
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.7868857">
+    <testsuite name="test/commands/generate/docker.test.ts" timestamp="2026-07-03T05:42:24.913Z" hostname="Bean" tests="19" failures="0" errors="0" skipped="0" time="8.5868252">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; passes datastores from the project config into context" time="0.8010531">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; resolves datastoreType from the model&apos;s @DataStore decorator via the project config" time="0.4378738">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; includes the current year in context" time="0.4531877">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; sets datastore and datastoreType to empty when model is &quot;(none)&quot;" time="0.4115715">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; includes project_name from package.json in context" time="0.4357081">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; leaves datastoreType empty when the model has no @DataStore decorator" time="0.4183132">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasMongoDB true when any datastore type is mongodb" time="0.413715">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; shows a select with &quot;(none)&quot;, project models, and a &quot;+ New model...&quot; option" time="0.4141308">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasPostgres true when any datastore type is postgresql" time="0.4149826">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; runs generate model inline when &quot;+ New model...&quot; is selected and uses the newly created model" time="0.3995233">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasRedis true when any datastore type is redis" time="0.426198">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; falls back to a free-form input when no models exist in the project" time="0.4105975">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets all boolean flags true when all three types are present" time="0.4384856">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; --no-model skips all model prompts and leaves model undefined in context" time="0.4091001">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets all boolean flags false when datastores is empty" time="0.4466399">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --model skips the model select and resolves datastore from the named model file" time="0.4299833">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; ignores unknown datastore types for boolean flags" time="0.4187079">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.4078184">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; uses process.cwd() as the output directory when --output-dir is not set" time="0.4240098">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --path skips the route path input prompt" time="0.4247069">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; uses --output-dir as the output directory and project source when provided" time="0.4222274">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --protect skips the protect confirm prompt" time="0.4192805">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; points processTemplate at the docker template directory" time="0.4214422">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4098151">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4498742">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4122629">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.449851">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; output and template options &gt; uses project root as the default output directory for the route file" time="0.4043627">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; calls readProjectDatastores with the current working directory" time="0.4551966">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; output and template options &gt; passes force: true to both processTemplate calls when --force is set" time="0.4089395">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; calls readProjectName with the current working directory" time="0.4247127">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; sets pkgMgr.npm true and pkgMgr.yarn false when detectPackageManager returns npm" time="0.4189245">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; sets pkgMgr.yarn true and pkgMgr.npm false when detectPackageManager returns yarn" time="0.449704">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; calls detectPackageManager with the project cwd" time="0.4201479">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/server.test.ts" timestamp="2026-07-03T01:18:28.884Z" hostname="Bean" tests="25" failures="0" errors="0" skipped="0" time="11.4743161">
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; builds the correct base context from prompts" time="0.8012067">
+    <testsuite name="test/commands/generate/job.test.ts" timestamp="2026-07-03T05:42:24.916Z" hostname="Bean" tests="12" failures="0" errors="0" skipped="0" time="5.5950292">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.8299014">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps selected database and feature choices to boolean flags on context.features" time="0.4327851">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; context building &gt; includes project_name from the project config in the context" time="0.4400579">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase true when any persistent store is selected" time="1.2214167">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.4448691">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase false when only non-persistent features are selected" time="0.414363">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --schedule skips the schedule input prompt" time="0.4262756">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the SCM choice to a boolean map on context.scm" time="0.417811">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4233799">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the package manager choice to a boolean map on context.pkgMgr" time="0.4111789">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; skips all prompts when description, schedule, and author flags are all provided" time="0.4323407">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses ./&lt;name&gt; as the default output directory" time="0.4246379">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4381794">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses --output-dir when provided" time="0.4229222">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.4142524">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; points processTemplate at the server template directory" time="0.412106">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; uses --output-dir when provided" time="0.4313292">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; passes force: true when --force is set" time="0.4077247">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4266077">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; calls inputAuthor and uses its return value as the author" time="0.408026">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; passes projectDir: cwd to processTemplate" time="0.4533475">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; runs GenerateDocker with --output-dir after server generation when docker is selected" time="0.4157236">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; points processTemplate at the job template directory" time="0.4326012">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; does not run GenerateDocker when docker is not selected" time="0.4013198">
+    </testsuite>
+    <testsuite name="test/commands/generate/k8s.test.ts" timestamp="2026-07-03T05:42:24.919Z" hostname="Bean" tests="16" failures="0" errors="0" skipped="0" time="7.4278065">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; passes datastores from the project config into context" time="0.8142718">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; passes --force to GenerateDocker when --force is set on the server command" time="0.4037021">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; includes the current year in context" time="0.4589592">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.4074703">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; includes project_name from package.json in context" time="0.4407409">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs GenerateHelm with --output-dir after server generation when k8s is selected" time="0.4045388">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasMongoDB true when any datastore type is mongodb" time="0.4284527">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; does not run GenerateHelm when k8s is not selected" time="0.4034075">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasPostgres true when any datastore type is postgresql" time="0.4229699">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; passes --force to GenerateHelm when --force is set on the server command" time="0.4069588">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasRedis true when any datastore type is redis" time="0.4465018">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.4022668">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets all boolean flags true when all three types are present" time="0.4599938">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs both GenerateDocker and GenerateHelm when both features are selected" time="0.4157666">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets all boolean flags false when datastores is empty" time="0.4173521">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs GenerateReact with --output-dir after server generation when react is selected" time="0.4054403">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; ignores unknown datastore types for boolean flags" time="0.4228665">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; does not run GenerateReact when react is not selected" time="0.4041101">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; uses process.cwd() as the output directory when --output-dir is not set" time="0.4422917">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; passes --force to GenerateReact when --force is set on the server command" time="0.4092767">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; uses --output-dir as the output directory and project source when provided" time="0.4478392">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.4183798">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; points processTemplate at the helm template directory" time="0.4544986">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs docker, helm, and react subcommands when all three features are selected" time="0.3996146">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4390494">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.449623">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; calls readProjectDatastores with the current working directory" time="0.4362722">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; calls readProjectName with the current working directory" time="0.4440596">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/model.test.ts" timestamp="2026-07-03T05:42:24.922Z" hostname="Bean" tests="30" failures="0" errors="0" skipped="0" time="14.7426579">
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="1.9275073">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; prompts for a cache TTL when --cache is omitted entirely" time="0.4375592">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; includes protect: false when the protect prompt answers no" time="0.4482954">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; disables caching when the interactive cache prompt returns an empty string" time="0.4552532">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; sets isMongoDb true and other db booleans false when datastoreType is mongodb" time="0.4987173">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; includes project_name from package.json in the context" time="0.4483503">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; shows only non-acl datastores in the select choices, plus a new option" time="0.4848836">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; resolves datastoreType from the config list for the selected name" time="0.4385845">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; selecting &quot;+ New datastore...&quot; prompts for db type and uses it as both name and type" time="0.4446378">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; does not show the &quot;set up new database&quot; prompt when datastores are configured" time="0.4489787">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — no configured datastores &gt; asks to set up a new database and selects the type when the user says yes" time="0.4230628">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — no configured datastores &gt; sets datastore and datastoreType to empty string when the user declines" time="0.4161602">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --datastore skips the datastore select but still resolves datastoreType from config" time="0.4277084">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --datastore leaves datastoreType empty when the name is not in the project config" time="0.4424927">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.4685899">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with a value overrides the default TTL and skips the cache prompt" time="0.4499231">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with no value defaults to &quot;60&quot; and skips the cache prompt" time="0.430176">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with no value still resolves to &quot;60&quot; when immediately followed by another flag" time="0.4555651">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; explicitly setting --cache to an empty string disables caching" time="0.4317201">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --protect skips the protect confirm prompt" time="0.4253307">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4327367">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4385814">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.4317313">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4209698">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; points processTemplate at the model template directory" time="0.4494284">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; does not call GenerateDocker or GenerateHelm when an existing datastore is selected" time="0.4339296">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update docker when a new datastore is added and docker-compose.yml exists" time="0.4295452">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; skips docker update when the user declines" time="0.4344456">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update helm when a new datastore is added and helm/Chart.yaml exists" time="0.4299458">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update both docker and helm when both exist for a new datastore" time="0.4355722">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/react-page.test.ts" timestamp="2026-07-03T05:42:24.928Z" hostname="Bean" tests="14" failures="0" errors="0" skipped="0" time="6.5043393">
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.8530625">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; includes service: false when the service prompt answers no" time="0.4808311">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; includes project_name from the project config in the context" time="0.4335917">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; keeps name as the raw path but PascalCases className for a nested path" time="0.4285301">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; capitalizes a single lowercase segment" time="0.4302129">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; joins hyphen- and underscore-separated words within a segment" time="0.4361219">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; flag shortcuts bypass prompts &gt; --service skips the service confirm prompt" time="0.4516015">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4270991">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4319472">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.4346186">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; uses --output-dir when provided" time="0.4305477">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4213761">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.4238714">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; points processTemplate at the react-page template directory" time="0.4186831">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/react.test.ts" timestamp="2026-07-03T05:42:24.930Z" hostname="Bean" tests="12" failures="0" errors="0" skipped="0" time="5.5364059">
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.8545354">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes hydrate: false when the hydrate select answers no" time="0.4553111">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes project_name from package.json in the context" time="0.4121579">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; uses the app name as the default suggestion for the path prompt" time="0.4073467">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --path skips the path input prompt" time="0.4271419">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --hydrate skips the hydrate confirm prompt" time="0.4118937">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4344088">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.430831">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; uses the project root as the default output directory" time="0.4140463">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4280092">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.4327709">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; points processTemplate at the react template directory" time="0.4260679">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/route.test.ts" timestamp="2026-07-03T05:42:24.932Z" hostname="Bean" tests="16" failures="0" errors="0" skipped="0" time="7.6113125">
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.8314537">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; resolves datastoreType from the model&apos;s @DataStore decorator via the project config" time="0.4360881">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; sets datastore and datastoreType to empty when model is &quot;(none)&quot;" time="0.5203412">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; leaves datastoreType empty when the model has no @DataStore decorator" time="0.4879914">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; shows a select with &quot;(none)&quot;, project models, and a &quot;+ New model...&quot; option" time="0.4480378">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; runs generate model inline when &quot;+ New model...&quot; is selected and uses the newly created model" time="0.4390225">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; falls back to a free-form input when no models exist in the project" time="0.4655883">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; --no-model skips all model prompts and leaves model undefined in context" time="0.4366696">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --model skips the model select and resolves datastore from the named model file" time="0.4422333">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.439772">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --path skips the route path input prompt" time="0.4258225">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --protect skips the protect confirm prompt" time="0.4192915">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4633693">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4671466">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; output and template options &gt; uses project root as the default output directory for the route file" time="0.4593723">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; output and template options &gt; passes force: true to both processTemplate calls when --force is set" time="0.4270537">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/server.test.ts" timestamp="2026-07-03T05:42:24.935Z" hostname="Bean" tests="25" failures="0" errors="0" skipped="0" time="12.101134">
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; builds the correct base context from prompts" time="0.8278757">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps selected database and feature choices to boolean flags on context.features" time="0.4448301">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase true when any persistent store is selected" time="1.3009993">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase false when only non-persistent features are selected" time="0.4321085">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the SCM choice to a boolean map on context.scm" time="0.4374479">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the package manager choice to a boolean map on context.pkgMgr" time="0.441115">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses ./&lt;name&gt; as the default output directory" time="0.4283659">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses --output-dir when provided" time="0.4256219">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; points processTemplate at the server template directory" time="0.4296129">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; passes force: true when --force is set" time="0.4224253">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; calls inputAuthor and uses its return value as the author" time="0.4409466">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; runs GenerateDocker with --output-dir after server generation when docker is selected" time="0.4237349">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; does not run GenerateDocker when docker is not selected" time="0.4262276">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; passes --force to GenerateDocker when --force is set on the server command" time="0.4362439">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.4266549">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs GenerateHelm with --output-dir after server generation when k8s is selected" time="0.4531394">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; does not run GenerateHelm when k8s is not selected" time="0.4366889">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; passes --force to GenerateHelm when --force is set on the server command" time="0.4340662">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.4371863">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs both GenerateDocker and GenerateHelm when both features are selected" time="0.4295408">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs GenerateReact with --output-dir after server generation when react is selected" time="0.4447455">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; does not run GenerateReact when react is not selected" time="0.4282108">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; passes --force to GenerateReact when --force is set on the server command" time="0.4379786">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.4318911">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs docker, helm, and react subcommands when all three features are selected" time="0.4214265">
         </testcase>
     </testsuite>
 </testsuites>
