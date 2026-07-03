@@ -54,7 +54,7 @@
 		"winston-transport": "^4.9.0"
 	},
 	"devDependencies": {
-		"@rapidrest/cli": "^0.6.0",
+		"@rapidrest/cli": "^0.7.0",
 		"@swc/core": "^1.15.41",
 		"@types/nconf": "^0.10.7",
 		{{#if features.react}}"@types/react": "^19",{{/if}}
