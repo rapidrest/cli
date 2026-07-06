@@ -47,8 +47,8 @@ describe('generate route — route template', () => {
       const ctx = { ...baseContext, model: 'Product', datastoreType: 'mongodb' };
       await processTemplate(routeTemplateDir, dir, ctx, { projectDir: dir });
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'ProductRoute.ts'), 'utf-8'));
-      expect(content).toContain('extends ModelRoute<Product>');
-      expect(content).toContain('ModelRoute');
+      expect(content).toContain('extends CRUDRoute<Product>');
+      expect(content).toContain('CRUDRoute');
     });
   });
 
@@ -56,7 +56,7 @@ describe('generate route — route template', () => {
     await withTmpDir(async (dir) => {
       await processTemplate(routeTemplateDir, dir, baseContext, { projectDir: dir });
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'ProductRoute.ts'), 'utf-8'));
-      expect(content).not.toContain('extends ModelRoute');
+      expect(content).not.toContain('extends CRUDRoute');
       expect(content).toContain('hello');
     });
   });
