@@ -1,5 +1,5 @@
 {
-    "extends": "@rapidrest/react/tsconfig/server",
+    "extends": "@rapidrest/service-core/tsconfig",
     "compilerOptions": {
         "rootDir": ".",
         "outDir": "dist",
