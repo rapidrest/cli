@@ -2,7 +2,7 @@
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
 import config from "./config";
-import { request } from "@rapidrest/service-core/dist/lib/test/request.js";
+import { request } from "@rapidrest/service-core/test";
 import {
     {{#if model}}
     ACLRecord,

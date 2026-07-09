@@ -3,7 +3,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 import "reflect-metadata";
 import config from "../config.js";
-import { request } from "@rapidrest/service-core/dist/lib/test/request.js";
+import { request } from "@rapidrest/service-core/test";
 import { Server, ConnectionManager, ACLRecord, ObjectFactory, MongoConnection, MongoRepository } from "@rapidrest/service-core";
 import { EventUtils, JWTUtils, Logger } from "@rapidrest/core";
 import { MongoMemoryServer } from "mongodb-memory-server";
