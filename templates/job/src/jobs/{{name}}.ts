@@ -9,8 +9,8 @@ import { BackgroundService } from "@rapidrest/service-core";
  * @author {{author}}
  */
 export default class {{name}} extends BackgroundService {
-    constructor(config: any, logger: any) {
-        super(config, logger);
+    constructor() {
+        super();
     }
 
     public get schedule(): string | undefined {
