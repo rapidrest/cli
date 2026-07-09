@@ -330,7 +330,7 @@ describe("Route:{{name}} Tests", () => {
             uid: uuid.v4(),
             name: "Kermit the Frog"
         };
-        const token = JWTUtils.createTokenSync(config.get("auth", user));
+        const token = JWTUtils.createTokenSync(config.get("auth"), user);
         const result = await request(server.getApplication())
             .get(baseUrl)
             .set("Authorization", "jwt " + token);
