@@ -55,28 +55,34 @@ const DEFAULT_DATASTORES = [
 ];
 
 // Default prompt order when configured datastores are present and --cache is omitted
-// (the normal case): input(description) → select(datastore name) → input(cache TTL)
-// → confirm(protect) → inputAuthor(cwd).
+// (the normal case): input(description) → select(datastore name) → confirm(enable cache?)
+// → input(cache TTL) → confirm(protect) → inputAuthor(cwd).
 //
 // --cache has three distinct behaviors (see model.ts's resolveCacheArgv):
-//   - omitted entirely      → prompts interactively via input() (defaults to '60')
+//   - omitted entirely      → prompts interactively via confirm()+input() (defaults to '60')
 //   - passed with no value  → resolves to '60' with no prompt
 //   - passed with a value   → uses that value with no prompt
 function stubPrompts({
   description = 'A test model',
   datastore = 'mongo',
+  cacheEnabled = true,
   cache = '60',
   protect = false,
   author,
 }: {
   description?: string;
   datastore?: string;
+  cacheEnabled?: boolean;
   cache?: string;
   protect?: boolean;
   author?: string;
 } = {}) {
-  vi.mocked(input).mockResolvedValueOnce(description).mockResolvedValueOnce(cache);
+  vi.mocked(input).mockResolvedValueOnce(description);
   vi.mocked(select).mockResolvedValueOnce(datastore);
+  vi.mocked(confirm).mockResolvedValueOnce(cacheEnabled);
+  if (cacheEnabled) {
+    vi.mocked(input).mockResolvedValueOnce(cache);
+  }
   vi.mocked(confirm).mockResolvedValueOnce(protect);
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
@@ -114,13 +120,14 @@ describe('generate model', () => {
       });
     });
 
-    it('prompts for a cache TTL when --cache is omitted entirely', async () => {
+    it('prompts for a cache TTL when --cache is omitted entirely and the user enables caching', async () => {
       stubPrompts({ cache: '90', author: 'Author' });
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe('90');
       expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + cache prompt
+      expect(vi.mocked(confirm)).toHaveBeenCalledWith(expect.objectContaining({ message: 'Enable caching for this model?' }));
     });
 
     it('includes protect: false when the protect prompt answers no', async () => {
@@ -131,12 +138,13 @@ describe('generate model', () => {
       expect(context.protect).toBe(false);
     });
 
-    it('disables caching when the interactive cache prompt returns an empty string', async () => {
-      stubPrompts({ cache: '', author: 'Author' });
+    it('disables caching when the user declines the enable-caching prompt', async () => {
+      stubPrompts({ cacheEnabled: false, author: 'Author' });
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe('');
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only, no cache TTL prompt
     });
 
     it('sets isMongoDb true and other db booleans false when datastoreType is mongodb', async () => {
@@ -185,7 +193,9 @@ describe('generate model', () => {
       vi.mocked(select)
         .mockResolvedValueOnce('__new__')  // datastore select → new
         .mockResolvedValueOnce('sqlite');   // db type
-      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // enable caching?
+        .mockResolvedValueOnce(false); // protect
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
@@ -193,16 +203,16 @@ describe('generate model', () => {
       expect(context.datastore).toBe('sqlite');
       expect(context.datastoreType).toBe('sqlite');
       expect(vi.mocked(select)).toHaveBeenCalledTimes(2);  // datastore + db type
-      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1); // protect only
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(2); // enable caching? + protect
     });
 
     it('does not show the "set up new database" prompt when datastores are configured', async () => {
       stubPrompts({ author: 'Author' });
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
-      // 1 select (datastore name) + 1 confirm (protect) — no "set up new?" confirm
+      // 1 select (datastore name) + 2 confirms (enable caching? + protect) — no "set up new?" confirm
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1);
-      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1);
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -215,6 +225,7 @@ describe('generate model', () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
       vi.mocked(confirm)
         .mockResolvedValueOnce(true)   // "set up new?" → yes
+        .mockResolvedValueOnce(true)   // enable caching?
         .mockResolvedValueOnce(false); // protect
       vi.mocked(select).mockResolvedValueOnce('postgres'); // db type
 
@@ -224,13 +235,14 @@ describe('generate model', () => {
       expect(context.datastore).toBe('postgres');
       expect(context.datastoreType).toBe('postgres');
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1);   // db type only
-      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(2);  // setup? + protect
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(3);  // setup? + enable caching? + protect
     });
 
     it('sets datastore and datastoreType to empty string when the user declines', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
       vi.mocked(confirm)
         .mockResolvedValueOnce(false)  // "set up new?" → no
+        .mockResolvedValueOnce(true)   // enable caching?
         .mockResolvedValueOnce(false); // protect
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
@@ -239,14 +251,16 @@ describe('generate model', () => {
       expect(context.datastore).toBe('');
       expect(context.datastoreType).toBe('');
       expect(vi.mocked(select)).not.toHaveBeenCalled();
-      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(2); // setup? + protect
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(3); // setup? + enable caching? + protect
     });
   });
 
   describe('flag shortcuts bypass prompts', () => {
     it('--datastore skips the datastore select but still resolves datastoreType from config', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
-      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // enable caching?
+        .mockResolvedValueOnce(false); // protect
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'mongo'], ROOT);
 
@@ -259,7 +273,9 @@ describe('generate model', () => {
 
     it('--datastore leaves datastoreType empty when the name is not in the project config', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
-      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // enable caching?
+        .mockResolvedValueOnce(false); // protect
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'unknown'], ROOT);
 
@@ -290,6 +306,7 @@ describe('generate model', () => {
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe('300');
       expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only, no cache prompt
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1); // protect only, no enable-caching prompt
     });
 
     it('--cache with no value defaults to "60" and skips the cache prompt', async () => {
@@ -316,10 +333,12 @@ describe('generate model', () => {
       expect(vi.mocked(confirm)).not.toHaveBeenCalled();
     });
 
-    it('explicitly setting --cache to an empty string disables caching', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc');
+    it('explicitly setting --cache to an empty string still triggers the enable-caching prompt', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
       vi.mocked(select).mockResolvedValueOnce('mongo');
-      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // enable caching? → no
+        .mockResolvedValueOnce(false); // protect
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', ''], ROOT);
 
@@ -330,12 +349,13 @@ describe('generate model', () => {
     it('--protect skips the protect confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
       vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(true); // enable caching?
 
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--protect'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.protect).toBe(true);
-      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1); // enable caching? only, no protect confirm
     });
 
     it('--author skips inputAuthor entirely', async () => {
@@ -410,6 +430,7 @@ describe('generate model', () => {
         .mockResolvedValueOnce('__new__')
         .mockResolvedValueOnce('mongodb');
       vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // enable caching?
         .mockResolvedValueOnce(false)  // protect
         .mockResolvedValueOnce(true);  // update docker?
 
@@ -430,6 +451,7 @@ describe('generate model', () => {
         .mockResolvedValueOnce('__new__')
         .mockResolvedValueOnce('mongodb');
       vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // enable caching?
         .mockResolvedValueOnce(false)  // protect
         .mockResolvedValueOnce(false); // update docker? → no
 
@@ -447,6 +469,7 @@ describe('generate model', () => {
         .mockResolvedValueOnce('__new__')
         .mockResolvedValueOnce('mongodb');
       vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // enable caching?
         .mockResolvedValueOnce(false)  // protect
         .mockResolvedValueOnce(true);  // update helm?
 
@@ -465,6 +488,7 @@ describe('generate model', () => {
         .mockResolvedValueOnce('__new__')
         .mockResolvedValueOnce('mongodb');
       vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // enable caching?
         .mockResolvedValueOnce(false)  // protect
         .mockResolvedValueOnce(true)   // update docker?
         .mockResolvedValueOnce(true);  // update helm?

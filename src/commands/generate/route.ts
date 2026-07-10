@@ -26,6 +26,7 @@ export default class GenerateRoute extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    api: Flags.string({ description: "Use @ApiRoute instead of @Route for the generated route(s). Pass a value to specify an api version." }),
     author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
     description: Flags.string({ alias: 'd', description: "The short description of the route."}),
     model: Flags.string({ alias: 'm', description: "The name of the model class this route will serve data for (will extend ModelRoute)."}),
@@ -52,6 +53,15 @@ export default class GenerateRoute extends Command {
       message: 'Enter the base route path (e.g. /api/v1/products):',
       required: true,
     });
+
+    let api = flags.api ?? undefined;
+    if (!api && await confirm({ message: "Is this an API route?" })) {
+      api = await input({
+        message: 'Enter the API version (enter blank for no version prefix):',
+        default: '1',
+        required: true
+      });
+    }
 
     // Model selection — offer existing project models via a select when available.
     let model: string | undefined = undefined;
@@ -110,6 +120,8 @@ export default class GenerateRoute extends Command {
     const generateTest = !flags['no-test'];
 
     const context: Record<string, unknown> = {
+      apiRoute: api !== undefined,
+      apiVersion: api,
       author,
       name: args.name,
       description,

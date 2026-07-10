@@ -19,7 +19,7 @@ const { Summary, Description, Returns } = DocDecorators;
 const {
     Auth,
     Get,
-    Route,
+    {{#if apiRoute}}Api{{/if}}Route,
 } = RouteDecorators;
 const AuthUser = RouteDecorators.User;
 
@@ -29,7 +29,7 @@ const AuthUser = RouteDecorators.User;
  * @author <AUTHOR>
  */
 @Description("Handles all REST API requests for the endpoint `/user/login`.")
-@Route("/")
+@{{#if apiRoute}}Api{{/if}}Route("/auth"{{#if apiVersion}}, "{{apiVersion}}"{{/if}})
 class AuthRoute {
     @Inject(AuthMiddleware)
     private authMiddleware?: AuthMiddleware;
@@ -92,7 +92,7 @@ class AuthRoute {
     @Description("Authenticates the user using HTTP Basic and returns a JSON Web Token access token to be used with future API requests.")
     @Returns([any])
     @Auth(["basic"])
-    @Get("/user/login")
+    @Get("/login")
     private async login(@AuthUser user: JWTUser): Promise<any> {
         if (!user) {
             throw new ApiError(ApiErrorMessages.AUTH_FAILED, 401, "Invalid user or password.");
@@ -111,7 +111,7 @@ class AuthRoute {
     @Description("Logs out the current user.")
     @Returns([null])
     @Auth(["jwt"])
-    @Get("/user/logout")
+    @Get("/logout")
     private async logout(@AuthUser user: JWTUser): Promise<void> {
         if (!this.userUtils) {
             throw new Error("User repository not set.");

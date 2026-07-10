@@ -9,6 +9,10 @@ import { type PatchEntry, applyPatches } from './patch.js';
 // to {{#if (eq ...)}} before compilation (see preprocessTemplate below).
 Handlebars.registerHelper('eq', (a: unknown, b: unknown) => a === b);
 
+Handlebars.registerHelper('isUndefined', function (value) {
+  return typeof value === 'undefined';
+});
+
 const BINARY_EXTENSIONS = new Set([
   '.cjs', '.gz', '.png', '.jpg', '.jpeg', '.gif', '.ico',
   '.woff', '.woff2', '.ttf', '.eot', '.pdf', '.zip', '.tar',

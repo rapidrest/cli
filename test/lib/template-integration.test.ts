@@ -60,6 +60,35 @@ describe('generate route — route template', () => {
       expect(content).toContain('hello');
     });
   });
+
+  it('uses the plain @Route decorator with no version when apiRoute is unset', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(routeTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'ProductRoute.ts'), 'utf-8'));
+      expect(content).toContain('@Route("/api/v1/products")');
+      expect(content).not.toContain('@ApiRoute');
+    });
+  });
+
+  it('uses @ApiRoute with a version argument when apiRoute and apiVersion are set', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = { ...baseContext, apiRoute: true, apiVersion: '2' };
+      await processTemplate(routeTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'ProductRoute.ts'), 'utf-8'));
+      expect(content).toContain('@ApiRoute("/api/v1/products", "2")');
+      expect(content).toContain('ApiRoute,');
+      expect(content).not.toContain('    Route,');
+    });
+  });
+
+  it('uses @ApiRoute with no version argument when apiRoute is set but apiVersion is empty', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = { ...baseContext, apiRoute: true, apiVersion: '' };
+      await processTemplate(routeTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'ProductRoute.ts'), 'utf-8'));
+      expect(content).toContain('@ApiRoute("/api/v1/products")');
+    });
+  });
 });
 
 describe('generate route — test template', () => {
@@ -95,6 +124,32 @@ describe('generate route — test template', () => {
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
       expect(content).not.toContain('MongoConnection');
       expect(content).not.toContain('MongoMemoryServer');
+    });
+  });
+
+  it('uses the bare path as baseUrl when apiRoute is unset', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(testTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
+      expect(content).toContain('const baseUrl = "/api/v1/products";');
+    });
+  });
+
+  it('prefixes baseUrl with /api/v<version> when apiRoute and apiVersion are set', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = { ...baseContext, path: '/products', apiRoute: true, apiVersion: '2' };
+      await processTemplate(testTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
+      expect(content).toContain('const baseUrl = "/api/v2/products";');
+    });
+  });
+
+  it('prefixes baseUrl with /api (no version) when apiRoute is set but apiVersion is empty', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = { ...baseContext, path: '/products', apiRoute: true, apiVersion: '' };
+      await processTemplate(testTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
+      expect(content).toContain('const baseUrl = "/api/products";');
     });
   });
 });
@@ -378,6 +433,111 @@ describe('generate server', () => {
       const files = await listFiles(dir);
       expect(files.every(f => !f.startsWith('/app/'))).toBe(true);
       expect(files.every(f => !f.includes('vite.config'))).toBe(true);
+    });
+  });
+
+  describe('apiRoute prefix', () => {
+    const dbContext = { features: { hasDatabase: true, react: false, docker: false, k8s: false, redis: false } };
+
+    it('uses the plain @Route decorator when apiRoute is unset', async () => {
+      await withTmpDir(async (dir) => {
+        const ctx = makeServerContext(dbContext);
+        await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
+        const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'UserRoute.ts'), 'utf-8'));
+        expect(content).toContain('@Route("/user")');
+        expect(content).not.toContain('@ApiRoute');
+      });
+    });
+
+    it('uses @ApiRoute with a version on the generated User, Auth, and Hello routes when apiRoute is set', async () => {
+      await withTmpDir(async (dir) => {
+        const ctx = makeServerContext({ ...dbContext, apiRoute: true, apiVersion: '1' });
+        await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
+        const readFile = (p: string) => import('fs/promises').then(fs => fs.readFile(join(dir, ...p.split('/')), 'utf-8'));
+        expect(await readFile('src/routes/UserRoute.ts')).toContain('@ApiRoute("/user", "1")');
+        expect(await readFile('src/routes/AuthRoute.ts')).toContain('@ApiRoute("/auth", "1")');
+        expect(await readFile('src/routes/HelloRoute.ts')).toContain('@ApiRoute("/hello", "1")');
+      });
+    });
+  });
+});
+
+// ─── default-route ───────────────────────────────────────────────────────────
+
+describe('generate default-route', () => {
+  const defaultRouteTemplateDir = join(TEMPLATES, 'default-route');
+
+  function makeContext(overrides: Record<string, unknown> = {}) {
+    return {
+      author: 'Test', year: 2025,
+      apiRoute: false, apiVersion: undefined,
+      features: { mongodb: false },
+      hasACLRoute: false, hasAdminRoute: false, hasMetricsRoute: false,
+      hasOpenAPIRoute: false, hasPushRoute: false, hasStatusRoute: false,
+      ...overrides,
+    };
+  }
+
+  it('only generates the route files corresponding to the enabled hasXRoute flags', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = makeContext({ hasAdminRoute: true, hasStatusRoute: true });
+      await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir });
+      const files = await listFiles(dir);
+      expect(files).toContain('/src/routes/AdminRoute.ts');
+      expect(files).toContain('/src/routes/StatusRoute.ts');
+      expect(files).not.toContain('/src/routes/ACLRoute.ts');
+      expect(files).not.toContain('/src/routes/MetricsRoute.ts');
+      expect(files).not.toContain('/src/routes/OpenAPIRoute.ts');
+      expect(files).not.toContain('/src/routes/PushRoute.ts');
+      expect(files).not.toContain('/template.config.json');
+    });
+  });
+
+  it('renders the SQL ACL variant when features.mongodb is false', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = makeContext({ hasACLRoute: true, features: { mongodb: false } });
+      await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'ACLRoute.ts'), 'utf-8'));
+      expect(content).toContain('AccessControlListSQL');
+      expect(content).not.toContain('AccessControlListMongo');
+    });
+  });
+
+  it('renders the Mongo ACL variant when features.mongodb is true', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = makeContext({ hasACLRoute: true, features: { mongodb: true } });
+      await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'ACLRoute.ts'), 'utf-8'));
+      expect(content).toContain('AccessControlListMongo');
+      expect(content).not.toContain('AccessControlListSQL');
+    });
+  });
+
+  it('uses @ApiRoute with a version on every generated route when apiRoute is set', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = makeContext({
+        apiRoute: true, apiVersion: '1',
+        hasACLRoute: true, hasAdminRoute: true, hasMetricsRoute: true,
+        hasOpenAPIRoute: true, hasPushRoute: true, hasStatusRoute: true,
+      });
+      await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir });
+      const readFile = (p: string) => import('fs/promises').then(fs => fs.readFile(join(dir, ...p.split('/')), 'utf-8'));
+      expect(await readFile('src/routes/ACLRoute.ts')).toContain('@ApiRoute("/acls", "1")');
+      expect(await readFile('src/routes/AdminRoute.ts')).toContain('@ApiRoute("/admin", "1")');
+      expect(await readFile('src/routes/MetricsRoute.ts')).toContain('@ApiRoute("/metrics", "1")');
+      expect(await readFile('src/routes/OpenAPIRoute.ts')).toContain('@ApiRoute("/openapi", "1")');
+      expect(await readFile('src/routes/PushRoute.ts')).toContain('@ApiRoute("/push", "1")');
+      expect(await readFile('src/routes/StatusRoute.ts')).toContain('@ApiRoute("/status", "1")');
+    });
+  });
+
+  it('uses the plain @Route decorator when apiRoute is unset', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = makeContext({ hasStatusRoute: true });
+      await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'StatusRoute.ts'), 'utf-8'));
+      expect(content).toContain('@Route("/status")');
+      expect(content).not.toContain('@ApiRoute');
     });
   });
 });

@@ -2,7 +2,7 @@
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
 import { BaseOpenAPIRoute, RouteDecorators } from "@rapidrest/service-core";
-const { Route } = RouteDecorators;
+const { {{#if apiRoute}}Api{{/if}}Route } = RouteDecorators;
 
-@Route("/openapi")
+@{{#if apiRoute}}Api{{/if}}Route("/openapi"{{#if apiVersion}}, "{{apiVersion}}"{{/if}})
 export class OpenAPIRoute extends BaseOpenAPIRoute {}

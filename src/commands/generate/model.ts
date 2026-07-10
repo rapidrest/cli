@@ -116,11 +116,14 @@ export default class GenerateModel extends Command {
       }
     }
 
-    const cache = flags.cache ?? await input({
-      message: 'Enter a cache TTL for this model (enter blank to disable caching):',
-      default: '60',
-      required: false
-    });
+    let cache = flags.cache ?? '';
+    if (!cache && await confirm({ message: "Enable caching for this model?" })) {
+      cache = await input({
+        message: 'Enter a cache TTL for this model:',
+        default: '60',
+        required: true
+      });
+    }
 
     const protect = flags.protect ?? await confirm({
       message: 'Enable RBAC-based protection for this model:',

@@ -21,7 +21,7 @@ const {
     Param,
     Request,
     Response,
-    Route,
+    {{#if apiRoute}}Api{{/if}}Route,
 } = RouteDecorators;
 const AuthUser = RouteDecorators.User;
 
@@ -31,7 +31,7 @@ const AuthUser = RouteDecorators.User;
  * @author {{author}}
  */
 @Model(User)
-@Route("/user")
+@{{#if apiRoute}}Api{{/if}}Route("/user"{{#if apiVersion}}, "{{apiVersion}}"{{/if}})
 class UserRoute extends CRUDRoute<User> {
     protected repoUtilsClass: any = RepoUtils;
 

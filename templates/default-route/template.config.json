@@ -1,0 +1,10 @@
+{
+  "conditionalFiles": [
+    { "file": "src/routes/ACLRoute.ts",             "condition": "hasACLRoute" },
+    { "file": "src/routes/AdminRoute.ts",           "condition": "hasAdminRoute" },
+    { "file": "src/routes/MetricsRoute.ts",         "condition": "hasMetricsRoute" },
+    { "file": "src/routes/OpenAPIRoute.ts",         "condition": "hasOpenAPIRoute" },
+    { "file": "src/routes/PushRoute.ts",            "condition": "hasPushRoute" },
+    { "file": "src/routes/StatusRoute.ts",          "condition": "hasStatusRoute" }
+  ]
+}

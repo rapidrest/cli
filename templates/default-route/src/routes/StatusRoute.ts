@@ -2,7 +2,7 @@
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
 import { BaseStatusRoute, RouteDecorators } from "@rapidrest/service-core";
-const { Route } = RouteDecorators;
+const { {{#if apiRoute}}Api{{/if}}Route } = RouteDecorators;
 
-@Route("/status")
+@{{#if apiRoute}}Api{{/if}}Route("/status"{{#if apiVersion}}, "{{apiVersion}}"{{/if}})
 export class StatusRoute extends BaseStatusRoute {}

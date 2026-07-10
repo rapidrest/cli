@@ -46,22 +46,31 @@ import GenerateRoute from '../../../src/commands/generate/route.js';
 const ROOT = process.cwd();
 
 // Default prompt order when project models are found (the normal case):
-//   input(description) → input(path) → select(model) → confirm(protect) → inputAuthor(cwd)
+//   input(description) → input(path) → confirm(isApi) → [input(apiVersion)]
+//   → select(model) → confirm(protect) → inputAuthor(cwd)
 // readModelDatastore returns 'acl' by default; readProjectDatastores maps 'acl' → 'mongodb'.
 function stubPrompts({
   description = 'Handles products',
   path = '/api/v1/products',
+  isApi = false,
+  apiVersion = '1',
   model = 'Product',
   protect = false,
   author,
 }: {
   description?: string;
   path?: string;
+  isApi?: boolean;
+  apiVersion?: string;
   model?: string;
   protect?: boolean;
   author?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(description).mockResolvedValueOnce(path);
+  vi.mocked(confirm).mockResolvedValueOnce(isApi);
+  if (isApi) {
+    vi.mocked(input).mockResolvedValueOnce(apiVersion);
+  }
   vi.mocked(select).mockResolvedValueOnce(model);
   vi.mocked(confirm).mockResolvedValueOnce(protect);
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
@@ -99,6 +108,8 @@ describe('generate route', () => {
         datastoreType: 'postgres',
         protect: true,
         author: 'Alice',
+        apiRoute: false,
+        apiVersion: undefined,
         year: new Date().getFullYear(),
       });
     });
@@ -139,6 +150,56 @@ describe('generate route', () => {
     });
   });
 
+  describe('api flag', () => {
+    it('sets apiRoute: false and apiVersion: undefined when the "Is this an API route?" prompt is declined', async () => {
+      stubPrompts({ isApi: false, author: 'Author' });
+      await GenerateRoute.run(['ProductRoute'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(false);
+      expect(context.apiVersion).toBeUndefined();
+    });
+
+    it('sets apiRoute: true and apiVersion from the follow-up prompt when confirmed', async () => {
+      stubPrompts({ isApi: true, apiVersion: '2', author: 'Author' });
+      await GenerateRoute.run(['ProductRoute'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(true);
+      expect(context.apiVersion).toBe('2');
+    });
+
+    it('--api with a value skips both the confirm and version prompts', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
+      vi.mocked(select).mockResolvedValueOnce('Product');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect only
+
+      await GenerateRoute.run(['ProductRoute', '--api', '3'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(true);
+      expect(context.apiVersion).toBe('3');
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1); // protect only, no "Is this an API route?" prompt
+    });
+
+    it('--api with an empty string still triggers the "Is this an API route?" prompt, but apiRoute stays true since the flag was passed', async () => {
+      // '' is falsy, so the `!api` guard still fires the confirm prompt — but api itself
+      // remains '' (not undefined) when the confirm is declined, so apiRoute is still true.
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
+      vi.mocked(select).mockResolvedValueOnce('Product');
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false) // isApi → declined
+        .mockResolvedValueOnce(false); // protect
+
+      await GenerateRoute.run(['ProductRoute', '--api', ''], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(true);
+      expect(context.apiVersion).toBe('');
+      expect(vi.mocked(confirm)).toHaveBeenCalledWith(expect.objectContaining({ message: 'Is this an API route?' }));
+    });
+  });
+
   describe('model selection', () => {
     it('shows a select with "(none)", project models, and a "+ New model..." option', async () => {
       stubPrompts({ author: 'Author' });
@@ -164,8 +225,9 @@ describe('generate route', () => {
       vi.mocked(input)
         .mockResolvedValueOnce('A desc')
         .mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(select).mockResolvedValueOnce('__new__'); // model select
-      vi.mocked(confirm).mockResolvedValueOnce(false);            // protect
+      vi.mocked(confirm).mockResolvedValueOnce(false);         // isApi
+      vi.mocked(select).mockResolvedValueOnce('__new__');      // model select
+      vi.mocked(confirm).mockResolvedValueOnce(false);         // protect
 
       await GenerateRoute.run(['OrderRoute'], ROOT);
 
@@ -183,7 +245,9 @@ describe('generate route', () => {
         .mockResolvedValueOnce('A desc')
         .mockResolvedValueOnce('/api/v1/x')
         .mockResolvedValueOnce(''); // model (free-form)
-      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // isApi
+        .mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['ProductRoute'], ROOT);
 
@@ -195,7 +259,9 @@ describe('generate route', () => {
       vi.mocked(input)
         .mockResolvedValueOnce('A desc')
         .mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // isApi
+        .mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['OrderRoute', '--no-model'], ROOT);
 
@@ -212,7 +278,9 @@ describe('generate route', () => {
   describe('flag shortcuts bypass prompts', () => {
     it('--model skips the model select and resolves datastore from the named model file', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
-      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(false)  // isApi
+        .mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['OrderRoute', '--model', 'Product'], ROOT);
 
@@ -227,8 +295,9 @@ describe('generate route', () => {
 
     it('--description skips the description input prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('/api/v1/x');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // isApi
       vi.mocked(select).mockResolvedValueOnce('Product');
-      vi.mocked(confirm).mockResolvedValueOnce(false);
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['OrderRoute', '--description', 'From flag'], ROOT);
 
@@ -239,8 +308,9 @@ describe('generate route', () => {
 
     it('--path skips the route path input prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // isApi
       vi.mocked(select).mockResolvedValueOnce('Product');
-      vi.mocked(confirm).mockResolvedValueOnce(false);
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['OrderRoute', '--path', '/api/v2/orders'], ROOT);
 
@@ -251,20 +321,22 @@ describe('generate route', () => {
 
     it('--protect skips the protect confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // isApi
       vi.mocked(select).mockResolvedValueOnce('Product'); // model only
 
       await GenerateRoute.run(['OrderRoute', '--protect'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.protect).toBe(true);
-      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1); // isApi only, no protect confirm
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // model only
     });
 
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // isApi
       vi.mocked(select).mockResolvedValueOnce('Product');
-      vi.mocked(confirm).mockResolvedValueOnce(false);
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
 
       await GenerateRoute.run(['OrderRoute', '--author', 'Flag Author'], ROOT);
 

@@ -10,7 +10,7 @@ import {
 const { Summary, Description, Returns } = DocDecorators;
 const {
     Get,
-    Route,
+    {{#if apiRoute}}Api{{/if}}Route,
     User
 } = RouteDecorators;
 
@@ -20,7 +20,7 @@ const {
  * @author {{author}}
  */
 @Description("An example route that greets the user at `/hello`.")
-@Route("/hello")
+@{{#if apiRoute}}Api{{/if}}Route("/hello"{{#if apiVersion}}, "{{apiVersion}}"{{/if}})
 export default class HelloRoute {
     /**
      * Sends a friendly greeting to the user.

@@ -38,7 +38,7 @@ const {
     Request,
     Response,
     {{/if}}
-    Route,
+    {{#if apiRoute}}Api{{/if}}Route,
     User,
     {{#if model}}
     Validate
@@ -54,7 +54,7 @@ const {
 {{#if model}}
 @Model({{model}})
 {{/if}}
-@Route("{{path}}")
+@{{#if apiRoute}}Api{{/if}}Route("{{path}}"{{#if apiVersion}}, "{{apiVersion}}"{{/if}})
 {{#if protect}}
 @Protect(
     {

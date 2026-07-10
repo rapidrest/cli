@@ -6,6 +6,7 @@ import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
 import GenerateHelm from './k8s.js';
 import GenerateReact from './react.js';
+import GenerateDefaultRoute from './default-route.js';
 
 export default class GenerateServer extends Command {
   static override args = {
@@ -58,6 +59,13 @@ export default class GenerateServer extends Command {
     const otherFeatures = await checkbox<string>({
       message: 'Select additional features:',
       choices: [
+        new Separator('-- Default Routes --'),
+        { name: 'Access Control Lists (RBAC)', value: 'route-acl', checked: true },
+        { name: 'Admin', value: 'route-admin', checked: true },
+        { name: 'Metrics (Prometheus)', value: 'route-metrics', checked: true },
+        { name: 'OpenAPI', value: 'route-openapi', checked: true },
+        { name: 'Push', value: 'route-push', checked: true },
+        { name: 'Status', value: 'route-status', checked: true },
         new Separator('-- Frontend --'),
         { name: 'React', value: 'react' },
         new Separator('-- Deployment --'),
@@ -67,6 +75,15 @@ export default class GenerateServer extends Command {
         // { name: 'Electron', value: 'electron' },
       ],
     });
+
+    let api = undefined;
+    if (await confirm({ message: "Would you like to prefix all non-React routes with `/api` ?" })) {
+      api = await input({
+        message: 'Enter the API version (enter blank for no version prefix):',
+        default: '1',
+        required: true
+      });
+    }
 
     const scmChoice = await select<string>({
       message: 'Select your Source Control Manager (SCM):',
@@ -83,15 +100,10 @@ export default class GenerateServer extends Command {
     const allFeatures = [...dbFeatures, ...otherFeatures];
 
     const context: Record<string, unknown> = {
-      project_name: args.name,
-      description,
-      repository: `${scmChoice}/${args.name}`,
+      apiRoute: api !== undefined,
+      apiVersion: api,
       author,
-      year: new Date().getFullYear(),
-      pkgMgr: {
-        npm: pkgMgr === 'npm',
-        yarn: pkgMgr === 'yarn',
-      },
+      description,
       features: {
         mongodb: allFeatures.includes('mongodb'),
         postgresql: allFeatures.includes('postgresql'),
@@ -103,6 +115,12 @@ export default class GenerateServer extends Command {
         k8s: allFeatures.includes('k8s'),
         hasDatabase: allFeatures.includes('mongodb') || allFeatures.includes('postgresql') || allFeatures.includes('sqlite'),
       },
+      pkgMgr: {
+        npm: pkgMgr === 'npm',
+        yarn: pkgMgr === 'yarn',
+      },
+      project_name: args.name,
+      repository: `${scmChoice}/${args.name}`,
       scm: {
         git: scmChoice === 'git' || scmChoice === 'github' || scmChoice === 'gitlab',
         github: scmChoice === 'github',
@@ -110,12 +128,28 @@ export default class GenerateServer extends Command {
         p4: scmChoice === 'p4',
         svn: scmChoice === 'svn',
       },
+      year: new Date().getFullYear(),
     };
 
     const templateDir = join(this.config.root, 'templates', 'server');
 
     try {
       await processTemplate(templateDir, outputDir, context, { force: flags.force });
+
+      const routeTypes = otherFeatures
+        .filter((feature) => feature.startsWith('route-'))
+        .map((feature) => feature.substring(6));
+
+      if (routeTypes.length > 0) {
+        this.log(`\nAdding default routes: ${routeTypes.join(', ')}...`);
+        await GenerateDefaultRoute.run([
+          '--output-dir', outputDir,
+          '--author', author,
+          ...routeTypes.flatMap((type) => ['--type', type]),
+          ...(flags.force ? ['--force'] : []),
+          ...(api ? ['--api', api] : []),
+        ], this.config.root);
+      }
 
       if (allFeatures.includes('docker')) {
         this.log('\nAdding Docker support...');

@@ -4,6 +4,7 @@ import { join } from 'path';
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
   select: vi.fn(),
+  confirm: vi.fn(),
   checkbox: vi.fn(),
   Separator: class {
     separator: string;
@@ -37,24 +38,31 @@ vi.mock('../../../src/commands/generate/react.js', () => ({
   default: { run: vi.fn() },
 }));
 
-import { input, select, checkbox } from '@inquirer/prompts';
+vi.mock('../../../src/commands/generate/default-route.js', () => ({
+  default: { run: vi.fn() },
+}));
+
+import { input, select, checkbox, confirm } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
 import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateDocker from '../../../src/commands/generate/docker.js';
 import GenerateHelm from '../../../src/commands/generate/k8s.js';
 import GenerateReact from '../../../src/commands/generate/react.js';
+import GenerateDefaultRoute from '../../../src/commands/generate/default-route.js';
 import GenerateServer from '../../../src/commands/generate/server.js';
 
 const ROOT = process.cwd();
 
 // Prompt order: input(description) → inputAuthor() → select(pkgMgr) → checkbox(dbFeatures)
-//               → checkbox(otherFeatures) → select(scm)
+//               → checkbox(otherFeatures) → confirm(apiEnabled) → [input(apiVersion)] → select(scm)
 function stubPrompts({
   description = 'My API',
   author = 'Test Author',
   pkgMgr = 'yarn',
   dbFeatures = ['mongodb'],
   otherFeatures = ['docker'],
+  apiEnabled = false,
+  apiVersion = '1',
   scm = 'github',
 }: {
   description?: string;
@@ -62,12 +70,18 @@ function stubPrompts({
   pkgMgr?: string;
   dbFeatures?: string[];
   otherFeatures?: string[];
+  apiEnabled?: boolean;
+  apiVersion?: string;
   scm?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(description);
   vi.mocked(inputAuthor).mockResolvedValueOnce(author);
   vi.mocked(select).mockResolvedValueOnce(pkgMgr).mockResolvedValueOnce(scm);
   vi.mocked(checkbox).mockResolvedValueOnce(dbFeatures).mockResolvedValueOnce(otherFeatures);
+  vi.mocked(confirm).mockResolvedValueOnce(apiEnabled);
+  if (apiEnabled) {
+    vi.mocked(input).mockResolvedValueOnce(apiVersion);
+  }
 }
 
 describe('generate server', () => {
@@ -77,6 +91,7 @@ describe('generate server', () => {
     (GenerateDocker as any).run.mockResolvedValue(undefined);
     (GenerateHelm as any).run.mockResolvedValue(undefined);
     (GenerateReact as any).run.mockResolvedValue(undefined);
+    (GenerateDefaultRoute as any).run.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -93,6 +108,8 @@ describe('generate server', () => {
       description: 'My service',
       author: 'Alice',
       year: new Date().getFullYear(),
+      apiRoute: false,
+      apiVersion: undefined,
     });
   });
 
@@ -122,6 +139,7 @@ describe('generate server', () => {
       (GenerateDocker as any).run.mockResolvedValue(undefined);
       (GenerateHelm as any).run.mockResolvedValue(undefined);
       (GenerateReact as any).run.mockResolvedValue(undefined);
+      (GenerateDefaultRoute as any).run.mockResolvedValue(undefined);
       stubPrompts({ dbFeatures: [db], otherFeatures: [] });
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
@@ -199,12 +217,93 @@ describe('generate server', () => {
     expect(opts).toMatchObject({ force: true });
   });
 
+  describe('api flag', () => {
+    it('sets apiRoute: false and apiVersion: undefined when the api prefix prompt is declined', async () => {
+      stubPrompts({ apiEnabled: false });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(false);
+      expect(context.apiVersion).toBeUndefined();
+    });
+
+    it('sets apiRoute: true and apiVersion from the follow-up prompt when confirmed', async () => {
+      stubPrompts({ apiEnabled: true, apiVersion: '2' });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(true);
+      expect(context.apiVersion).toBe('2');
+    });
+  });
+
+  describe('default routes subcommand', () => {
+    it('does not call GenerateDefaultRoute when no route-* features are selected', async () => {
+      stubPrompts({ otherFeatures: ['docker'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateDefaultRoute as any).run).not.toHaveBeenCalled();
+    });
+
+    it('calls GenerateDefaultRoute once with a --type per selected route-* feature', async () => {
+      stubPrompts({ author: 'Test Author', otherFeatures: ['route-acl', 'route-admin', 'docker'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledOnce();
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'acl', '--type', 'admin'],
+        expect.any(String),
+      );
+    });
+
+    it('passes --force to GenerateDefaultRoute when --force is set on the server command', async () => {
+      stubPrompts({ author: 'Test Author', otherFeatures: ['route-status'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
+
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'status', '--force'],
+        expect.any(String),
+      );
+    });
+
+    it('passes --api to GenerateDefaultRoute when the api prefix prompt was confirmed', async () => {
+      stubPrompts({ author: 'Test Author', otherFeatures: ['route-metrics'], apiEnabled: true, apiVersion: '3' });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'metrics', '--api', '3'],
+        expect.any(String),
+      );
+    });
+
+    it('does not pass --api to GenerateDefaultRoute when the api prefix prompt was declined', async () => {
+      stubPrompts({ author: 'Test Author', otherFeatures: ['route-metrics'], apiEnabled: false });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'metrics'],
+        expect.any(String),
+      );
+    });
+
+    it('uses the default output directory (./<name>) when --output-dir is not set', async () => {
+      stubPrompts({ author: 'Test Author', otherFeatures: ['route-push'] });
+      await GenerateServer.run(['my-project'], ROOT);
+
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+        ['--output-dir', join(process.cwd(), 'my-project'), '--author', 'Test Author', '--type', 'push'],
+        expect.any(String),
+      );
+    });
+  });
+
   describe('author resolution', () => {
     it('calls inputAuthor and uses its return value as the author', async () => {
       vi.mocked(inputAuthor).mockResolvedValueOnce('Git Author <git@example.com>');
       vi.mocked(input).mockResolvedValueOnce('My API');
       vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
       vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
 
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
 
@@ -341,13 +440,14 @@ describe('generate server', () => {
       );
     });
 
-    it('runs docker, helm, and react subcommands when all three features are selected', async () => {
-      stubPrompts({ otherFeatures: ['docker', 'k8s', 'react'] });
+    it('runs docker, helm, react, and default-route subcommands when all are selected', async () => {
+      stubPrompts({ otherFeatures: ['docker', 'k8s', 'react', 'route-openapi'] });
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
 
       expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
       expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
       expect((GenerateReact as any).run).toHaveBeenCalledOnce();
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledOnce();
     });
   });
 });

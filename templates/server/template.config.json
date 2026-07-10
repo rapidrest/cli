@@ -1,5 +1,4 @@
 {
-  "helmPaths": ["helm"],
   "conditionalFiles": [
     { "file": ".gitattributes",                     "condition": "scm.github" },
     { "file": ".gitattributes",                     "condition": "scm.gitlab" },
@@ -8,15 +7,10 @@
     { "file": ".gitlab-ci.yml",                     "condition": "scm.gitlab" },
     { "file": ".yarn",                              "condition": "pkgMgr.yarn" },
     { "file": ".yarnrc.yml",                        "condition": "pkgMgr.yarn" },
-    { "file": "app",                                "condition": "features.react" },
     { "file": "src/models/User.ts",                 "condition": "features.hasDatabase" },
-    { "file": "src/routes/ACLRoute.ts",             "condition": "features.hasDatabase" },
-    { "file": "src/routes/AppRoute.ts",             "condition": "features.react" },
     { "file": "src/routes/AuthRoute.ts",            "condition": "features.hasDatabase" },
     { "file": "src/routes/UserRoute.ts",            "condition": "features.hasDatabase" },
     { "file": "test/routes/AuthRoute.test.ts",      "condition": "features.hasDatabase" },
-    { "file": "test/routes/UserRoute.test.ts",      "condition": "features.hasDatabase" },
-    { "file": "tsconfig.client.json",               "condition": "features.react" },
-    { "file": "vite.config.ts",                     "condition": "features.react" }
+    { "file": "test/routes/UserRoute.test.ts",      "condition": "features.hasDatabase" }
   ]
 }

@@ -2,7 +2,7 @@
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
 import { BaseMetricsRoute, RouteDecorators } from "@rapidrest/service-core";
-const { Route } = RouteDecorators; 
+const { {{#if apiRoute}}Api{{/if}}Route } = RouteDecorators;
 
-@Route("/metrics")
+@{{#if apiRoute}}Api{{/if}}Route("/metrics"{{#if apiVersion}}, "{{apiVersion}}"{{/if}})
 export class MetricsRoute extends BaseMetricsRoute {}

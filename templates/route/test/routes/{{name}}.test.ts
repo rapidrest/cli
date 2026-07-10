@@ -34,7 +34,7 @@ describe("Route:{{name}} Tests", () => {
     const logger = Logger();
     const objectFactory: ObjectFactory = new ObjectFactory(config, logger);
     const server: Server = new Server({ config, basePath: "./src", logger, objectFactory });
-    const baseUrl = "{{path}}";
+    const baseUrl = "{{#if apiRoute}}/api{{#if apiVersion}}/v{{apiVersion}}{{/if}}{{/if}}{{path}}";
     {{#if model}}
     let repo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<{{model}}>;
     let aclRepo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<any>;
