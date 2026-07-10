@@ -311,6 +311,33 @@ describe('generate server', () => {
       expect(context.author).toBe('Git Author <git@example.com>');
       expect(inputAuthor).toHaveBeenCalledOnce();
     });
+
+    it('--author skips inputAuthor and uses the flag value', async () => {
+      vi.mocked(input).mockResolvedValueOnce('My API');
+      vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+      vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--author', 'Flag Author'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.author).toBe('Flag Author');
+      expect(inputAuthor).not.toHaveBeenCalled();
+    });
+
+    it('passes the resolved author through to GenerateDefaultRoute for selected route-* features', async () => {
+      vi.mocked(input).mockResolvedValueOnce('My API');
+      vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+      vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['route-acl']);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--author', 'Flag Author'], ROOT);
+
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--author', 'Flag Author', '--type', 'acl'],
+        expect.any(String),
+      );
+    });
   });
 
   describe('docker subcommand', () => {

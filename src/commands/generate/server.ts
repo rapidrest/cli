@@ -22,6 +22,7 @@ export default class GenerateServer extends Command {
 
   static override flags = {
     force: Flags.boolean({ description: 'Overwrite existing files.' }),
+    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated project into. Defaults to ./<name>.' }),
   };
 

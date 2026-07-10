@@ -56,6 +56,7 @@ rapidrest dev
 - [`rapidrest generate server NAME`](#rapidrest-generate-server-name)
 - [`rapidrest generate model NAME`](#rapidrest-generate-model-name)
 - [`rapidrest generate route NAME`](#rapidrest-generate-route-name)
+- [`rapidrest generate default-route`](#rapidrest-generate-default-route)
 - [`rapidrest generate job NAME`](#rapidrest-generate-job-name)
 - [`rapidrest generate docker`](#rapidrest-generate-docker)
 - [`rapidrest generate k8s`](#rapidrest-generate-k8s)
@@ -73,13 +74,14 @@ Scaffold a new RapidREST server project.
 
 ```
 USAGE
-  $ rapidrest generate server NAME [--output-dir <path>] [--force]
+  $ rapidrest generate server NAME [--output-dir <path>] [--author <name>] [--force]
 
 ARGUMENTS
   NAME  Name of the new project (also used as the output directory name)
 
 FLAGS
   --output-dir <path>  Directory to write the generated project into. Defaults to ./<NAME>
+  -a, --author <name>  Author to attribute the generated code to
   --force               Overwrite existing files
 ```
 
@@ -88,11 +90,14 @@ The command walks through an interactive prompt to configure the generated proje
 | Prompt | Description | Options |
 |--------|---------|
 | Project description | Textual description of your project | Free input |
-| Author | The author of the project | Auto-filled from your Git config when available; otherwise you're prompted |
+| Author | The author of the project (skipped if `--author` is passed) | Auto-filled from your Git config when available; otherwise you're prompted |
 | Package manager | The desired Node.js package manager | `yarn` \| `npm` |
 | Databases | Desired database(s) to use in the project | `MongoDB` , `PostgreSQL`, `Redis` , `SQLite` |
-| Additional features | Additional RapidREST features to enable | `React`, `Docker`, `Kubernetes (Helm)` (multi-select) |
+| Additional features | Additional RapidREST features to enable | Default routes (`ACL`, `Admin`, `Metrics`, `OpenAPI`, `Push`, `Status` — all checked by default), `React`, `Docker`, `Kubernetes (Helm)` (multi-select) |
+| API prefix | Whether to prefix all non-React routes with `/api` | Yes/No, then optionally a version (e.g. `1` → `/api/v1`) |
 | Source control | The SCM to use for the project | `GitHub`, `GitLab`, `Git`, `Perforce (Helix)`, `Subversion`, or none |
+
+Any default routes selected above are generated via [`generate default-route`](#rapidrest-generate-default-route) immediately after the project is scaffolded, using the same author and API prefix you chose here.
 
 **Example:**
 
@@ -101,6 +106,7 @@ rapidrest generate server my-api
 # → prompts for all options, then writes my-api/ with the selected features
 
 rapidrest generate server my-api --output-dir ~/projects/my-api
+rapidrest generate server my-api --author "Jane Doe <jane@example.com>"
 ```
 
 ---
@@ -131,7 +137,7 @@ If the project does not contain an existing datastore, or you simply want to wan
 
 `--cache` has three forms:
 
-- Omitted entirely — you're prompted interactively for a TTL (blank disables caching)
+- Omitted entirely — you're asked whether to enable caching; if you confirm, you're then prompted for a TTL (default `60`)
 - Passed with no value (`--cache`) — caching is enabled with the default TTL of `60` seconds
 - Passed with a value (`--cache 120`) — caching is enabled with that TTL in seconds
 
@@ -153,7 +159,7 @@ Generate a new route handler inside the current project.
 ```
 USAGE
   $ rapidrest generate route NAME [--output-dir <path>] [--author <name>] [--description <text>]
-      [--path <route-path>] [--model <name>] [--no-model] [--protect] [--no-test] [--force]
+      [--path <route-path>] [--api <version>] [--model <name>] [--no-model] [--protect] [--no-test] [--force]
 
 ARGUMENTS
   NAME  Name of the route class (e.g. ProductRoute, AuthRoute)
@@ -163,12 +169,16 @@ FLAGS
   -a, --author <name>       Author to attribute the generated code to
   -d, --description <text>  Short description of the route
   --path <route-path>       Base path of the route (e.g. /api/v1/products)
+  --api <version>           Use @ApiRoute instead of @Route for the generated route. Pass a version to prefix the
+                             path with /api/v<version>; pass an empty value for /api with no version
   -m, --model <name>        Name of the model class this route will serve (extends ModelRoute)
   --no-model                Skip all prompts about associating a model class
   -p, --protect             Enable RBAC-based protection for this route
   --no-test                 Skip generating the matching test file
   -f, --force                Overwrite existing files
 ```
+
+If `--api` is omitted, you're asked whether this is an API route; confirming then prompts for a version (blank for no version prefix). Passing `--api <version>` skips both prompts and generates the route with `@ApiRoute(path, version)` instead of `@Route(path)`.
 
 When selecting or creating a data model for the route handler, the resulting class will extend the `ModelRoute` base class and automatically include the following default endpoints:
 
@@ -188,6 +198,46 @@ rapidrest generate route ProductRoute
 # → creates src/routes/ProductRoute.ts and test/ProductRoute.test.ts
 
 rapidrest generate route ProductRoute --model Product --cache --protect
+```
+
+---
+
+### `rapidrest generate default-route`
+
+Generate one or more of RapidREST's built-in default route handlers (Access Control Lists, Admin, Metrics, OpenAPI, Push, Status) inside the current project. `generate server` runs this automatically for whichever default routes you select there — this command lets you add or regenerate them independently on an existing project.
+
+```
+USAGE
+  $ rapidrest generate default-route [--output-dir <path>] [--author <name>] [--api <version>]
+      [--type <type>]... [--force]
+
+FLAGS
+  --output-dir <path>  Directory to write the generated route(s) into. Defaults to the current working directory
+  -a, --author <name>  Author to attribute the generated code to
+  --api <version>      Use @ApiRoute instead of @Route for the generated route(s). Pass a version to prefix paths
+                        with /api/v<version>; pass an empty value for /api with no version
+  -t, --type <type>    The type of default route to generate: acl, admin, metrics, openapi, push, status.
+                        Pass more than once to generate multiple route types
+  -f, --force           Overwrite existing files
+```
+
+If `--type` is omitted, you're shown a checklist of all six default routes (all checked by default) to choose from interactively. Pass `--type` one or more times to generate specific routes non-interactively — handy for scripting or CI:
+
+```sh
+rapidrest generate default-route --type acl --type admin --type status
+```
+
+`ACLRoute` automatically binds to `AccessControlListMongo` or `AccessControlListSQL` depending on whether the project has a MongoDB datastore configured.
+
+**Example:**
+
+```sh
+cd my-api
+rapidrest generate default-route
+# → interactive checklist of default routes to add
+
+rapidrest generate default-route --type openapi --type metrics --api 1
+# → creates src/routes/OpenAPIRoute.ts and src/routes/MetricsRoute.ts, both using @ApiRoute(path, "1")
 ```
 
 ---
