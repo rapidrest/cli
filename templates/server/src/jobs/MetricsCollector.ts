@@ -13,6 +13,11 @@ import * as prom from "prom-client";
 export default class MetricsCollector extends BackgroundService {
     private registry: prom.Registry;
 
+    constructor() {
+        super();
+        this.registry = prom.register;
+    }
+
     public get schedule(): string | undefined {
         return "* * * * *";
     }
