@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
-import { BaseACLRoute, RouteDecorators } from "@rapidrest/service-core";
+import { {{#if features.mongodb}}AccessControlListMongo, {{else}}AccessControlListSQL, {{/if}}BaseACLRoute, RouteDecorators } from "@rapidrest/service-core";
 const { Model, Route } = RouteDecorators;
 
 {{#if features.mongodb}}
