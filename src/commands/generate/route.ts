@@ -3,8 +3,6 @@ import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
 import {
-  readGitAuthor,
-  readProjectAuthor,
   readProjectDatastores,
   readProjectModels,
   readModelDatastore,

@@ -2,8 +2,15 @@ import { confirm, input } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readGitAuthor, readProjectAuthor, readProjectName } from '../../lib/project.js';
+import { readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
+
+/**
+ * Converts the first character of the given string to uppercase
+ */
+function toPascalCase(name: string): string {
+  return `${name.substring(0,1).toUpperCase()}${name.substring(1)}`;
+}
 
 export default class GenerateReact extends Command {
   static override args = {
@@ -47,6 +54,7 @@ export default class GenerateReact extends Command {
 
     const context: Record<string, unknown> = {
       author,
+      className: toPascalCase(args.name),
       hydrate,
       name: args.name,
       path: routePath,

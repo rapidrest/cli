@@ -1,13 +1,12 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Copyright (C) 2026 Jean-Philippe Steinmetz
+// Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
 import { ReactRoute } from "@rapidrest/react";
 import { RouteDecorators } from "@rapidrest/service-core";
-
 const { Route } = RouteDecorators;
 
 @Route("{{path}}/*")
-export class AppRoute extends ReactRoute {
+export class {{className}}Route extends ReactRoute {
     protected readonly appDir: number = "apps/{{name}}";
     {{#if cache}}
     protected readonly cacheTTL: number = {{cache}};
