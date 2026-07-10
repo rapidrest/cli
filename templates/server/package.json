@@ -51,7 +51,7 @@
 		"winston-transport": "^4.9.0"
 	},
 	"devDependencies": {
-		"@rapidrest/cli": "^0.11.1",
+		"@rapidrest/cli": "^0.12.0",
 		"@swc/core": "^1.15.41",
 		"@types/nconf": "^0.10.7",
 		"@vitest/coverage-v8": "^4.1.8",
