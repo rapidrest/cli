@@ -20,7 +20,7 @@ const mongod: MongoMemoryServer = new MongoMemoryServer({
 describe("User Tests", () => {
     const logger = Logger();
     const objectFactory: ObjectFactory = new ObjectFactory(config, logger);
-    const server: Server = new Server(config, "./src", logger, objectFactory);
+    const server: Server = new Server({ config, basePath: "./src", logger, objectFactory });
     const baseUrl = "/user";
 
     const admin: any = {

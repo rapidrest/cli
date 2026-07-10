@@ -18,7 +18,7 @@ const mongod: MongoMemoryServer = new MongoMemoryServer({
 describe("Auth Tests", () => {
     const logger = Logger();
     const objectFactory: ObjectFactory = new ObjectFactory(config, logger);
-    const server: Server = new Server(config, "./src", logger, objectFactory);
+    const server: Server = new Server({ config, basePath: "./src", logger, objectFactory });
     const baseUrl = "/user/login";
     let aclRepo: MongoRepository<any>;
     let userRepo: MongoRepository<User>;

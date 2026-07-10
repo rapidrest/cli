@@ -33,7 +33,7 @@ const mongod: MongoMemoryServer = new MongoMemoryServer({
 describe("Route:{{name}} Tests", () => {
     const logger = Logger();
     const objectFactory: ObjectFactory = new ObjectFactory(config, logger);
-    const server: Server = new Server(config, "./src", logger, objectFactory);
+    const server: Server = new Server({ config, basePath: "./src", logger, objectFactory });
     const baseUrl = "{{path}}";
     {{#if model}}
     let repo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<{{model}}>;

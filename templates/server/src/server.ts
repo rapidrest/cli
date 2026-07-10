@@ -45,7 +45,7 @@ const start = async function (config: any, logger: any) {
     await EventUtils.init(config, logger, token);
 
     // Create and start the server
-    server = new Server(config, _dirname, logger, objectFactory);
+    server = new Server({ config, basePath: _dirname, logger, objectFactory });
     await server.start();
 };
 

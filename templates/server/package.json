@@ -38,7 +38,7 @@
 	"dependencies": {
 		"@rapidrest/core": "^1.3.2",
 		{{#if features.react}}"@rapidrest/react": "^0.2.1",{{/if}}
-		"@rapidrest/service-core": "^1.0.0-rc.13",
+		"@rapidrest/service-core": "^1.0.0-rc.14",
 		"@types/node": "^25.9.3",
 		"argon2": "^0.44.0",
 		"axios": "^1.17.0",
