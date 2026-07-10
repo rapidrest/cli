@@ -1,0 +1,8 @@
+///////////////////////////////////////////////////////////////////////////////
+// Copyright (C) {{year}} {{author}}
+///////////////////////////////////////////////////////////////////////////////
+import { BaseMetricsRoute, RouteDecorators } from "@rapidrest/service-core";
+const { Route } = RouteDecorators; 
+
+@Route("/metrics")
+export class MetricsRoute extends BaseMetricsRoute {}

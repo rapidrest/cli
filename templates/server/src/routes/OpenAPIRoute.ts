@@ -1,10 +1,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
-import { ReactRoute } from "@rapidrest/react";
-import { RouteDecorators } from "@rapidrest/service-core";
-
+import { BaseOpenAPIRoute, RouteDecorators } from "@rapidrest/service-core";
 const { Route } = RouteDecorators;
 
-@Route("/app/*")
-export class AppRoute extends ReactRoute {}
+@Route("/openapi")
+export class OpenAPIRoute extends BaseOpenAPIRoute {}
