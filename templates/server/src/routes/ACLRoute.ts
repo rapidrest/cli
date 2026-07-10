@@ -2,12 +2,12 @@
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
 import { BaseACLRoute, RouteDecorators } from "@rapidrest/service-core";
-const { Route } = RouteDecorators;
+const { Model, Route } = RouteDecorators;
 
 {{#if features.mongodb}}
-@Route(AccessControlListMongo)
+@Model(AccessControlListMongo)
 {{else}}
-@Route(AccessControlListSQL)
+@Model(AccessControlListSQL)
 {{/if}}
 @Route("/acls")
 export class ACLRoute extends BaseACLRoute<{{#if features.mongodb}}AccessControlListMongo{{else}}AccessControlListSQL{{/if}}> {}
