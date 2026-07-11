@@ -5,13 +5,16 @@ import jsdoc from "eslint-plugin-jsdoc";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 export default [
     {
-        files: ["**/*.ts"],
+        files: ["**/*.ts", "**/*.tsx"],
         languageOptions: {
             ecmaVersion: 2020,
             parser: typescriptParser,
             parserOptions: {
-                project: ["tsconfig.json", "./tsconfig.eslint.json"],
+                project: ["tsconfig.json", "./tsconfig.eslint.json", "./tsconfig.client.json"],
                 sourceType: "module",
+                ecmaFeatures: {
+                    jsx: true,
+                },
             },
             globals: {
                 ...globals.browser,
