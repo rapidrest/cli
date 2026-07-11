@@ -34,7 +34,8 @@ export default class Start extends Command {
   ];
 
   static override flags = {
-    docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips starting database servers).' }),
+    bun: Flags.boolean({ description: "Use the Bun engine instead of Node.js" }),
+    docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips build and database servers).' }),
     'no-build': Flags.boolean({ description: 'Skip the build step.' }),
   };
 
@@ -45,7 +46,7 @@ export default class Start extends Command {
     const ext = process.platform === 'win32' ? '.cmd' : '';
 
     // 1. Build
-    if (!flags['no-build']) {
+    if (!flags['no-build'] || flags['docker']) {
       const pkgMgr = await detectPackageManager(cwd);
       this.log('Building project...');
       try {
@@ -88,7 +89,7 @@ export default class Start extends Command {
     const serverPath: string = detectServerPath(cwd);
     this.log('\nStarting RapidREST server...');
     const serverEnv = { ...process.env, ...dbEnv };
-    const server = spawn(process.execPath, [serverPath], {
+    const server = spawn(flags.bun ? 'bun' : process.execPath, [serverPath], {
       cwd,
       stdio: 'inherit',
       env: serverEnv,
