@@ -1,6 +1,13 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
+{{#if features.redis}}
+// This mock MUST be defined before we import ConnectionManager (or anything that pulls it in such as Server)
+vi.mock("ioredis", async () => {
+    const RedisMock = await import("ioredis-mock");
+    return { Redis: RedisMock.default || RedisMock };
+});
+{{/if}}
 import "reflect-metadata";
 import config from "../config.js";
 import { request } from "@rapidrest/service-core/test";

@@ -53,6 +53,7 @@
 	"devDependencies": {
 		"@rapidrest/cli": "^0.13.0",
 		"@swc/core": "^1.15.41",
+		{{#if features.redis}}"@types/ioredis-mock": "^8",{{/if}}
 		"@types/nconf": "^0.10.7",
 		"@vitest/coverage-v8": "^4.1.8",
 		"coveralls": "^3.1.1",
@@ -61,6 +62,7 @@
 		"eslint-plugin-jsdoc": "^63.0.2",
 		"globals": "^17.6.0",
 		{{#if features.redis}}"ioredis": "^5.11.1",{{/if}}
+		{{#if features.redis}}"ioredis-mock": "^8.13.1",{{/if}}
 		{{#if features.mongodb}}"mongodb-memory-server": "^11.2.0",{{/if}}
 		"nodemon": "^3.1.14",
 		"rimraf": "^6.1.3",

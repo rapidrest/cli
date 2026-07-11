@@ -100,11 +100,13 @@ export default class GenerateRoute extends Command {
     // Resolve the datastore binding and its type from the selected model's source file.
     let datastore = '';
     let datastoreType = '';
+    let hasRedis: boolean = false;
     if (model) {
       datastore = await readModelDatastore(cwd, model);
       if (datastore) {
         const configured = await readProjectDatastores(cwd);
         datastoreType = configured.find((d) => d.name === datastore)?.type ?? '';
+        hasRedis = configured.find((d) => d.type === 'redis') ? true : hasRedis;
       }
     }
 
@@ -121,11 +123,12 @@ export default class GenerateRoute extends Command {
       apiRoute: api !== undefined,
       apiVersion: api,
       author,
-      name: args.name,
       description,
-      model,
       datastore,
       datastoreType,
+      hasRedis,
+      model,
+      name: args.name,
       path: routePath,
       protect,
       year: new Date().getFullYear(),
