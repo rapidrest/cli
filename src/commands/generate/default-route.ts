@@ -40,7 +40,7 @@ export default class GenerateDefaultRoute extends Command {
       api = await input({
         message: 'Enter the API version (enter blank for no version prefix):',
         default: '1',
-        required: true
+        required: false
       });
     }
 
