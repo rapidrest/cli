@@ -241,7 +241,7 @@ describe('generate job', () => {
 describe('generate react', () => {
   const reactTemplateDir = join(TEMPLATES, 'react');
   const baseContext = {
-    name: 'dashboard', author: 'Test', hydrate: false,
+    name: 'dashboard', className: 'Dashboard', author: 'Test', hydrate: false,
     path: '/dashboard', project_name: 'my-app', year: 2025,
   };
 
