@@ -6,6 +6,11 @@
       "template": "patches/package.json",
       "target": "package.json",
       "strategy": "json-merge"
+    },
+    {
+      "template": "patches/tsconfig.json",
+      "target": "tsconfig.json",
+      "strategy": "json-merge"
     }
   ]
 }
