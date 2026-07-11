@@ -51,7 +51,7 @@
 		"winston-transport": "^4.9.0"
 	},
 	"devDependencies": {
-		"@rapidrest/cli": "^0.15.0",
+		"@rapidrest/cli": "^0.16.0",
 		"@swc/core": "^1.15.41",
 		{{#if features.redis}}"@types/ioredis-mock": "^8",{{/if}}
 		"@types/nconf": "^0.10.7",
