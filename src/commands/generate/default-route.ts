@@ -5,7 +5,7 @@ import { processTemplate } from '../../lib/template.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import { readProjectDatastores } from '../../lib/project.js';
 
-const ROUTE_TYPES = ['acl', 'admin', 'metrics', 'openapi', 'push', 'status'];
+const ROUTE_TYPES = ['acl', 'admin', 'metrics', 'openapi', 'push', 'static', 'status'];
 
 export default class GenerateDefaultRoute extends Command {
   static override args = {
@@ -15,7 +15,8 @@ export default class GenerateDefaultRoute extends Command {
 
   static override examples = [
     '<%= config.bin %> <%= command.id %> ProductRoute',
-    '<%= config.bin %> <%= command.id %> ProductRoute --output-dir src/routes --no-test',
+    '<%= config.bin %> <%= command.id %> ProductRoute --api',
+    '<%= config.bin %> <%= command.id %> ProductRoute --api --type admin',
   ];
 
   static override flags = {
@@ -23,7 +24,8 @@ export default class GenerateDefaultRoute extends Command {
     api: Flags.string({ description: "Use @ApiRoute instead of @Route for the generated route(s). Pass a value to specify an api version." }),
     author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated route into. Defaults to ./src/routes.' }),
-    type: Flags.string({ alias: 't', multiple: true, description: 'The type of default route to generate: acl, admin, metrics, openapi, push, status. Pass more than once to generate multiple route types.'})
+    type: Flags.string({ alias: 't', multiple: true, description: 'The type of default route to generate: acl, admin, metrics, openapi, push, static, status. Pass more than once to generate multiple route types.'}),
+    'static-path': Flags.string({ description: "If `--type static` is set. Sets the path containing the static files to serve. Default is `public`." }),
   };
 
   async run(): Promise<void> {
@@ -55,13 +57,23 @@ export default class GenerateDefaultRoute extends Command {
       routes = await checkbox<string>({
         message: 'Select additional features:',
         choices: [
-          { name: 'Access Control Lists (RBAC)', value: 'acl-route', checked: true },
+          { name: 'Access Control Lists (RBAC)', value: 'acl-route', checked: false },
           { name: 'Admin', value: 'admin-route', checked: true },
           { name: 'Metrics (Prometheus)', value: 'metrics-route', checked: true },
           { name: 'OpenAPI', value: 'openapi-route', checked: true },
-          { name: 'Push', value: 'push-route', checked: true },
+          { name: 'Push', value: 'push-route', checked: false },
+          { name: 'Static', value: 'static-route', checked: false },
           { name: 'Status', value: 'status-route', checked: true },
         ],
+      });
+    }
+
+    let staticPath = flags['static-path'] ?? 'public';
+    if (flags['static-path'] === undefined && routes.includes('static-route')) {
+      staticPath = await input({
+        message: "Enter the path containing the static files to serve:",
+        default: staticPath,
+        required: true
       });
     }
 
@@ -80,7 +92,9 @@ export default class GenerateDefaultRoute extends Command {
       hasMetricsRoute: routes.includes('metrics-route'),
       hasOpenAPIRoute: routes.includes('openapi-route'),
       hasPushRoute: routes.includes('push-route'),
+      hasStaticRoute: routes.includes('static-route'),
       hasStatusRoute: routes.includes('status-route'),
+      staticPath,
     };
 
     const templateDir = join(this.config.root, 'templates', 'default-route');

@@ -94,6 +94,18 @@ describe('generate default-route', () => {
         hasStatusRoute: false,
       });
     });
+
+    it('sets hasStaticRoute: true when static-route is selected via checkbox', async () => {
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // isApi
+      vi.mocked(checkbox).mockResolvedValueOnce(['static-route']);
+      vi.mocked(input).mockResolvedValueOnce('public'); // static file path prompt
+
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.hasStaticRoute).toBe(true);
+    });
   });
 
   describe('api flag', () => {
@@ -150,6 +162,7 @@ describe('generate default-route', () => {
         ['metrics', 'hasMetricsRoute'],
         ['openapi', 'hasOpenAPIRoute'],
         ['push', 'hasPushRoute'],
+        ['static', 'hasStaticRoute'],
         ['status', 'hasStatusRoute'],
       ];
       for (const [type, flagName] of cases) {
@@ -157,6 +170,11 @@ describe('generate default-route', () => {
         vi.mocked(processTemplate).mockResolvedValue(undefined);
         vi.mocked(inputAuthor).mockResolvedValue('Default Author');
         vi.mocked(readProjectDatastores).mockResolvedValue([]);
+        // 'static' triggers an extra interactive prompt for the static file path
+        // when --static-path isn't also provided.
+        if (type === 'static') {
+          vi.mocked(input).mockResolvedValueOnce('public');
+        }
 
         await GenerateDefaultRoute.run(['--output-dir', '/tmp/m', '--type', type], ROOT);
 
@@ -210,6 +228,75 @@ describe('generate default-route', () => {
       ).rejects.toThrow(/bogus, nope/);
 
       expect(processTemplate).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('static route type', () => {
+    it('prompts for the static file path when static-route is selected via checkbox and --static-path is not provided', async () => {
+      vi.mocked(confirm).mockResolvedValueOnce(false); // isApi
+      vi.mocked(checkbox).mockResolvedValueOnce(['static-route']);
+      vi.mocked(input).mockResolvedValueOnce('assets');
+
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m'], ROOT);
+
+      expect(vi.mocked(input)).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'Enter the path containing the static files to serve:' }),
+      );
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.staticPath).toBe('assets');
+    });
+
+    it('does not prompt for the static file path when static-route is not selected', async () => {
+      stubPrompts({ author: 'Author', routes: ['acl-route'] });
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m'], ROOT);
+
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.staticPath).toBe('public');
+    });
+
+    it('--static-path skips the interactive prompt and uses the flag value', async () => {
+      vi.mocked(confirm).mockResolvedValueOnce(false); // isApi
+      vi.mocked(checkbox).mockResolvedValueOnce(['static-route']);
+
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m', '--static-path', 'wwwroot'], ROOT);
+
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.staticPath).toBe('wwwroot');
+    });
+
+    it('--type static without --static-path still prompts for the path interactively', async () => {
+      vi.mocked(input).mockResolvedValueOnce('assets');
+
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m', '--type', 'static'], ROOT);
+
+      expect(vi.mocked(checkbox)).not.toHaveBeenCalled();
+      expect(vi.mocked(input)).toHaveBeenCalledOnce();
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.staticPath).toBe('assets');
+    });
+
+    it('--type static --static-path is fully non-interactive', async () => {
+      await GenerateDefaultRoute.run(
+        ['--output-dir', '/tmp/m', '--type', 'static', '--static-path', 'assets', '--author', 'Author', '--api', '1'],
+        ROOT,
+      );
+
+      expect(vi.mocked(checkbox)).not.toHaveBeenCalled();
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.staticPath).toBe('assets');
+      expect(context.hasStaticRoute).toBe(true);
+    });
+
+    it('defaults staticPath to "public" in the context even when static-route is not part of the selection', async () => {
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m', '--type', 'admin'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.staticPath).toBe('public');
+      expect(context.hasStaticRoute).toBe(false);
     });
   });
 

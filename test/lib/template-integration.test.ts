@@ -249,7 +249,7 @@ describe('generate react', () => {
     await withTmpDir(async (dir) => {
       await processTemplate(reactTemplateDir, dir, baseContext, { projectDir: dir });
       const files = await listFiles(dir);
-      expect(files).toContain('/src/routes/dashboardRoute.ts');
+      expect(files).toContain('/src/routes/DashboardRoute.ts');
       expect(files).toContain('/apps/dashboard/index.tsx');
       expect(files).toContain('/apps/dashboard/_layout.tsx');
       expect(files).toContain('/vite.config.ts');
@@ -473,7 +473,8 @@ describe('generate default-route', () => {
       apiRoute: false, apiVersion: undefined,
       features: { mongodb: false },
       hasACLRoute: false, hasAdminRoute: false, hasMetricsRoute: false,
-      hasOpenAPIRoute: false, hasPushRoute: false, hasStatusRoute: false,
+      hasOpenAPIRoute: false, hasPushRoute: false, hasStaticRoute: false, hasStatusRoute: false,
+      staticPath: 'public',
       ...overrides,
     };
   }
@@ -538,6 +539,88 @@ describe('generate default-route', () => {
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'StatusRoute.ts'), 'utf-8'));
       expect(content).toContain('@Route("/status")');
       expect(content).not.toContain('@ApiRoute');
+    });
+  });
+
+  it('generates StaticRoute.ts when hasStaticRoute is true', async () => {
+    await withTmpDir(async (dir) => {
+      // hasStaticRoute also gates the config.ts patch, so a patch target must exist.
+      await mkdir(join(dir, 'src'), { recursive: true });
+      await writeFile(join(dir, 'src', 'config.ts'), 'conf.defaults({\n});\n', 'utf-8');
+
+      const ctx = makeContext({ hasStaticRoute: true });
+      await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir });
+      const files = await listFiles(dir);
+      expect(files).toContain('/src/routes/StaticRoute.ts');
+    });
+  });
+
+  describe('static route config.ts patch', () => {
+    // A trimmed-down but structurally faithful stand-in for templates/server/src/config.ts —
+    // a `.defaults({ ... })` call with a named `auth` block, so the test can assert the
+    // inserted property lands as a top-level sibling rather than nested inside `auth`.
+    const baseConfigSource = `import nconf from "nconf";
+
+const conf = nconf.argv();
+
+conf.defaults({
+    service_name: "my-app",
+    auth: {
+        strategy: "auth.JWTStrategy",
+        secret: "MyPasswordIsSecure",
+    },
+    cors: {
+        origin: ["http://localhost:3000"],
+    },
+});
+
+export default conf;
+`;
+
+    async function withConfigFile(fn: (dir: string) => Promise<void>): Promise<void> {
+      await withTmpDir(async (dir) => {
+        await mkdir(join(dir, 'src'), { recursive: true });
+        await writeFile(join(dir, 'src', 'config.ts'), baseConfigSource, 'utf-8');
+        await fn(dir);
+      });
+    }
+
+    it('inserts static_files as a top-level property, not nested inside another block', async () => {
+      await withConfigFile(async (dir) => {
+        const ctx = makeContext({ hasStaticRoute: true, staticPath: 'assets' });
+        await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir });
+
+        const patched = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'config.ts'), 'utf-8'));
+        expect(patched).toContain('static_files: "assets",');
+
+        const authBlock = patched.slice(patched.indexOf('auth: {'), patched.indexOf('cors: {'));
+        expect(authBlock).not.toContain('static_files');
+
+        // Lands immediately before the closing of the conf.defaults({ ... }) call
+        expect(patched).toContain('static_files: "assets",\n});');
+      });
+    });
+
+    it('does not patch config.ts when hasStaticRoute is false', async () => {
+      await withConfigFile(async (dir) => {
+        const ctx = makeContext({ hasStaticRoute: false });
+        await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir });
+
+        const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'config.ts'), 'utf-8'));
+        expect(content).toBe(baseConfigSource);
+      });
+    });
+
+    it('is idempotent — re-running the patch does not insert a duplicate static_files property', async () => {
+      await withConfigFile(async (dir) => {
+        const ctx = makeContext({ hasStaticRoute: true, staticPath: 'assets' });
+        await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir, force: true });
+        await processTemplate(defaultRouteTemplateDir, dir, ctx, { projectDir: dir, force: true });
+
+        const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'config.ts'), 'utf-8'));
+        const matches = content.match(/static_files:/g) ?? [];
+        expect(matches.length).toBe(1);
+      });
     });
   });
 });

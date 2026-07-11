@@ -5,6 +5,17 @@
     { "file": "src/routes/MetricsRoute.ts",         "condition": "hasMetricsRoute" },
     { "file": "src/routes/OpenAPIRoute.ts",         "condition": "hasOpenAPIRoute" },
     { "file": "src/routes/PushRoute.ts",            "condition": "hasPushRoute" },
+    { "file": "src/routes/StaticRoute.ts",          "condition": "hasStaticRoute" },
     { "file": "src/routes/StatusRoute.ts",          "condition": "hasStatusRoute" }
+  ],
+  "patches": [
+    {
+      "template": "patches/config.ts",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "",
+      "idempotencyKey": "static_files",
+      "condition": "hasStaticRoute"
+    }
   ]
 }

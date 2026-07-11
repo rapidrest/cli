@@ -204,30 +204,34 @@ rapidrest generate route ProductRoute --model Product --cache --protect
 
 ### `rapidrest generate default-route`
 
-Generate one or more of RapidREST's built-in default route handlers (Access Control Lists, Admin, Metrics, OpenAPI, Push, Status) inside the current project. `generate server` runs this automatically for whichever default routes you select there — this command lets you add or regenerate them independently on an existing project.
+Generate one or more of RapidREST's built-in default route handlers (Access Control Lists, Admin, Metrics, OpenAPI, Push, Static, Status) inside the current project. `generate server` runs this automatically for whichever default routes you select there — this command lets you add or regenerate them independently on an existing project.
 
 ```
 USAGE
   $ rapidrest generate default-route [--output-dir <path>] [--author <name>] [--api <version>]
-      [--type <type>]... [--force]
+      [--type <type>]... [--static-path <path>] [--force]
 
 FLAGS
-  --output-dir <path>  Directory to write the generated route(s) into. Defaults to the current working directory
-  -a, --author <name>  Author to attribute the generated code to
-  --api <version>      Use @ApiRoute instead of @Route for the generated route(s). Pass a version to prefix paths
-                        with /api/v<version>; pass an empty value for /api with no version
-  -t, --type <type>    The type of default route to generate: acl, admin, metrics, openapi, push, status.
-                        Pass more than once to generate multiple route types
-  -f, --force           Overwrite existing files
+  --output-dir <path>    Directory to write the generated route(s) into. Defaults to the current working directory
+  -a, --author <name>    Author to attribute the generated code to
+  --api <version>        Use @ApiRoute instead of @Route for the generated route(s). Pass a version to prefix paths
+                          with /api/v<version>; pass an empty value for /api with no version
+  -t, --type <type>      The type of default route to generate: acl, admin, metrics, openapi, push, static, status.
+                          Pass more than once to generate multiple route types
+  --static-path <path>   Path containing the static files to serve, when the static route is included. Defaults to
+                          `public`
+  -f, --force             Overwrite existing files
 ```
 
-If `--type` is omitted, you're shown a checklist of all six default routes (all checked by default) to choose from interactively. Pass `--type` one or more times to generate specific routes non-interactively — handy for scripting or CI:
+If `--type` is omitted, you're shown a checklist of all seven default routes to choose from interactively (Admin, Metrics, OpenAPI, and Status are checked by default; ACL, Push, and Static are not). Pass `--type` one or more times to generate specific routes non-interactively — handy for scripting or CI:
 
 ```sh
 rapidrest generate default-route --type acl --type admin --type status
 ```
 
 `ACLRoute` automatically binds to `AccessControlListMongo` or `AccessControlListSQL` depending on whether the project has a MongoDB datastore configured.
+
+When the static route is included, you're asked for the path containing the files to serve (default `public`) unless `--static-path` is passed; this also patches `src/config.ts` with a top-level `static_files` setting pointing at that path.
 
 **Example:**
 
@@ -238,6 +242,9 @@ rapidrest generate default-route
 
 rapidrest generate default-route --type openapi --type metrics --api 1
 # → creates src/routes/OpenAPIRoute.ts and src/routes/MetricsRoute.ts, both using @ApiRoute(path, "1")
+
+rapidrest generate default-route --type static --static-path assets
+# → creates src/routes/StaticRoute.ts and adds static_files: "assets" to src/config.ts
 ```
 
 ---

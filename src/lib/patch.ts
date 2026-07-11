@@ -26,6 +26,10 @@ function resolveCondition(condition: string, context: Record<string, unknown>): 
 }
 
 // Inserts `snippet` into the named block (e.g. `datastores: { … }`) in `source`.
+// An empty `blockName` targets the root object of a `.defaults({ … })` call (nconf's config
+// root) instead of a named `name: { … }` block, so the snippet lands as a top-level sibling
+// of auth/cors/datastores/etc. rather than nested inside whichever named block happens to
+// appear first in the file.
 // Uses the same character-walker as extractDatastoreInfo to skip strings and // comments.
 // Returns source unchanged when `idempotencyKey` is already present as a depth-1 property.
 // Throws if the block cannot be found or its closing brace is malformed.
@@ -35,13 +39,23 @@ export function tsBlockInsert(
   snippet: string,
   idempotencyKey: string,
 ): string {
-  const blockPattern = new RegExp(`\\b${blockName}\\s*:\\s*\\{`);
-  const match = source.match(blockPattern);
-  if (!match || match.index === undefined) {
-    throw new Error(`Could not find '${blockName}' block in source`);
+  let i: number; // first char after the target block's opening {
+
+  if (blockName) {
+    const blockPattern = new RegExp(`\\b${blockName}\\s*:\\s*\\{`);
+    const match = source.match(blockPattern);
+    if (!match || match.index === undefined) {
+      throw new Error(`Could not find '${blockName}' block in source`);
+    }
+    i = match.index + match[0].length;
+  } else {
+    const match = source.match(/\.defaults\(\s*\{/);
+    if (!match || match.index === undefined) {
+      throw new Error(`Could not find the root config object (expected a '.defaults({ ... })' call)`);
+    }
+    i = match.index + match[0].length;
   }
 
-  let i = match.index + match[0].length; // first char after opening {
   let depth = 1;
   let blockEnd = -1;
 
@@ -81,7 +95,7 @@ export function tsBlockInsert(
   }
 
   if (blockEnd === -1) {
-    throw new Error(`Malformed '${blockName}' block: no matching closing brace`);
+    throw new Error(`Malformed ${blockName ? `'${blockName}'` : 'root config'} block: no matching closing brace`);
   }
 
   return source.slice(0, blockEnd) + snippet + source.slice(blockEnd);

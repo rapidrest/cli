@@ -80,6 +80,66 @@ describe('tsBlockInsert', () => {
     const result = tsBlockInsert(src, 'datastores', snippet, 'postgres');
     expect(result).toContain('    postgres: { type: "postgresql" }');
   });
+
+  describe('root config object (empty blockName)', () => {
+    const confSource = `const conf = nconf.argv();
+conf.defaults({
+  auth: {
+    strategy: "auth.JWTStrategy",
+  },
+  datastores: {
+    mongo: {
+      type: "mongodb",
+    },
+  },
+});`;
+
+    it('inserts the snippet as a top-level sibling, not inside the first named block', () => {
+      const snippet = '  static_files: "public",\n';
+      const result = tsBlockInsert(confSource, '', snippet, 'static_files');
+      expect(result).toContain('static_files:');
+      // Must land after the root object's own content, not nested inside `auth`
+      const authBlock = result.slice(result.indexOf('auth: {'), result.indexOf('datastores: {'));
+      expect(authBlock).not.toContain('static_files');
+      expect(result.indexOf('static_files:')).toBeGreaterThan(result.indexOf('datastores: {'));
+    });
+
+    it('inserts immediately before the closing of the .defaults({ ... }) call', () => {
+      const snippet = '  static_files: "public",\n';
+      const result = tsBlockInsert(confSource, '', snippet, 'static_files');
+      expect(result).toContain('static_files: "public",\n});');
+    });
+
+    it('is a no-op when idempotencyKey already appears as a top-level property', () => {
+      const src = `conf.defaults({
+  auth: { strategy: "jwt" },
+  static_files: "public",
+});`;
+      const result = tsBlockInsert(src, '', '  static_files: "assets",\n', 'static_files');
+      expect(result).toBe(src);
+    });
+
+    it('does not match a property of the same name nested inside a named block', () => {
+      // A `static_files` key nested inside `auth` should NOT satisfy the top-level idempotency check
+      const src = `conf.defaults({
+  auth: {
+    static_files: "nested-not-the-target",
+  },
+});`;
+      const snippet = '  static_files: "public",\n';
+      const result = tsBlockInsert(src, '', snippet, 'static_files');
+      // Should insert a second, top-level static_files rather than treating the nested one as already patched
+      const matches = result.match(/static_files:/g) ?? [];
+      expect(matches.length).toBe(2);
+      expect(result).toContain('static_files: "public",\n});');
+    });
+
+    it('throws a descriptive error when no .defaults({ ... }) call exists', () => {
+      expect(() =>
+        tsBlockInsert('export default { port: 3000 };', '', 'foo', ''),
+      ).toThrow("Could not find the root config object");
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------
