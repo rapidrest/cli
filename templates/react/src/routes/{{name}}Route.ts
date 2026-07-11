@@ -7,7 +7,7 @@ const { Route } = RouteDecorators;
 
 @Route("{{path}}/*")
 export class {{className}}Route extends ReactRoute {
-    protected readonly appDir: number = "apps/{{name}}";
+    protected readonly appDir: string = "apps/{{name}}";
     {{#if cache}}
     protected readonly cacheTTL: number = {{cache}};
     {{/if}}
