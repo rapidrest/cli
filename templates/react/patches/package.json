@@ -3,6 +3,6 @@
     "build": "rimraf dist && tsc && tsc -p tsconfig.client.json && vite build",
     "lint": "eslint ./apps ./src ./test"
   },
-  "dependencies": { "@rapidrest/react": "^0.3.0", "react": "^19.2.7", "react-dom": "^19.2.7" },
+  "dependencies": { "@rapidrest/react": "^0.6.0", "react": "^19.2.7", "react-dom": "^19.2.7" },
   "devDependencies": { "@vitejs/plugin-react": "^6.0.3", "vite": "^8.1.0" }
 }

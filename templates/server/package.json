@@ -37,7 +37,7 @@
 	},
 	"dependencies": {
 		"@rapidrest/core": "^1.3.2",
-		"@rapidrest/service-core": "^1.0.0-rc.17",
+		"@rapidrest/service-core": "^1.0.0-rc.19",
 		"@types/node": "^25.9.3",
 		"argon2": "^0.44.0",
 		"axios": "^1.17.0",

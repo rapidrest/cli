@@ -5,7 +5,7 @@ import { ReactRoute } from "@rapidrest/react";
 import { RouteDecorators } from "@rapidrest/service-core";
 const { Route } = RouteDecorators;
 
-@Route("{{path}}/*")
+@Route("{{path}}")
 export class {{className}}Route extends ReactRoute {
     protected readonly appDir: string = "apps/{{name}}";
     {{#if cache}}
