@@ -18,6 +18,8 @@ COPY ./scripts /app/scripts
 
 ARG NODE_ENV=production
 ENV NODE_ENV ${NODE_ENV}
+ENV MONGOMS_DISABLE_POSTINSTALL=1
+ENV REDISMS_DISABLE_POSTINSTALL=true
 RUN echo Building as $NODE_ENV
 # Install any needed packages specified in requirements.txt
 RUN apt update && apt upgrade -y
@@ -70,7 +72,7 @@ HEALTHCHECK --interval=10s --timeout=60s --start-period=15s --retries=3 CMD curl
 
 # Run app.js when the container launches
 {{#if pkgMgr.yarn}}
-CMD ["yarn", "rapidrest", "start", "--docker"]
+CMD ["yarn", "rapidrest", "start", "--docker", "--no-build"]
 {{else}}
-CMD ["npx", "rapidrest", "start", "--docker"]
+CMD ["npx", "rapidrest", "start", "--docker", "--no-build"]
 {{/if}}
