@@ -35,7 +35,7 @@ export default class Start extends Command {
 
   static override flags = {
     bun: Flags.boolean({ description: "Use the Bun engine instead of Node.js" }),
-    docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips build and database servers).' }),
+    docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips embedded databases).' }),
     'no-build': Flags.boolean({ description: 'Skip the build step.' }),
   };
 
@@ -46,7 +46,7 @@ export default class Start extends Command {
     const ext = process.platform === 'win32' ? '.cmd' : '';
 
     // 1. Build
-    if (!flags['no-build'] || flags['docker']) {
+    if (!flags['no-build']) {
       const pkgMgr = await detectPackageManager(cwd);
       this.log('Building project...');
       try {
