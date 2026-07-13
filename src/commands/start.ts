@@ -91,7 +91,11 @@ export default class Start extends Command {
     const basePort = flags.port ?? (Number(process.env.port) || 3000);
     const port = await findAvailablePort(basePort);
     if (port !== basePort) {
-      this.warn(`Port ${basePort} is already in use. Using port ${port} instead.`);
+      if (flags.port && flags.port !== port) {
+        throw new Error(`The specified port (${basePort}) is already in use.`);
+      } else {
+        this.warn(`Port ${basePort} is already in use. Using port ${port} instead.`);
+      }
     }
 
     // 4. Start server
