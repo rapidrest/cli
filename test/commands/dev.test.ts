@@ -166,6 +166,45 @@ describe('dev', () => {
       expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('3001'));
       warnSpy.mockRestore();
     });
+
+    it('does not warn when the preferred port is free', async () => {
+      const warnSpy = vi.spyOn(Dev.prototype, 'warn').mockImplementation(() => undefined as never);
+
+      await Dev.run([], ROOT);
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('throws when --port is explicitly set and that port is already in use', async () => {
+      vi.mocked(findAvailablePort).mockResolvedValue(3001);
+
+      await expect(Dev.run(['--port', '3000'], ROOT)).rejects.toThrow(
+        'The specified port (3000) is already in use.',
+      );
+    });
+
+    it('does not spawn the server when the explicit --port is already in use', async () => {
+      vi.mocked(findAvailablePort).mockResolvedValue(3001);
+
+      await expect(Dev.run(['--port', '3000'], ROOT)).rejects.toThrow();
+
+      expect(spawn).not.toHaveBeenCalled();
+    });
+
+    it('does not warn when --port is explicitly set and already in use (it throws instead)', async () => {
+      vi.mocked(findAvailablePort).mockResolvedValue(3001);
+      const warnSpy = vi.spyOn(Dev.prototype, 'warn').mockImplementation(() => undefined as never);
+
+      await expect(Dev.run(['--port', '3000'], ROOT)).rejects.toThrow();
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
+    });
+
+    it('does not throw when --port is explicitly set and already free', async () => {
+      await expect(Dev.run(['--port', '4000'], ROOT)).resolves.toBeUndefined();
+    });
   });
 
   describe('React / Vite integration', () => {
