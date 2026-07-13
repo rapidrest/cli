@@ -5,16 +5,7 @@ FROM node:lts-trixie-slim AS builder
 WORKDIR /app
 
 # Copy the current directory contents into the container at /app
-{{#if pkgMgr.yarn}}
-COPY package.json yarn.lock .yarnrc.yml tsconfig.json RELEASE_NOTES.md ./
-COPY .yarn/releases ./.yarn/releases
-{{else}}
-COPY package.json package-lock.json tsconfig.json RELEASE_NOTES.md ./
-{{/if}}
-COPY ./app /app/app
-COPY ./public /app/public
-COPY ./src /app/src
-COPY ./scripts /app/scripts
+COPY . ./
 
 ARG NODE_ENV=production
 ENV NODE_ENV ${NODE_ENV}
@@ -27,10 +18,11 @@ RUN npm install --global nodemon
 {{#if pkgMgr.yarn}}
 RUN corepack enable
 RUN yarn install --immutable
+RUN yarn build
 {{else}}
 RUN npm ci
+RUN npm run build
 {{/if}}
-RUN npx rapidreact build
 
 FROM node:lts-trixie-slim AS runner
 WORKDIR /app
@@ -74,5 +66,5 @@ HEALTHCHECK --interval=10s --timeout=60s --start-period=15s --retries=3 CMD curl
 {{#if pkgMgr.yarn}}
 CMD ["yarn", "rapidrest", "start", "--docker", "--no-build"]
 {{else}}
-CMD ["npx", "rapidrest", "start", "--docker", "--no-build"]
+CMD ["npm", "rapidrest", "start", "--docker", "--no-build"]
 {{/if}}

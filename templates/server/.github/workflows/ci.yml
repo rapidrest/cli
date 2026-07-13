@@ -30,7 +30,7 @@ jobs:
             ${{ runner.os }}-yarn-
 
       - name: Install dependencies
-        run: yarn install
+        run: export REDISMS_DISABLE_POSTINSTALL=true && yarn install
 
       - name: Build
         run: yarn build
@@ -64,7 +64,7 @@ jobs:
         run: apt-get update && apt-get install -y libcurl4t64
       
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: export REDISMS_DISABLE_POSTINSTALL=true && yarn install --frozen-lockfile
 
       - name: Run tests
         run: yarn test
