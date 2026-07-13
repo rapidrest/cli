@@ -4,6 +4,7 @@ import { join, delimiter } from 'path';
 import { spawn } from 'child_process';
 import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
 import { detectPackageManager, detectReact } from '../lib/project.js';
+import { findAvailablePort } from '../lib/port.js';
 
 function detectServerPath(cwd: string): string {
   if (existsSync(join(cwd, "dist", "server", "server.js"))) {
@@ -37,6 +38,7 @@ export default class Start extends Command {
     bun: Flags.boolean({ description: "Use the Bun engine instead of Node.js" }),
     docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips embedded databases).' }),
     'no-build': Flags.boolean({ description: 'Skip the build step.' }),
+    port: Flags.integer({ char: 'p', description: 'Preferred port to bind to. If already in use, the next available port is used instead.' }),
   };
 
   async run(): Promise<void> {
@@ -85,17 +87,24 @@ export default class Start extends Command {
       this.log("Docker mode enabled.");
     }
 
-    // 3. Start server
+    // 3. Find an available port, starting from the preferred/default port
+    const basePort = flags.port ?? (Number(process.env.port) || 3000);
+    const port = await findAvailablePort(basePort);
+    if (port !== basePort) {
+      this.warn(`Port ${basePort} is already in use. Using port ${port} instead.`);
+    }
+
+    // 4. Start server
     const serverPath: string = detectServerPath(cwd);
     this.log('\nStarting RapidREST server...');
-    const serverEnv = { ...process.env, ...dbEnv };
+    const serverEnv = { ...process.env, ...dbEnv, port: String(port) };
     const server = spawn(flags.bun ? 'bun' : process.execPath, [serverPath], {
       cwd,
       stdio: 'inherit',
       env: serverEnv,
     });
 
-    // 4. Forward signals and clean up
+    // 5. Forward signals and clean up
     const cleanup = async () => {
       server.kill();
       for (const db of dbProcesses) {

@@ -404,19 +404,21 @@ Start the RapidREST server in development mode with hot reloading.
 
 ```
 USAGE
-  $ rapidrest dev [--inspect] [--docker]
+  $ rapidrest dev [--inspect] [--docker] [--port <value>]
 
 FLAGS
   --inspect  Enable the Node.js inspector on port 9229 for debugger attachment
   -d, --docker  Run in Docker mode (skips starting in-memory database servers)
+  -p, --port    Preferred port to bind to (default 3000). If already in use, the next available port is used instead.
 ```
 
 Run this command from the root of a generated RapidREST project. It:
 
 1. Reads `src/config.ts` to detect which databases are configured.
 2. Starts an in-process, in-memory server for each configured database (MongoDB, PostgreSQL, and/or Redis) — no local database installation required. Pass `--docker` to skip this step when your databases are already running elsewhere (e.g. via `docker compose`).
-3. Starts the server via `tsx --watch`, watching `src/` for changes.
-4. If the project has React support configured (a `vite.config.ts` is present), also starts `vite build --watch` concurrently.
+3. Finds an available port to bind to, starting at 3000 (or `--port`, if given) and trying the next port up until a free one is found.
+4. Starts the server via `tsx --watch`, watching `src/` for changes.
+5. If the project has React support configured (a `vite.config.ts` is present), also starts `vite build --watch` concurrently.
 
 All child processes and started databases are cleaned up on `CTRL+C`.
 
@@ -427,6 +429,7 @@ cd my-api
 rapidrest dev
 rapidrest dev --inspect   # attach a debugger on localhost:9229
 rapidrest dev --docker    # assume databases are already running (e.g. via Docker Compose)
+rapidrest dev --port 4000 # prefer port 4000, falling back to 4001, 4002, ... if occupied
 ```
 
 ---
@@ -437,11 +440,12 @@ Build and start the RapidREST server for production.
 
 ```
 USAGE
-  $ rapidrest start [--no-build] [--docker]
+  $ rapidrest start [--no-build] [--docker] [--port <value>]
 
 FLAGS
   --no-build    Skip the build step
   -d, --docker  Run in Docker mode (skips starting in-memory database servers)
+  -p, --port    Preferred port to bind to (default 3000). If already in use, the next available port is used instead.
 ```
 
 Run this command from the root of a generated RapidREST project. It:
@@ -449,7 +453,8 @@ Run this command from the root of a generated RapidREST project. It:
 1. Runs `yarn build` or `npm run build` (auto-detected from `yarn.lock` / `package.json`).
 2. If the project has React support configured, also runs `vite build` to compile the frontend.
 3. Reads `src/config.ts` to detect which databases are configured and starts an in-memory server for each one — unless `--docker` is passed, in which case this step is skipped.
-4. Starts the compiled server (`node dist/server.js`, or the equivalent path for your build output).
+4. Finds an available port to bind to, starting at 3000 (or `--port`, if given) and trying the next port up until a free one is found.
+5. Starts the compiled server (`node dist/server.js`, or the equivalent path for your build output).
 
 **Example:**
 
@@ -458,6 +463,7 @@ cd my-api
 rapidrest start
 rapidrest start --no-build   # skip build, just start databases + server
 rapidrest start --docker     # assume databases are already running
+rapidrest start --port 4000  # prefer port 4000, falling back to 4001, 4002, ... if occupied
 ```
 
 ---

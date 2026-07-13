@@ -19,10 +19,15 @@ vi.mock('../../src/lib/project.js', () => ({
   detectReact: vi.fn(),
 }));
 
+vi.mock('../../src/lib/port.js', () => ({
+  findAvailablePort: vi.fn(),
+}));
+
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { detectDatabases, startDatabases } from '../../src/lib/db.js';
 import { detectPackageManager, detectReact } from '../../src/lib/project.js';
+import { findAvailablePort } from '../../src/lib/port.js';
 import Start from '../../src/commands/start.js';
 
 const ROOT = process.cwd();
@@ -63,6 +68,7 @@ describe('start', () => {
     vi.mocked(detectDatabases).mockResolvedValue({ mongodb: false, redis: false, postgresql: false });
     vi.mocked(startDatabases).mockResolvedValue({ databases: [], env: {} });
     vi.mocked(detectReact).mockResolvedValue(false);
+    vi.mocked(findAvailablePort).mockImplementation(async (port) => port as number);
   });
 
   afterEach(() => {
@@ -301,6 +307,53 @@ describe('start', () => {
       } finally {
         delete process.env[testKey];
       }
+    });
+  });
+
+  describe('port detection', () => {
+    it('defaults to port 3000 and passes it to findAvailablePort', async () => {
+      await Start.run(['--no-build'], ROOT);
+      expect(findAvailablePort).toHaveBeenCalledWith(3000);
+    });
+
+    it('passes the port through to the server env when free', async () => {
+      await Start.run(['--no-build'], ROOT);
+      const [, , opts] = serverSpawnCall()!;
+      expect((opts as any).env.port).toBe('3000');
+    });
+
+    it('uses --port as the preferred base port', async () => {
+      await Start.run(['--no-build', '--port', '4000'], ROOT);
+      expect(findAvailablePort).toHaveBeenCalledWith(4000);
+    });
+
+    it('falls back to the port returned by findAvailablePort when the preferred one is occupied', async () => {
+      vi.mocked(findAvailablePort).mockResolvedValue(3001);
+
+      await Start.run(['--no-build'], ROOT);
+
+      const [, , opts] = serverSpawnCall()!;
+      expect((opts as any).env.port).toBe('3001');
+    });
+
+    it('warns when falling back to a different port', async () => {
+      vi.mocked(findAvailablePort).mockResolvedValue(3001);
+      const warnSpy = vi.spyOn(Start.prototype, 'warn').mockImplementation(() => undefined as never);
+
+      await Start.run(['--no-build'], ROOT);
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('3000'));
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('3001'));
+      warnSpy.mockRestore();
+    });
+
+    it('does not warn when the preferred port is free', async () => {
+      const warnSpy = vi.spyOn(Start.prototype, 'warn').mockImplementation(() => undefined as never);
+
+      await Start.run(['--no-build'], ROOT);
+
+      expect(warnSpy).not.toHaveBeenCalled();
+      warnSpy.mockRestore();
     });
   });
 

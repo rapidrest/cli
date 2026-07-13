@@ -3,6 +3,7 @@ import { join, delimiter } from 'path';
 import { spawn } from 'child_process';
 import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
 import { detectReact } from '../lib/project.js';
+import { findAvailablePort } from '../lib/port.js';
 
 export default class Dev extends Command {
   static override description = 'Start the RapidREST server in development mode with hot reloading via nodemon + tsx.';
@@ -15,6 +16,7 @@ export default class Dev extends Command {
   static override flags = {
     docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips starting database servers).' }),
     inspect: Flags.boolean({ description: 'Enable Node.js inspector on port 9229 for debugging.' }),
+    port: Flags.integer({ char: 'p', description: 'Preferred port to bind to. If already in use, the next available port is used instead.' }),
   };
 
   async run(): Promise<void> {
@@ -39,16 +41,24 @@ export default class Dev extends Command {
       this.log("Docker mode enabled.");
     }
 
-    // 2. Add project's .bin to PATH so nodemon can resolve tsx (and vite)
+    // 2. Find an available port, starting from the preferred/default port
+    const basePort = flags.port ?? (Number(process.env.port) || 3000);
+    const port = await findAvailablePort(basePort);
+    if (port !== basePort) {
+      this.warn(`Port ${basePort} is already in use. Using port ${port} instead.`);
+    }
+
+    // 3. Add project's .bin to PATH so nodemon can resolve tsx (and vite)
     const projectBin = join(cwd, 'node_modules', '.bin');
     const ext = process.platform === 'win32' ? '.cmd' : '';
     const serverEnv = {
       ...process.env,
       ...dbEnv,
       PATH: `${projectBin}${delimiter}${process.env.PATH ?? ''}`,
+      port: String(port),
     };
 
-    // 3. Build the tsx exec string — with optional inspector
+    // 4. Build the tsx exec string — with optional inspector
     const tsxExec = join(projectBin, `tsx${ext}`);
     const tsxArgs = ['--watch', 'src/server.ts'];
     if (flags.inspect) {

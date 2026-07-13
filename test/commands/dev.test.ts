@@ -13,9 +13,14 @@ vi.mock('../../src/lib/project.js', () => ({
   detectReact: vi.fn(),
 }));
 
+vi.mock('../../src/lib/port.js', () => ({
+  findAvailablePort: vi.fn(),
+}));
+
 import { spawn } from 'child_process';
 import { detectDatabases, startDatabases } from '../../src/lib/db.js';
 import { detectReact } from '../../src/lib/project.js';
+import { findAvailablePort } from '../../src/lib/port.js';
 import Dev from '../../src/commands/dev.js';
 
 const ROOT = process.cwd();
@@ -45,6 +50,7 @@ describe('dev', () => {
     vi.mocked(detectDatabases).mockResolvedValue({ mongodb: false, redis: false, postgresql: false });
     vi.mocked(startDatabases).mockResolvedValue({ databases: [], env: {} });
     vi.mocked(detectReact).mockResolvedValue(false);
+    vi.mocked(findAvailablePort).mockImplementation(async (port) => port as number);
   });
 
   afterEach(() => {
@@ -121,6 +127,44 @@ describe('dev', () => {
 
     it('does not throw when no databases are configured', async () => {
       await expect(Dev.run([], ROOT)).resolves.toBeUndefined();
+    });
+  });
+
+  describe('port detection', () => {
+    it('defaults to port 3000 and passes it to findAvailablePort', async () => {
+      await Dev.run([], ROOT);
+      expect(findAvailablePort).toHaveBeenCalledWith(3000);
+    });
+
+    it('passes the port through to the server env when free', async () => {
+      await Dev.run([], ROOT);
+      const [, , opts] = vi.mocked(spawn).mock.calls[0];
+      expect((opts as any).env.port).toBe('3000');
+    });
+
+    it('uses --port as the preferred base port', async () => {
+      await Dev.run(['--port', '4000'], ROOT);
+      expect(findAvailablePort).toHaveBeenCalledWith(4000);
+    });
+
+    it('falls back to the port returned by findAvailablePort when the preferred one is occupied', async () => {
+      vi.mocked(findAvailablePort).mockResolvedValue(3001);
+
+      await Dev.run([], ROOT);
+
+      const [, , opts] = vi.mocked(spawn).mock.calls[0];
+      expect((opts as any).env.port).toBe('3001');
+    });
+
+    it('warns when falling back to a different port', async () => {
+      vi.mocked(findAvailablePort).mockResolvedValue(3001);
+      const warnSpy = vi.spyOn(Dev.prototype, 'warn').mockImplementation(() => undefined as never);
+
+      await Dev.run([], ROOT);
+
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('3000'));
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('3001'));
+      warnSpy.mockRestore();
     });
   });
 
