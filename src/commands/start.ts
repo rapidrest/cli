@@ -5,6 +5,7 @@ import { spawn } from 'child_process';
 import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
 import { detectPackageManager, detectReact } from '../lib/project.js';
 import { findAvailablePort } from '../lib/port.js';
+import { MIN_BUN_VERSION, resolveBunExecutable } from '../lib/bun.js';
 
 function detectServerPath(cwd: string): string {
   if (existsSync(join(cwd, "dist", "server", "server.js"))) {
@@ -35,7 +36,7 @@ export default class Start extends Command {
   ];
 
   static override flags = {
-    bun: Flags.boolean({ description: "Use the Bun engine instead of Node.js" }),
+    bun: Flags.boolean({ description: `Use the Bun engine instead of Node.js. Requires Bun v${MIN_BUN_VERSION}+; downloads a compatible version automatically if none is installed.` }),
     docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips embedded databases).' }),
     'no-build': Flags.boolean({ description: 'Skip the build step.' }),
     port: Flags.integer({ char: 'p', description: 'Preferred port to bind to. If already in use, the next available port is used instead.' }),
@@ -47,7 +48,17 @@ export default class Start extends Command {
     const projectBin = join(cwd, 'node_modules', '.bin');
     const ext = process.platform === 'win32' ? '.cmd' : '';
 
-    // 1. Build
+    // 1. Resolve a compatible Bun executable, downloading one if necessary
+    let runtimePath = process.execPath;
+    if (flags.bun) {
+      try {
+        runtimePath = await resolveBunExecutable((m) => this.log(m), (m) => this.warn(m));
+      } catch (e) {
+        this.error(e instanceof Error ? e.message : String(e));
+      }
+    }
+
+    // 2. Build
     if (!flags['no-build']) {
       const pkgMgr = await detectPackageManager(cwd);
       this.log('Building project...');
@@ -58,7 +69,7 @@ export default class Start extends Command {
         this.error(e instanceof Error ? e.message : String(e));
       }
 
-      // 1b. Build React frontend (vite build) if configured
+      // 2b. Build React frontend (vite build) if configured
       if (await detectReact(cwd)) {
         this.log('Building React frontend...');
         try {
@@ -71,7 +82,7 @@ export default class Start extends Command {
 
     this.log('\nStarting RapidREST server...');
 
-    // 2. Start databases
+    // 3. Start databases
     let dbProcesses: StartedDatabase[] = [];
     let dbEnv: Record<string, string> = {};
     if (!flags.docker) {
@@ -87,7 +98,7 @@ export default class Start extends Command {
       this.log("Docker mode enabled.");
     }
 
-    // 3. Find an available port, starting from the preferred/default port
+    // 4. Find an available port, starting from the preferred/default port
     const basePort = flags.port ?? (Number(process.env.port) || 3000);
     const port = await findAvailablePort(basePort);
     if (port !== basePort) {
@@ -98,17 +109,17 @@ export default class Start extends Command {
       }
     }
 
-    // 4. Start server
+    // 5. Start server
     const serverPath: string = detectServerPath(cwd);
     this.log('\nStarting RapidREST server...');
     const serverEnv = { ...process.env, ...dbEnv, port: String(port) };
-    const server = spawn(flags.bun ? 'bun' : process.execPath, [serverPath], {
+    const server = spawn(runtimePath, [serverPath], {
       cwd,
       stdio: 'inherit',
       env: serverEnv,
     });
 
-    // 5. Forward signals and clean up
+    // 6. Forward signals and clean up
     const cleanup = async () => {
       server.kill();
       for (const db of dbProcesses) {

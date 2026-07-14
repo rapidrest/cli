@@ -440,21 +440,28 @@ Build and start the RapidREST server for production.
 
 ```
 USAGE
-  $ rapidrest start [--no-build] [--docker] [--port <value>]
+  $ rapidrest start [--no-build] [--docker] [--port <value>] [--bun]
 
 FLAGS
   --no-build    Skip the build step
   -d, --docker  Run in Docker mode (skips starting in-memory database servers)
   -p, --port    Preferred port to bind to (default 3000). If already in use, the next available port is used instead.
+  --bun         Use the Bun engine instead of Node.js. Requires Bun v1.4.0+; downloads a compatible version automatically if none is installed.
 ```
 
 Run this command from the root of a generated RapidREST project. It:
 
-1. Runs `yarn build` or `npm run build` (auto-detected from `yarn.lock` / `package.json`).
-2. If the project has React support configured, also runs `vite build` to compile the frontend.
-3. Reads `src/config.ts` to detect which databases are configured and starts an in-memory server for each one — unless `--docker` is passed, in which case this step is skipped.
-4. Finds an available port to bind to, starting at 3000 (or `--port`, if given) and trying the next port up until a free one is found.
-5. Starts the compiled server (`node dist/server.js`, or the equivalent path for your build output).
+1. If `--bun` is passed, resolves a Bun v1.4.0+ executable to run the server with (see below).
+2. Runs `yarn build` or `npm run build` (auto-detected from `yarn.lock` / `package.json`).
+3. If the project has React support configured, also runs `vite build` to compile the frontend.
+4. Reads `src/config.ts` to detect which databases are configured and starts an in-memory server for each one — unless `--docker` is passed, in which case this step is skipped.
+5. Finds an available port to bind to, starting at 3000 (or `--port`, if given) and trying the next port up until a free one is found.
+6. Starts the compiled server (`node dist/server.js`, or the equivalent path for your build output — or the resolved `bun` executable when `--bun` is passed).
+
+**Bun support (`--bun`):** RapidREST requires Bun v1.4.0 or newer. When `--bun` is passed:
+- If a compatible `bun` is already on your `PATH`, it's used directly.
+- Otherwise, if a previously-downloaded compatible version exists in the local cache (`~/.rapidrest/bun/<version>/`), it's reused.
+- Otherwise, the latest Bun release is downloaded automatically from GitHub and cached for future runs. If the latest available release is still older than v1.4.0, the command fails with a clear error rather than running under an incompatible runtime.
 
 **Example:**
 
@@ -464,6 +471,7 @@ rapidrest start
 rapidrest start --no-build   # skip build, just start databases + server
 rapidrest start --docker     # assume databases are already running
 rapidrest start --port 4000  # prefer port 4000, falling back to 4001, 4002, ... if occupied
+rapidrest start --bun        # run the server with Bun, downloading a compatible version if needed
 ```
 
 ---

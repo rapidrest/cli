@@ -1,845 +1,1079 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuites name="vitest tests" tests="403" failures="0" errors="0" time="110.5588524">
-    <testsuite name="test/commands/dev.test.ts" timestamp="2026-07-13T21:57:25.500Z" hostname="Jane" tests="31" failures="0" errors="0" skipped="0" time="12.1212082">
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; spawns tsx from the project node_modules/.bin with --watch src/server.ts" time="0.6375016">
+<testsuites name="vitest tests" tests="517" failures="0" errors="0" time="129.6755716">
+    <testsuite name="test/commands/build.test.ts" timestamp="2026-07-14T18:19:34.074Z" hostname="Jane" tests="4" failures="0" errors="0" skipped="0" time="1.7723022">
+        <testcase classname="test/commands/build.test.ts" name="build &gt; runs &quot;npm run build&quot; when detectPackageManager resolves &quot;npm&quot;" time="0.6102251">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; prepends --inspect=0.0.0.0:9229 to tsx args when --inspect is passed" time="0.41953">
+        <testcase classname="test/commands/build.test.ts" name="build &gt; runs &quot;yarn build&quot; when detectPackageManager resolves &quot;yarn&quot;" time="0.393132">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; passes db env vars into the tsx process environment" time="0.4181095">
+        <testcase classname="test/commands/build.test.ts" name="build &gt; calls detectPackageManager with the current working directory" time="0.3897619">
         </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; includes project node_modules/.bin in PATH for the server process" time="0.4069178">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.3911785">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.3649033">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls server.stop() on each started database after the server exits" time="0.3679703">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; does not throw when no databases are configured" time="0.3771767">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; defaults to port 3000 and passes it to findAvailablePort" time="0.3626497">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; passes the port through to the server env when free" time="0.3600398">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; uses --port as the preferred base port" time="0.3839631">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; falls back to the port returned by findAvailablePort when the preferred one is occupied" time="0.3720064">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; warns when falling back to a different port" time="0.3828549">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; does not warn when the preferred port is free" time="0.3829516">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; throws when --port is explicitly set and that port is already in use" time="0.3762927">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; does not spawn the server when the explicit --port is already in use" time="0.3879426">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; does not warn when --port is explicitly set and already in use (it throws instead)" time="0.3721852">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; does not throw when --port is explicitly set and already free" time="0.3952494">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; does not spawn vite when detectReact returns false" time="0.3633187">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; spawns vite build --watch concurrently when detectReact returns true" time="0.3674821">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; vite process receives the same db env vars as the server" time="0.3856468">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.3960337">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.3843744">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns the tsx server when --docker is set" time="0.3908643">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; passes no db env vars to the tsx process when --docker is set" time="0.3762928">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.3779727">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns vite in watch mode when --docker is set and React is configured" time="0.3977616">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process" time="0.3594061">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process in --docker mode" time="0.374485">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.3936122">
-        </testcase>
-        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; vite process receives the same shell env vars as the tsx server" time="0.3929448">
+        <testcase classname="test/commands/build.test.ts" name="build &gt; propagates an error thrown by config.runCommand" time="0.3781852">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/start.test.ts" timestamp="2026-07-13T21:57:25.505Z" hostname="Jane" tests="37" failures="0" errors="0" skipped="0" time="14.9840645">
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --no-build flag &gt; skips the build step entirely and goes straight to starting the server" time="0.6634478">
+    <testsuite name="test/commands/dev.test.ts" timestamp="2026-07-14T18:19:34.077Z" hostname="Jane" tests="37" failures="0" errors="0" skipped="0" time="13.3119511">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; spawns tsx from the project node_modules/.bin with --watch src/server.ts" time="0.6113782">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --no-build flag &gt; does not call detectReact when --no-build is set" time="0.4428375">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; prepends --inspect=0.0.0.0:9229 to tsx args when --inspect is passed" time="0.3911796">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs npm run build when no yarn.lock or packageManager field exists" time="0.4093137">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; passes db env vars into the tsx process environment" time="0.406255">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs yarn build when yarn.lock is present" time="0.3925362">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; server process &gt; includes project node_modules/.bin in PATH for the server process" time="0.3626591">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs yarn build when packageManager field starts with &quot;yarn&quot;" time="0.4165187">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.3656727">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; spawns node with a server.js path" time="0.409767">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.3617995">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; checks for server files relative to the project cwd, not the node binary path" time="0.3844239">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; calls server.stop() on each started database after the server exits" time="0.3835954">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; falls back to dist/server.js when no specific layout is detected" time="0.4203222">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database lifecycle &gt; does not throw when no databases are configured" time="0.3609825">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; uses dist/server/server.js when existsSync returns true for that path (first check)" time="0.4203367">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; defaults to port 3000 and passes it to findAvailablePort" time="0.3855657">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; uses dist/src/server.js when the first check fails but the second succeeds" time="0.4210261">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; passes the port through to the server env when free" time="0.3567547">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; passes db env vars into the server process environment" time="0.4139579">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; uses --port as the preferred base port" time="0.3788636">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.4096481">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; falls back to the port returned by findAvailablePort when the preferred one is occupied" time="0.3862955">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.3758712">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; warns when falling back to a different port" time="0.3573803">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; calls server.stop() on each started database after server exits" time="0.4079657">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; does not warn when the preferred port is free" time="0.3883023">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.3664797">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; throws when --port is explicitly set and that port is already in use" time="0.364265">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.3840639">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; does not spawn the server when the explicit --port is already in use" time="0.3786539">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; still spawns the server process when --docker is set" time="0.3902799">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; does not warn when --port is explicitly set and already in use (it throws instead)" time="0.388975">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; passes no db env vars to the server process when --docker is set" time="0.4487447">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; port detection &gt; does not throw when --port is explicitly set and already free" time="0.3542466">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; still runs the build step when --docker is set without --no-build" time="0.3834314">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; does not spawn vite when detectReact returns false" time="0.3655647">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.4023816">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; spawns vite build --watch concurrently when detectReact returns true" time="0.3895054">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; passes shell env vars through to the server process" time="0.3764087">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; React / Vite integration &gt; vite process receives the same db env vars as the server" time="0.3752424">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; passes shell env vars through to the server process in --docker mode" time="0.4050153">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.3631999">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.3870588">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.3882589">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; build commands inherit the shell environment implicitly (no explicit env stripping)" time="0.3816897">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns the tsx server when --docker is set" time="0.3632299">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; defaults to port 3000 and passes it to findAvailablePort" time="0.3686754">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; passes no db env vars to the tsx process when --docker is set" time="0.3616889">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; passes the port through to the server env when free" time="0.4557066">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.3613425">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; uses --port as the preferred base port" time="0.3934122">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; --docker flag &gt; still spawns vite in watch mode when --docker is set and React is configured" time="0.3786856">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; falls back to the port returned by findAvailablePort when the preferred one is occupied" time="0.3907631">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process" time="0.3538352">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; warns when falling back to a different port" time="0.3625702">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; passes shell env vars through to the tsx process in --docker mode" time="0.35769">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; does not warn when the preferred port is free" time="0.38456">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.3605015">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; throws when --port is explicitly set and that port is already in use" time="0.3858919">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; environment variable passthrough &gt; vite process receives the same shell env vars as the tsx server" time="0.3563047">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; does not spawn the server when the explicit --port is already in use" time="0.3973985">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; error handling &gt; throws when startDatabases rejects with an Error" time="0.3784492">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; does not warn when --port is explicitly set and already in use (it throws instead)" time="0.3780077">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; error handling &gt; falls back to String(e) when startDatabases rejects with a non-Error value" time="0.3830397">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; does not throw when --port is explicitly set and already free" time="0.3840908">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; error handling &gt; does not spawn the server when startDatabases rejects" time="0.3811919">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; does not run vite build when detectReact returns false" time="0.3879953">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; platform-specific behavior &gt; does not append .cmd to the tsx/vite binary names on non-Windows platforms" time="0.011689">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; runs vite build between the main build and server startup when detectReact is true" time="0.3860533">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; platform-specific behavior &gt; falls back to an empty string when process.env.PATH is unset" time="0.0412253">
         </testcase>
-        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; skips vite build when --no-build is set even if detectReact would return true" time="0.3937412">
-        </testcase>
-    </testsuite>
-    <testsuite name="test/lib/db.test.ts" timestamp="2026-07-13T21:57:25.510Z" hostname="Jane" tests="11" failures="0" errors="0" skipped="0" time="6.85636">
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects mongodb from type: &quot;mongodb&quot; in datastores" time="0.0055731">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects redis from type: &quot;redis&quot; in datastores" time="0.0026598">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects postgresql from type: &quot;postgresql&quot; in datastores" time="0.0023995">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects multiple database types from a single config" time="0.0027662">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; handles single-quoted type values" time="0.0021744">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when config has no datastore type strings" time="0.001981">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when src/config.ts does not exist" time="0.0012978">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts mongodb-memory-server and sets DATASTORES env vars" time="0.4403399">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; sets no env vars and spawns no processes when no databases configured" time="0.0003051">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts redis-memory-server and sets DATASTORES env vars" time="4.0468696">
-        </testcase>
-        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts postgres-memory-server and sets DATASTORES env vars" time="2.3485222">
+        <testcase classname="test/commands/dev.test.ts" name="dev &gt; database log/warn forwarding &gt; forwards log and warn messages from startDatabases through to the command" time="0.356758">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/patch.test.ts" timestamp="2026-07-13T21:57:25.511Z" hostname="Jane" tests="36" failures="0" errors="0" skipped="0" time="0.052787">
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; inserts a snippet before the closing brace of the named block" time="0.0013622">
+    <testsuite name="test/commands/start.test.ts" timestamp="2026-07-14T18:19:34.081Z" hostname="Jane" tests="54" failures="0" errors="0" skipped="0" time="20.2038311">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --no-build flag &gt; skips the build step entirely and goes straight to starting the server" time="0.6817521">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; is a no-op when idempotencyKey already appears as a depth-1 property" time="0.0002562">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --no-build flag &gt; does not call detectReact when --no-build is set" time="0.4114595">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; inserts when idempotencyKey does not match any existing property" time="0.0001137">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs npm run build when no yarn.lock or packageManager field exists" time="0.3967612">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; throws a descriptive error when the named block does not exist" time="0.0005581">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs yarn build when yarn.lock is present" time="0.3626225">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; handles an empty block" time="0.0000968">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; build step (without --no-build) &gt; runs yarn build when packageManager field starts with &quot;yarn&quot;" time="0.3800129">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; does not match property names inside string literals" time="0.0001264">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; spawns node with a server.js path" time="0.3584822">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; skips property names inside // comments when checking idempotency" time="0.0000808">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; checks for server files relative to the project cwd, not the node binary path" time="0.3744859">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; inserts the snippet as a top-level sibling, not inside the first named block" time="0.000219">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; falls back to dist/server.js when no specific layout is detected" time="0.3864602">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; inserts immediately before the closing of the .defaults({ ... }) call" time="0.0001695">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; uses dist/server/server.js when existsSync returns true for that path (first check)" time="0.3610427">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; is a no-op when idempotencyKey already appears as a top-level property" time="0.0001452">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; uses dist/src/server.js when the first check fails but the second succeeds" time="0.3767512">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; does not match a property of the same name nested inside a named block" time="0.0001183">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; server process &gt; passes db env vars into the server process environment" time="0.3937465">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; throws a descriptive error when no .defaults({ ... }) call exists" time="0.0001263">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; calls detectDatabases before starting the server" time="0.3681503">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; replaces the value of the named property inside the block" time="0.0002708">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; passes the detected config to startDatabases" time="0.3621974">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; is a no-op when the value is already the desired value" time="0.0001104">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; database lifecycle &gt; calls server.stop() on each started database after server exits" time="0.3909502">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; preserves all other content outside the changed property" time="0.0001074">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; skips detectDatabases when --docker is set" time="0.3661609">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; throws when the named block does not exist" time="0.0001297">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; skips startDatabases when --docker is set" time="0.3869277">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; returns source unchanged when the property does not exist in the block" time="0.0001142">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; still spawns the server process when --docker is set" time="0.3971119">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; does not affect same-named properties inside sibling blocks" time="0.0001325">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; passes no db env vars to the server process when --docker is set" time="0.379104">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; handles an object-valued property without corrupting it" time="0.0001366">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; still runs the build step when --docker is set without --no-build" time="0.3911344">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; skips // comments when scanning for property names" time="0.0000974">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --docker flag &gt; does not stop any database servers on exit when --docker is set" time="0.3891145">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; merges dependencies into an existing package.json object" time="0.0005424">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; passes shell env vars through to the server process" time="0.3797815">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; patch value wins on scalar conflicts" time="0.0000818">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; passes shell env vars through to the server process in --docker mode" time="0.3577403">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; deep-merges nested objects independently" time="0.0001377">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; db env vars take precedence over shell env vars of the same name" time="0.3573936">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; replaces arrays rather than concatenating" time="0.000093">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; environment variable passthrough &gt; build commands inherit the shell environment implicitly (no explicit env stripping)" time="0.3649705">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; is idempotent: applying the same patch twice yields the same result" time="0.0001095">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; defaults to port 3000 and passes it to findAvailablePort" time="0.3684348">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; does not mutate the target argument" time="0.0000789">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; passes the port through to the server env when free" time="0.3604864">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; handles an empty patch (no-op)" time="0.0000841">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; uses --port as the preferred base port" time="0.3820975">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: inserts rendered snippet into the named block" time="0.0113976">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; falls back to the port returned by findAvailablePort when the preferred one is occupied" time="0.3676697">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: skips insertion when idempotencyKey is already present" time="0.0047274">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; warns when falling back to a different port" time="0.3643839">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: throws when target file does not exist" time="0.0041982">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; does not warn when the preferred port is free" time="0.3908673">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: merges dependency entries into existing package.json" time="0.0046532">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; throws when --port is explicitly set and that port is already in use" time="0.3816396">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: creates the file if it does not exist" time="0.004155">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; does not spawn the server when the explicit --port is already in use" time="0.3797566">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: is idempotent — running twice yields the same result" time="0.0051292">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; does not warn when --port is explicitly set and already in use (it throws instead)" time="0.3557054">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: replaces a property value in the named block" time="0.0041438">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; port detection &gt; does not throw when --port is explicitly set and already free" time="0.3814894">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: is idempotent when property already has the desired value" time="0.0040185">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; does not run vite build when detectReact returns false" time="0.3806997">
         </testcase>
-        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; skips a patch entirely when condition evaluates to falsy" time="0.0034107">
+        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; runs vite build between the main build and server startup when detectReact is true" time="0.3865636">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; React / Vite integration &gt; skips vite build when --no-build is set even if detectReact would return true" time="0.369038">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; error handling &gt; throws when the build command exits with a non-zero code" time="0.3646374">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; error handling &gt; does not start databases when the build command fails" time="0.3807152">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; error handling &gt; throws when the vite build command exits with a non-zero code" time="0.3517688">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; error handling &gt; throws when startDatabases rejects" time="0.38272">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; error handling &gt; does not spawn the server when startDatabases rejects" time="0.3772224">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; error handling &gt; falls back to String(e) when the build process errors with a non-Error value" time="0.3667613">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; error handling &gt; falls back to String(e) when the vite build process errors with a non-Error value" time="0.3739298">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; error handling &gt; falls back to String(e) when startDatabases rejects with a non-Error value" time="0.3573043">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; platform-specific behavior &gt; does not append .cmd to the vite binary name on non-Windows platforms" time="0.01084">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --bun flag &gt; spawns the resolved Bun executable instead of the node executable when --bun is set" time="0.3689963">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --bun flag &gt; spawns a downloaded Bun binary path when resolveBunExecutable returns one" time="0.3933044">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --bun flag &gt; does not call resolveBunExecutable when --bun is not set" time="0.3550787">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --bun flag &gt; throws when resolveBunExecutable rejects (e.g. download failure)" time="0.365412">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --bun flag &gt; falls back to String(e) when resolveBunExecutable rejects with a non-Error value" time="0.3782417">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --bun flag &gt; does not spawn the server when resolveBunExecutable rejects" time="0.3895535">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; --bun flag &gt; forwards resolveBunExecutable log/warn messages through to the command" time="0.3598302">
+        </testcase>
+        <testcase classname="test/commands/start.test.ts" name="start &gt; database log/warn forwarding &gt; forwards log and warn messages from startDatabases through to the command" time="0.3824673">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/port.test.ts" timestamp="2026-07-13T21:57:25.514Z" hostname="Jane" tests="3" failures="0" errors="0" skipped="0" time="0.0169609">
-        <testcase classname="test/lib/port.test.ts" name="findAvailablePort &gt; returns the requested port when it is free" time="0.0115224">
+    <testsuite name="test/lib/bun.test.ts" timestamp="2026-07-14T18:19:34.088Z" hostname="Jane" tests="23" failures="0" errors="0" skipped="0" time="0.010284">
+        <testcase classname="test/lib/bun.test.ts" name="bunAssetName &gt; maps darwin/x64 to bun-darwin-x64" time="0.0011554">
         </testcase>
-        <testcase classname="test/lib/port.test.ts" name="findAvailablePort &gt; returns the next free port when the requested one is occupied" time="0.0023841">
+        <testcase classname="test/lib/bun.test.ts" name="bunAssetName &gt; maps darwin/arm64 to bun-darwin-aarch64" time="0.0001027">
         </testcase>
-        <testcase classname="test/lib/port.test.ts" name="findAvailablePort &gt; skips multiple consecutive occupied ports" time="0.002041">
+        <testcase classname="test/lib/bun.test.ts" name="bunAssetName &gt; maps linux/x64 to bun-linux-x64" time="0.0000767">
         </testcase>
-    </testsuite>
-    <testsuite name="test/lib/project.test.ts" timestamp="2026-07-13T21:57:25.515Z" hostname="Jane" tests="27" failures="0" errors="0" skipped="0" time="0.0365141">
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns true when vite.config.ts exists" time="0.0039037">
+        <testcase classname="test/lib/bun.test.ts" name="bunAssetName &gt; maps linux/arm64 to bun-linux-aarch64" time="0.0000604">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false when vite.config.ts does not exist" time="0.0008594">
+        <testcase classname="test/lib/bun.test.ts" name="bunAssetName &gt; maps win32/x64 to bun-windows-x64" time="0.000056">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false for a non-existent directory" time="0.0007624">
+        <testcase classname="test/lib/bun.test.ts" name="bunAssetName &gt; throws for win32/arm64 (unsupported)" time="0.0005058">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns a string author field" time="0.0020202">
+        <testcase classname="test/lib/bun.test.ts" name="bunAssetName &gt; throws for an unsupported platform" time="0.0001132">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns the name from an object author field" time="0.0016607">
+        <testcase classname="test/lib/bun.test.ts" name="getBunVersion &gt; returns the parsed version when the command succeeds" time="0.0004622">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author is an empty string" time="0.0016576">
+        <testcase classname="test/lib/bun.test.ts" name="getBunVersion &gt; coerces extraneous output into a valid version" time="0.0001712">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author field is absent" time="0.0016387">
+        <testcase classname="test/lib/bun.test.ts" name="getBunVersion &gt; returns undefined when the command fails (e.g. not installed)" time="0.0001374">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json does not exist" time="0.0011289">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; returns &quot;bun&quot; when the system version already satisfies the minimum" time="0.0005372">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json is invalid JSON" time="0.0017631">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; returns &quot;bun&quot; when the system version exceeds the minimum" time="0.0002216">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; extracts name and type for each top-level datastore property" time="0.0007141">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; warns and looks elsewhere when the system version is below the minimum" time="0.0014435">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; handles multi-line datastore objects" time="0.0001451">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; logs when bun is not installed at all" time="0.0002452">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; returns an empty array when there is no datastores block" time="0.0000785">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; reuses the highest cached version satisfying the minimum, without downloading" time="0.0003234">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; returns empty type when the datastore object has no type field" time="0.0000825">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; ignores cached versions below the minimum" time="0.0004786">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; does not confuse nested type fields with the top-level one" time="0.0000853">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; falls through to the next-highest cached version when the highest one is missing its binary" time="0.0002313">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; ignores type values inside string literals" time="0.0000784">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; downloads and extracts the latest release when nothing is cached" time="0.0009561">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; skips // line comments" time="0.0000776">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; does not chmod on win32" time="0.0002588">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectDatastores &gt; reads datastores from src/config.ts" time="0.0021915">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; throws when the latest release is still below the minimum version" time="0.0007793">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectDatastores &gt; returns an empty array when src/config.ts does not exist" time="0.0013983">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; throws when the &quot;latest&quot; redirect cannot be resolved" time="0.0003084">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; extracts the datastore name from a @DataStore decorator" time="0.0001413">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; throws a descriptive error when the download request fails" time="0.0002945">
         </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; handles double-quoted strings" time="0.0000908">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; returns an empty string when no @DataStore decorator is present" time="0.0000707">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; returns the class name (filename without .ts) for each model file" time="0.0028185">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; excludes .d.ts declaration files" time="0.0024723">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; returns an empty array when src/models does not exist" time="0.0018051">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; reads the @DataStore value from the named model file" time="0.0029673">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; returns an empty string when the model file does not exist" time="0.0015715">
-        </testcase>
-        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; returns an empty string when the model has no @DataStore decorator" time="0.003086">
+        <testcase classname="test/lib/bun.test.ts" name="resolveBunExecutable &gt; throws a descriptive error when the archive does not contain the expected binary" time="0.0002736">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/prompts.test.ts" timestamp="2026-07-13T21:57:25.518Z" hostname="Jane" tests="8" failures="0" errors="0" skipped="0" time="0.0041113">
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; always calls input() and returns whatever the user enters" time="0.0014751">
+    <testsuite name="test/lib/db-errors.test.ts" timestamp="2026-07-14T18:19:34.091Z" hostname="Jane" tests="7" failures="0" errors="0" skipped="0" time="0.0042731">
+        <testcase classname="test/lib/db-errors.test.ts" name="startDatabases error handling &gt; wraps a MongoDB startup failure (Error) with a descriptive message" time="0.0020242">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses git config author as the default value for the prompt" time="0.0001499">
+        <testcase classname="test/lib/db-errors.test.ts" name="startDatabases error handling &gt; wraps a MongoDB startup failure (non-Error) with a descriptive message" time="0.0001961">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses package.json author as the default when git config is not set and cwd is provided" time="0.0008122">
+        <testcase classname="test/lib/db-errors.test.ts" name="startDatabases error handling &gt; wraps a Redis startup failure (Error) with a descriptive message" time="0.0002168">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; prefers git config over package.json when both are available" time="0.0002306">
+        <testcase classname="test/lib/db-errors.test.ts" name="startDatabases error handling &gt; wraps a Redis startup failure (non-Error) with a descriptive message" time="0.000188">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses undefined as the default when neither git config nor package.json has an author" time="0.0001317">
+        <testcase classname="test/lib/db-errors.test.ts" name="startDatabases error handling &gt; wraps a Postgres startup failure (Error) with a descriptive message" time="0.0001775">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; does not call readProjectAuthor when no cwd is provided" time="0.0001002">
+        <testcase classname="test/lib/db-errors.test.ts" name="startDatabases error handling &gt; wraps a Postgres startup failure (non-Error) with a descriptive message" time="0.0001618">
         </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; does not call readProjectAuthor when git config returns an author" time="0.0000946">
-        </testcase>
-        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; passes the correct message and required flag to input()" time="0.0001077">
+        <testcase classname="test/lib/db-errors.test.ts" name="startDatabases error handling &gt; leaves the ACL datastore as mongodb when both mongodb and postgresql are configured" time="0.0003194">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/template-integration.test.ts" timestamp="2026-07-13T21:57:25.519Z" hostname="Jane" tests="44" failures="0" errors="0" skipped="0" time="0.4916296">
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates the route file and no scaffolding artifacts" time="0.014441">
+    <testsuite name="test/lib/db.test.ts" timestamp="2026-07-14T18:19:34.092Z" hostname="Jane" tests="11" failures="0" errors="0" skipped="0" time="6.9474191">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects mongodb from type: &quot;mongodb&quot; in datastores" time="0.0075126">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates a model-extended route when model is provided" time="0.0066942">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects redis from type: &quot;redis&quot; in datastores" time="0.0023755">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates a plain route (no model class) when model is empty" time="0.0058147">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects postgresql from type: &quot;postgresql&quot; in datastores" time="0.0020652">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; uses the plain @Route decorator with no version when apiRoute is unset" time="0.0048363">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; detects multiple database types from a single config" time="0.0026559">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; uses @ApiRoute with a version argument when apiRoute and apiVersion are set" time="0.0048209">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; handles single-quoted type values" time="0.0024106">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; uses @ApiRoute with no version argument when apiRoute is set but apiVersion is empty" time="0.0052828">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when config has no datastore type strings" time="0.0019725">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; generates the test file" time="0.009844">
+        <testcase classname="test/lib/db.test.ts" name="detectDatabases &gt; returns all false when src/config.ts does not exist" time="0.0013033">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; includes mongo-specific imports when datastoreType is mongodb" time="0.008528">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts mongodb-memory-server and sets DATASTORES env vars" time="0.4708593">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; omits mongo-specific imports when datastoreType is not mongodb" time="0.0076389">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; sets no env vars and spawns no processes when no databases configured" time="0.0002903">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; uses the bare path as baseUrl when apiRoute is unset" time="0.0070486">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts redis-memory-server and sets DATASTORES env vars" time="4.0484787">
         </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; prefixes baseUrl with /api/v&lt;version&gt; when apiRoute and apiVersion are set" time="0.0066999">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; prefixes baseUrl with /api (no version) when apiRoute is set but apiVersion is empty" time="0.0064561">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; generates the model file under src/models/ and no scaffolding artifacts" time="0.0057867">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; emits Mongo entity imports when datastoreType is mongodb" time="0.0063798">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; emits SQL entity imports when datastoreType is not mongodb" time="0.005882">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; generates the job source and test files with no scaffolding artifacts" time="0.006157">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; substitutes description, schedule, and author into the job source" time="0.0058658">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; references the generated job class from the test file" time="0.0057503">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react &gt; generates app files, route file, and vite config with no scaffolding artifacts" time="0.0157163">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react &gt; merges react dependencies into package.json via patch" time="0.0176913">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; generates the page component under apps/&lt;app&gt;/&lt;name&gt;/index.tsx and a flat service class, with no scaffolding artifacts" time="0.0064002">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; omits the service class when service is disabled" time="0.0048162">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; omits the client-side fetchProps helper when a service class is used" time="0.0065798">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; includes the client-side fetchProps helper when no service class is used" time="0.0046655">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; substitutes app, name, and author into the generated service class" time="0.0064391">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; nested page paths &gt; nests the page component under the full subpath while keeping the service class flat" time="0.0071926">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; nested page paths &gt; uses the PascalCased className for the component and service identifiers" time="0.0077616">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; generates core server files when all optional features are disabled" time="0.0289977">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes GitHub CI workflow when scm.github is enabled" time="0.0294334">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes database model and routes when features.hasDatabase is enabled" time="0.0326991">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes the database route tests under test/routes when features.hasDatabase is enabled" time="0.0332669">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; excludes the database route tests when features.hasDatabase is disabled" time="0.024124">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; does not include react app files when features.react is disabled" time="0.0248741">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; apiRoute prefix &gt; uses the plain @Route decorator when apiRoute is unset" time="0.0304871">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; apiRoute prefix &gt; uses @ApiRoute with a version on the generated User, Auth, and Hello routes when apiRoute is set" time="0.0314503">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; only generates the route files corresponding to the enabled hasXRoute flags" time="0.0058792">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; renders the SQL ACL variant when features.mongodb is false" time="0.0046856">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; renders the Mongo ACL variant when features.mongodb is true" time="0.0047979">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; uses @ApiRoute with a version on every generated route when apiRoute is set" time="0.0124274">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; uses the plain @Route decorator when apiRoute is unset" time="0.0041762">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; generates StaticRoute.ts when hasStaticRoute is true" time="0.0055222">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; static route config.ts patch &gt; inserts static_files as a top-level property, not nested inside another block" time="0.0056883">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; static route config.ts patch &gt; does not patch config.ts when hasStaticRoute is false" time="0.0026019">
-        </testcase>
-        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; static route config.ts patch &gt; is idempotent — re-running the patch does not insert a duplicate static_files property" time="0.00718">
+        <testcase classname="test/lib/db.test.ts" name="startDatabases &gt; starts postgres-memory-server and sets DATASTORES env vars" time="2.406">
         </testcase>
     </testsuite>
-    <testsuite name="test/lib/template.test.ts" timestamp="2026-07-13T21:57:25.526Z" hostname="Jane" tests="21" failures="0" errors="0" skipped="0" time="0.0933757">
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{variable}} in file content" time="0.0083052">
+    <testsuite name="test/lib/patch.test.ts" timestamp="2026-07-14T18:19:34.093Z" hostname="Jane" tests="47" failures="0" errors="0" skipped="0" time="0.0663176">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; inserts a snippet before the closing brace of the named block" time="0.0013433">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{name}} placeholders in output file paths" time="0.0037698">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; is a no-op when idempotencyKey already appears as a depth-1 property" time="0.0002677">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; evaluates {{#if}} Handlebars conditionals in content" time="0.0036462">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; inserts when idempotencyKey does not match any existing property" time="0.0001134">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; copies binary files (.cjs, .gz) byte-for-byte without Handlebars processing" time="0.0026782">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; throws a descriptive error when the named block does not exist" time="0.0005586">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a file when its manifest condition is false" time="0.0035423">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; throws a descriptive error when the block has no matching closing brace" time="0.0001526">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; includes a file when its manifest condition is true" time="0.0031169">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; throws a descriptive error when the root config block has no matching closing brace" time="0.0001824">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a directory subtree when its manifest condition is false" time="0.0022562">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; handles an empty block" time="0.0000811">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; preserves ${{ }} GitHub Actions syntax unchanged" time="0.002393">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; handles escaped quotes inside string literals within the scanned block" time="0.0001354">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; throws when an output file already exists and force is not set" time="0.0017381">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; does not match property names inside string literals" time="0.0001224">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; overwrites an existing output file when force is true" time="0.0027181">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; skips property names inside // comments when checking idempotency" time="0.0001062">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; creates nested output directories for files in subdirectories" time="0.0032649">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; inserts the snippet as a top-level sibling, not inside the first named block" time="0.0002177">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; does not copy patch template files into the output directory" time="0.003615">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; inserts immediately before the closing of the .defaults({ ... }) call" time="0.0000929">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; applies a json-merge patch to the project directory after file generation" time="0.0047942">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; is a no-op when idempotencyKey already appears as a top-level property" time="0.0000892">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; skips a patch when its condition is falsy in the context" time="0.0039374">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; does not match a property of the same name nested inside a named block" time="0.0000931">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; applies a ts-block-insert patch to src/config.ts in the project directory" time="0.00532">
+        <testcase classname="test/lib/patch.test.ts" name="tsBlockInsert &gt; root config object (empty blockName) &gt; throws a descriptive error when no .defaults({ ... }) call exists" time="0.0001617">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ varname ]] in Helm files" time="0.0029972">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; replaces the value of the named property inside the block" time="0.0002647">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; resolves [[#if condition]]...[[/if]] blocks in Helm files" time="0.0027601">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; is a no-op when the value is already the desired value" time="0.0001189">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; preserves Helm {{ }} Go-template expressions in helmPaths files" time="0.0033882">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; preserves all other content outside the changed property" time="0.0000843">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; handles nested [[#if]] blocks in Helm files" time="0.0058928">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; throws when the named block does not exist" time="0.000131">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ dotted.path ]] from nested context in Helm files" time="0.0026775">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; returns source unchanged when the property does not exist in the block" time="0.0000736">
         </testcase>
-        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; files outside helmPaths still use Handlebars {{ }} normally" time="0.0044968">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; does not affect same-named properties inside sibling blocks" time="0.0001533">
         </testcase>
-    </testsuite>
-    <testsuite name="test/commands/generate/default-route.test.ts" timestamp="2026-07-13T21:57:25.528Z" hostname="Jane" tests="27" failures="0" errors="0" skipped="0" time="12.6884773">
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6334367">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; handles an object-valued property without corrupting it" time="0.0001163">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; context building &gt; sets hasXRoute flags to true only for the routes selected via checkbox" time="0.3794846">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; skips // comments when scanning for property names" time="0.0001102">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; context building &gt; sets hasStaticRoute: true when static-route is selected via checkbox" time="0.38352">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; skips over a string-valued property (with an escaped quote) that appears before the target property" time="0.0001427">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; api flag &gt; sets apiRoute: false and apiVersion: undefined when the &quot;Is this an API route?&quot; prompt is declined" time="0.3652089">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; correctly finds the end of a string-valued target property containing an escaped quote" time="0.0001124">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; api flag &gt; sets apiRoute: true and apiVersion from the follow-up prompt when confirmed" time="0.3962726">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; handles an unterminated string value at the end of the source gracefully" time="0.0000845">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; api flag &gt; --api with a value skips both the confirm and version prompts" time="0.3871995">
+        <testcase classname="test/lib/patch.test.ts" name="tsPropertySet &gt; skips a nested object value on a property preceding the target" time="0.0000805">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; generates only the specified route type without showing the checkbox prompt" time="0.3619655">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; merges dependencies into an existing package.json object" time="0.000545">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; accepts each of the documented route types" time="2.6172159">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; patch value wins on scalar conflicts" time="0.0000838">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; rejects an unrecognized --type value" time="0.3764197">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; deep-merges nested objects independently" time="0.0001352">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; generates multiple route types when --type is passed more than once" time="0.3880318">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; replaces arrays rather than concatenating" time="0.0000937">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; dedupes repeated --type values" time="0.3746355">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; is idempotent: applying the same patch twice yields the same result" time="0.0001119">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; rejects when any of multiple --type values is invalid, listing all invalid ones" time="0.3770544">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; does not mutate the target argument" time="0.0000776">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; prompts for the static file path when static-route is selected via checkbox and --static-path is not provided" time="0.3740118">
+        <testcase classname="test/lib/patch.test.ts" name="jsonMerge &gt; handles an empty patch (no-op)" time="0.000089">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; does not prompt for the static file path when static-route is not selected" time="0.3890118">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: inserts rendered snippet into the named block" time="0.0110287">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; --static-path skips the interactive prompt and uses the flag value" time="0.3678874">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: skips insertion when idempotencyKey is already present" time="0.0046465">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; --type static without --static-path still prompts for the path interactively" time="0.3651216">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: throws when target file does not exist" time="0.0035982">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; --type static --static-path is fully non-interactive" time="0.3847853">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-block-insert: defaults to no idempotency check when idempotencyKey is omitted" time="0.0040975">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; defaults staticPath to &quot;public&quot; in the context even when static-route is not part of the selection" time="0.364382">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: merges dependency entries into existing package.json" time="0.0046423">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; mongodb detection for the ACL route &gt; sets features.mongodb to false when the project has no mongodb datastore" time="0.3928158">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: creates the file if it does not exist" time="0.0037488">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; mongodb detection for the ACL route &gt; sets features.mongodb to true when the project has a mongodb datastore" time="0.4073282">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; json-merge: is idempotent — running twice yields the same result" time="0.0047962">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; mongodb detection for the ACL route &gt; reads datastores from the current working directory" time="0.3694961">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: replaces a property value in the named block" time="0.0042732">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; author resolution &gt; uses the --author flag and skips inputAuthor entirely" time="0.3688402">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: is idempotent when property already has the desired value" time="0.0042512">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.3868904">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; ts-property-set: throws when target file does not exist" time="0.0031868">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.3631071">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; skips a patch entirely when condition evaluates to falsy" time="0.0032581">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; output and template options &gt; uses --output-dir when provided" time="0.3556167">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; treats a condition that traverses through a non-object value as falsy" time="0.0033172">
         </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3700887">
-        </testcase>
-        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; output and template options &gt; points processTemplate at the default-route template directory" time="0.3871611">
+        <testcase classname="test/lib/patch.test.ts" name="applyPatches &gt; does nothing for an unrecognized strategy" time="0.003729">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/docker.test.ts" timestamp="2026-07-13T21:57:25.531Z" hostname="Jane" tests="19" failures="0" errors="0" skipped="0" time="7.5286886">
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; passes datastores from the project config into context" time="0.6183371">
+    <testsuite name="test/lib/port.test.ts" timestamp="2026-07-14T18:19:34.099Z" hostname="Jane" tests="3" failures="0" errors="0" skipped="0" time="0.0166017">
+        <testcase classname="test/lib/port.test.ts" name="findAvailablePort &gt; returns the requested port when it is free" time="0.0111507">
         </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; includes the current year in context" time="0.3724815">
+        <testcase classname="test/lib/port.test.ts" name="findAvailablePort &gt; returns the next free port when the requested one is occupied" time="0.0023659">
         </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; includes project_name from package.json in context" time="0.3768396">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasMongoDB true when any datastore type is mongodb" time="0.4130651">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasPostgres true when any datastore type is postgresql" time="0.3703188">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasRedis true when any datastore type is redis" time="0.387489">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets all boolean flags true when all three types are present" time="0.3727686">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets all boolean flags false when datastores is empty" time="0.4189827">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; ignores unknown datastore types for boolean flags" time="0.373091">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; uses process.cwd() as the output directory when --output-dir is not set" time="0.3831677">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; uses --output-dir as the output directory and project source when provided" time="0.3918683">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; points processTemplate at the docker template directory" time="0.3641853">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3869373">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.394987">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; calls readProjectDatastores with the current working directory" time="0.3609421">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; calls readProjectName with the current working directory" time="0.3839976">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; sets pkgMgr.npm true and pkgMgr.yarn false when detectPackageManager returns npm" time="0.3964382">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; sets pkgMgr.yarn true and pkgMgr.npm false when detectPackageManager returns yarn" time="0.3919777">
-        </testcase>
-        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; calls detectPackageManager with the project cwd" time="0.3693763">
+        <testcase classname="test/lib/port.test.ts" name="findAvailablePort &gt; skips multiple consecutive occupied ports" time="0.0020493">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/job.test.ts" timestamp="2026-07-13T21:57:25.532Z" hostname="Jane" tests="12" failures="0" errors="0" skipped="0" time="4.706417">
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6484773">
+    <testsuite name="test/lib/project.test.ts" timestamp="2026-07-14T18:19:34.100Z" hostname="Jane" tests="43" failures="0" errors="0" skipped="0" time="0.0506998">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns true when vite.config.ts exists" time="0.00385">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; context building &gt; includes project_name from the project config in the context" time="0.3799267">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false when vite.config.ts does not exist" time="0.0008449">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.3707387">
+        <testcase classname="test/lib/project.test.ts" name="detectReact &gt; returns false for a non-existent directory" time="0.0007027">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --schedule skips the schedule input prompt" time="0.3714751">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns a string author field" time="0.0024892">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.3600706">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns the name from an object author field" time="0.001583">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; skips all prompts when description, schedule, and author flags are all provided" time="0.3635177">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author is an object without a name field" time="0.0016468">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.3512053">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author is an empty string" time="0.0016032">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.3739508">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when author field is absent" time="0.0015196">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; uses --output-dir when provided" time="0.3854084">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json does not exist" time="0.0007225">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3703995">
+        <testcase classname="test/lib/project.test.ts" name="readProjectAuthor &gt; returns undefined when package.json is invalid JSON" time="0.0015282">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; passes projectDir: cwd to processTemplate" time="0.3687104">
+        <testcase classname="test/lib/project.test.ts" name="readProjectName &gt; returns the name field from package.json" time="0.0016482">
         </testcase>
-        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; points processTemplate at the job template directory" time="0.3612884">
+        <testcase classname="test/lib/project.test.ts" name="readProjectName &gt; returns an empty string when the name field is absent" time="0.001543">
         </testcase>
-    </testsuite>
-    <testsuite name="test/commands/generate/k8s.test.ts" timestamp="2026-07-13T21:57:25.534Z" hostname="Jane" tests="16" failures="0" errors="0" skipped="0" time="6.1437514">
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; passes datastores from the project config into context" time="0.6119532">
+        <testcase classname="test/lib/project.test.ts" name="readProjectName &gt; returns an empty string when package.json does not exist" time="0.0006207">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; includes the current year in context" time="0.4100959">
+        <testcase classname="test/lib/project.test.ts" name="readProjectName &gt; returns an empty string when package.json is invalid JSON" time="0.0015804">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; includes project_name from package.json in context" time="0.3640462">
+        <testcase classname="test/lib/project.test.ts" name="detectPackageManager &gt; returns &quot;yarn&quot; when package.json packageManager field starts with &quot;yarn&quot;" time="0.0016193">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasMongoDB true when any datastore type is mongodb" time="0.3682456">
+        <testcase classname="test/lib/project.test.ts" name="detectPackageManager &gt; returns &quot;yarn&quot; when yarn.lock exists and there is no packageManager field" time="0.0019957">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasPostgres true when any datastore type is postgresql" time="0.3615478">
+        <testcase classname="test/lib/project.test.ts" name="detectPackageManager &gt; returns &quot;npm&quot; when there is no package.json, yarn.lock, or packageManager field" time="0.0007695">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasRedis true when any datastore type is redis" time="0.3597828">
+        <testcase classname="test/lib/project.test.ts" name="detectPackageManager &gt; returns &quot;npm&quot; when package.json is invalid JSON and no yarn.lock exists" time="0.0016097">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets all boolean flags true when all three types are present" time="0.3480438">
+        <testcase classname="test/lib/project.test.ts" name="detectPackageManager &gt; returns &quot;npm&quot; when packageManager field does not start with &quot;yarn&quot;" time="0.0016776">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets all boolean flags false when datastores is empty" time="0.3731924">
+        <testcase classname="test/lib/project.test.ts" name="readGitAuthor &gt; returns &quot;Name &lt;email&gt;&quot; when both user.name and user.email are configured" time="0.000297">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; ignores unknown datastore types for boolean flags" time="0.3905028">
+        <testcase classname="test/lib/project.test.ts" name="readGitAuthor &gt; returns just the name when the email lookup fails" time="0.0001144">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; uses process.cwd() as the output directory when --output-dir is not set" time="0.3642379">
+        <testcase classname="test/lib/project.test.ts" name="readGitAuthor &gt; returns just the name when user.email resolves to an empty string" time="0.0000984">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; uses --output-dir as the output directory and project source when provided" time="0.3616895">
+        <testcase classname="test/lib/project.test.ts" name="readGitAuthor &gt; returns undefined when the user.name lookup fails (git unavailable)" time="0.0001079">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; points processTemplate at the helm template directory" time="0.358216">
+        <testcase classname="test/lib/project.test.ts" name="readGitAuthor &gt; returns undefined when user.name resolves to an empty string" time="0.0000764">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3691966">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; extracts name and type for each top-level datastore property" time="0.0006691">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.3713424">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; handles multi-line datastore objects" time="0.0001329">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; calls readProjectDatastores with the current working directory" time="0.3623803">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; returns an empty array when there is no datastores block" time="0.0000804">
         </testcase>
-        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; calls readProjectName with the current working directory" time="0.3678905">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; returns empty type when the datastore object has no type field" time="0.0001183">
         </testcase>
-    </testsuite>
-    <testsuite name="test/commands/generate/model.test.ts" timestamp="2026-07-13T21:57:25.535Z" hostname="Jane" tests="30" failures="0" errors="0" skipped="0" time="12.3331644">
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6486148">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; does not confuse nested type fields with the top-level one" time="0.000108">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; prompts for a cache TTL when --cache is omitted entirely and the user enables caching" time="0.4155547">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; ignores type values inside string literals" time="0.0000892">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; includes protect: false when the protect prompt answers no" time="0.4168611">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; handles escaped quotes inside string literals without ending the string early" time="0.0000754">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; disables caching when the user declines the enable-caching prompt" time="0.3872772">
+        <testcase classname="test/lib/project.test.ts" name="extractDatastoreInfo &gt; skips // line comments" time="0.0000765">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; sets isMongoDb true and other db booleans false when datastoreType is mongodb" time="0.4316646">
+        <testcase classname="test/lib/project.test.ts" name="readProjectDatastores &gt; reads datastores from src/config.ts" time="0.0023404">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; includes project_name from package.json in the context" time="0.4036515">
+        <testcase classname="test/lib/project.test.ts" name="readProjectDatastores &gt; returns an empty array when src/config.ts does not exist" time="0.0011261">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; shows only non-acl datastores in the select choices, plus a new option" time="0.3904017">
+        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; extracts the datastore name from a @DataStore decorator" time="0.0001297">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; resolves datastoreType from the config list for the selected name" time="0.4074925">
+        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; handles double-quoted strings" time="0.000091">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; selecting &quot;+ New datastore...&quot; prompts for db type and uses it as both name and type" time="0.412609">
+        <testcase classname="test/lib/project.test.ts" name="extractModelDatastore &gt; returns an empty string when no @DataStore decorator is present" time="0.0000602">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; does not show the &quot;set up new database&quot; prompt when datastores are configured" time="0.4179756">
+        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; returns the class name (filename without .ts) for each model file" time="0.0028342">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — no configured datastores &gt; asks to set up a new database and selects the type when the user says yes" time="0.4356364">
+        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; excludes .d.ts declaration files" time="0.0025634">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — no configured datastores &gt; sets datastore and datastoreType to empty string when the user declines" time="0.3763844">
+        <testcase classname="test/lib/project.test.ts" name="readProjectModels &gt; returns an empty array when src/models does not exist" time="0.0016003">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --datastore skips the datastore select but still resolves datastoreType from config" time="0.3827438">
+        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; reads the @DataStore value from the named model file" time="0.0027412">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --datastore leaves datastoreType empty when the name is not in the project config" time="0.4379544">
+        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; returns an empty string when the model file does not exist" time="0.0017027">
         </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.4527774">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with a value overrides the default TTL and skips the cache prompt" time="0.4032662">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with no value defaults to &quot;60&quot; and skips the cache prompt" time="0.4654344">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with no value still resolves to &quot;60&quot; when immediately followed by another flag" time="0.3898693">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; explicitly setting --cache to an empty string still triggers the enable-caching prompt" time="0.402663">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --protect skips the protect confirm prompt" time="0.4315979">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.3918502">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.3890798">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.3920807">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3767731">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; points processTemplate at the model template directory" time="0.3994831">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; does not call GenerateDocker or GenerateHelm when an existing datastore is selected" time="0.3796276">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update docker when a new datastore is added and docker-compose.yml exists" time="0.3757735">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; skips docker update when the user declines" time="0.3740953">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update helm when a new datastore is added and helm/Chart.yaml exists" time="0.3750049">
-        </testcase>
-        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update both docker and helm when both exist for a new datastore" time="0.3673877">
+        <testcase classname="test/lib/project.test.ts" name="readModelDatastore &gt; returns an empty string when the model has no @DataStore decorator" time="0.0025183">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/react-page.test.ts" timestamp="2026-07-13T21:57:25.538Z" hostname="Jane" tests="14" failures="0" errors="0" skipped="0" time="5.604121">
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6292797">
+    <testsuite name="test/lib/prompts.test.ts" timestamp="2026-07-14T18:19:34.104Z" hostname="Jane" tests="8" failures="0" errors="0" skipped="0" time="0.0041276">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; always calls input() and returns whatever the user enters" time="0.0014853">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; includes service: false when the service prompt answers no" time="0.4437515">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses git config author as the default value for the prompt" time="0.0001607">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; includes project_name from the project config in the context" time="0.373117">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses package.json author as the default when git config is not set and cwd is provided" time="0.0008111">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; keeps name as the raw path but PascalCases className for a nested path" time="0.3701713">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; prefers git config over package.json when both are available" time="0.0002262">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; capitalizes a single lowercase segment" time="0.3811887">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; uses undefined as the default when neither git config nor package.json has an author" time="0.0001335">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; joins hyphen- and underscore-separated words within a segment" time="0.3589006">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; does not call readProjectAuthor when no cwd is provided" time="0.0000998">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; flag shortcuts bypass prompts &gt; --service skips the service confirm prompt" time="0.3581831">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; does not call readProjectAuthor when git config returns an author" time="0.0000923">
         </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.3977681">
-        </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.3642944">
-        </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.3699768">
-        </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; uses --output-dir when provided" time="0.3988629">
-        </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4019088">
-        </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.3602709">
-        </testcase>
-        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; points processTemplate at the react-page template directory" time="0.3951446">
+        <testcase classname="test/lib/prompts.test.ts" name="inputAuthor &gt; passes the correct message and required flag to input()" time="0.000109">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/react.test.ts" timestamp="2026-07-13T21:57:25.539Z" hostname="Jane" tests="12" failures="0" errors="0" skipped="0" time="4.690591">
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6119806">
+    <testsuite name="test/lib/template-integration.test.ts" timestamp="2026-07-14T18:19:34.106Z" hostname="Jane" tests="44" failures="0" errors="0" skipped="0" time="0.513008">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates the route file and no scaffolding artifacts" time="0.0132003">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes hydrate: false when the hydrate select answers no" time="0.4244845">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates a model-extended route when model is provided" time="0.0056023">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes project_name from package.json in the context" time="0.3612817">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; generates a plain route (no model class) when model is empty" time="0.0052325">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; uses the app name as the default suggestion for the path prompt" time="0.3654003">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; uses the plain @Route decorator with no version when apiRoute is unset" time="0.0045512">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --path skips the path input prompt" time="0.3583493">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; uses @ApiRoute with a version argument when apiRoute and apiVersion are set" time="0.0046724">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --hydrate skips the hydrate confirm prompt" time="0.3561962">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — route template &gt; uses @ApiRoute with no version argument when apiRoute is set but apiVersion is empty" time="0.0048954">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.3615978">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; generates the test file" time="0.0121532">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.3844634">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; includes mongo-specific imports when datastoreType is mongodb" time="0.0080047">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; uses the project root as the default output directory" time="0.3622276">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; omits mongo-specific imports when datastoreType is not mongodb" time="0.0072542">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3584663">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; uses the bare path as baseUrl when apiRoute is unset" time="0.0067686">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.3527204">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; prefixes baseUrl with /api/v&lt;version&gt; when apiRoute and apiVersion are set" time="0.0065936">
         </testcase>
-        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; points processTemplate at the react template directory" time="0.3921195">
+        <testcase classname="test/lib/template-integration.test.ts" name="generate route — test template &gt; prefixes baseUrl with /api (no version) when apiRoute is set but apiVersion is empty" time="0.0060372">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; generates the model file under src/models/ and no scaffolding artifacts" time="0.0054528">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; emits Mongo entity imports when datastoreType is mongodb" time="0.0083481">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate model &gt; emits SQL entity imports when datastoreType is not mongodb" time="0.0058102">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; generates the job source and test files with no scaffolding artifacts" time="0.0082289">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; substitutes description, schedule, and author into the job source" time="0.0052188">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate job &gt; references the generated job class from the test file" time="0.0059497">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react &gt; generates app files, route file, and vite config with no scaffolding artifacts" time="0.0199352">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react &gt; merges react dependencies into package.json via patch" time="0.0145636">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; generates the page component under apps/&lt;app&gt;/&lt;name&gt;/index.tsx and a flat service class, with no scaffolding artifacts" time="0.006814">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; omits the service class when service is disabled" time="0.0047015">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; omits the client-side fetchProps helper when a service class is used" time="0.006185">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; includes the client-side fetchProps helper when no service class is used" time="0.0041796">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; substitutes app, name, and author into the generated service class" time="0.0088864">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; nested page paths &gt; nests the page component under the full subpath while keeping the service class flat" time="0.0071213">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate react-page &gt; nested page paths &gt; uses the PascalCased className for the component and service identifiers" time="0.0073891">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; generates core server files when all optional features are disabled" time="0.0261998">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes GitHub CI workflow when scm.github is enabled" time="0.0285714">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes database model and routes when features.hasDatabase is enabled" time="0.0392965">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; includes the database route tests under test/routes when features.hasDatabase is enabled" time="0.0336345">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; excludes the database route tests when features.hasDatabase is disabled" time="0.0235428">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; does not include react app files when features.react is disabled" time="0.0333305">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; apiRoute prefix &gt; uses the plain @Route decorator when apiRoute is unset" time="0.0306007">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate server &gt; apiRoute prefix &gt; uses @ApiRoute with a version on the generated User, Auth, and Hello routes when apiRoute is set" time="0.0352403">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; only generates the route files corresponding to the enabled hasXRoute flags" time="0.0058831">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; renders the SQL ACL variant when features.mongodb is false" time="0.0087882">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; renders the Mongo ACL variant when features.mongodb is true" time="0.0045374">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; uses @ApiRoute with a version on every generated route when apiRoute is set" time="0.0123084">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; uses the plain @Route decorator when apiRoute is unset" time="0.004378">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; generates StaticRoute.ts when hasStaticRoute is true" time="0.0053843">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; static route config.ts patch &gt; inserts static_files as a top-level property, not nested inside another block" time="0.0055144">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; static route config.ts patch &gt; does not patch config.ts when hasStaticRoute is false" time="0.002601">
+        </testcase>
+        <testcase classname="test/lib/template-integration.test.ts" name="generate default-route &gt; static route config.ts patch &gt; is idempotent — re-running the patch does not insert a duplicate static_files property" time="0.0075229">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/route.test.ts" timestamp="2026-07-13T21:57:25.540Z" hostname="Jane" tests="20" failures="0" errors="0" skipped="0" time="7.7003022">
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6154892">
+    <testsuite name="test/lib/template.test.ts" timestamp="2026-07-14T18:19:34.110Z" hostname="Jane" tests="27" failures="0" errors="0" skipped="0" time="0.1013189">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{variable}} in file content" time="0.0084787">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; resolves datastoreType from the model&apos;s @DataStore decorator via the project config" time="0.4165502">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; substitutes {{name}} placeholders in output file paths" time="0.0038128">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; sets datastore and datastoreType to empty when model is &quot;(none)&quot;" time="0.3841622">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; evaluates {{#if}} Handlebars conditionals in content" time="0.0035851">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; leaves datastoreType empty when the model has no @DataStore decorator" time="0.3700551">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; supports the isUndefined helper for conditional blocks" time="0.0026981">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; api flag &gt; sets apiRoute: false and apiVersion: undefined when the &quot;Is this an API route?&quot; prompt is declined" time="0.3899788">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; treats a conditionalFiles condition that traverses through a non-object value as falsy" time="0.0017108">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; api flag &gt; sets apiRoute: true and apiVersion from the follow-up prompt when confirmed" time="0.3672307">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; copies binary files (.cjs, .gz) byte-for-byte without Handlebars processing" time="0.0025053">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; api flag &gt; --api with a value skips both the confirm and version prompts" time="0.3474453">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a file when its manifest condition is false" time="0.0030112">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; api flag &gt; --api with an empty string still triggers the &quot;Is this an API route?&quot; prompt, but apiRoute stays true since the flag was passed" time="0.3673278">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; includes a file when its manifest condition is true" time="0.0022907">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; shows a select with &quot;(none)&quot;, project models, and a &quot;+ New model...&quot; option" time="0.3758019">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; excludes a directory subtree when its manifest condition is false" time="0.0020532">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; runs generate model inline when &quot;+ New model...&quot; is selected and uses the newly created model" time="0.3892301">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; preserves ${{ }} GitHub Actions syntax unchanged" time="0.0018929">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; falls back to a free-form input when no models exist in the project" time="0.383007">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; throws when an output file already exists and force is not set" time="0.0019687">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; --no-model skips all model prompts and leaves model undefined in context" time="0.3638082">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; overwrites an existing output file when force is true" time="0.0021894">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --model skips the model select and resolves datastore from the named model file" time="0.3936445">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; creates nested output directories for files in subdirectories" time="0.0030467">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.389057">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; does not copy patch template files into the output directory" time="0.0037268">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --path skips the route path input prompt" time="0.3551911">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; applies a json-merge patch to the project directory after file generation" time="0.004639">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --protect skips the protect confirm prompt" time="0.3583805">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; skips a patch when its condition is falsy in the context" time="0.0036479">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.3542637">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; applies a ts-block-insert patch to src/config.ts in the project directory" time="0.0049345">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.3531937">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; patches &gt; falls back to process.cwd() as the patch target when opts.projectDir is not provided" time="0.0031346">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; output and template options &gt; uses project root as the default output directory for the route file" time="0.365827">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ varname ]] in Helm files" time="0.0027487">
         </testcase>
-        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; output and template options &gt; passes force: true to both processTemplate calls when --force is set" time="0.359037">
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes an empty string for an undefined variable in Helm file content" time="0.0025794">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes an empty string for an undefined variable in a Helm-safe output file path" time="0.0026399">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; resolves [[#if condition]]...[[/if]] blocks in Helm files" time="0.0024504">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[var]] placeholders in Helm-safe output file paths" time="0.0024397">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; preserves Helm {{ }} Go-template expressions in helmPaths files" time="0.0027353">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; handles nested [[#if]] blocks in Helm files" time="0.0026948">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; substitutes [[ dotted.path ]] from nested context in Helm files" time="0.0026757">
+        </testcase>
+        <testcase classname="test/lib/template.test.ts" name="processTemplate &gt; Helm-safe mode (helmPaths) &gt; files outside helmPaths still use Handlebars {{ }} normally" time="0.0045136">
         </testcase>
     </testsuite>
-    <testsuite name="test/commands/generate/server.test.ts" timestamp="2026-07-13T21:57:25.542Z" hostname="Jane" tests="35" failures="0" errors="0" skipped="0" time="14.5063282">
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; builds the correct base context from prompts" time="0.6404726">
+    <testsuite name="test/commands/generate/default-route.test.ts" timestamp="2026-07-14T18:19:34.113Z" hostname="Jane" tests="29" failures="0" errors="0" skipped="0" time="14.0498199">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.5992659">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps selected database and feature choices to boolean flags on context.features" time="0.3861386">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; context building &gt; sets hasXRoute flags to true only for the routes selected via checkbox" time="0.4010466">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase true when any persistent store is selected" time="1.1461268">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; context building &gt; sets hasStaticRoute: true when static-route is selected via checkbox" time="0.3970751">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase false when only non-persistent features are selected" time="0.3959859">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; api flag &gt; sets apiRoute: false and apiVersion: undefined when the &quot;Is this an API route?&quot; prompt is declined" time="0.4078268">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the SCM choice to a boolean map on context.scm" time="0.3556599">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; api flag &gt; sets apiRoute: true and apiVersion from the follow-up prompt when confirmed" time="0.3656157">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the package manager choice to a boolean map on context.pkgMgr" time="0.388072">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; api flag &gt; --api with a value skips both the confirm and version prompts" time="0.3790317">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses ./&lt;name&gt; as the default output directory" time="0.3948599">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; generates only the specified route type without showing the checkbox prompt" time="0.4039806">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses --output-dir when provided" time="0.388443">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; accepts each of the documented route types" time="2.6866422">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; points processTemplate at the server template directory" time="0.3874224">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; rejects an unrecognized --type value" time="0.401833">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; passes force: true when --force is set" time="0.3876074">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; generates multiple route types when --type is passed more than once" time="0.4241757">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; api flag &gt; sets apiRoute: false and apiVersion: undefined when the api prefix prompt is declined" time="0.387231">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; dedupes repeated --type values" time="0.4305873">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; api flag &gt; sets apiRoute: true and apiVersion from the follow-up prompt when confirmed" time="0.3949595">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; --type flag &gt; rejects when any of multiple --type values is invalid, listing all invalid ones" time="0.3900786">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; does not call GenerateDefaultRoute when no route-* features are selected" time="0.3977636">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; prompts for the static file path when static-route is selected via checkbox and --static-path is not provided" time="0.3768512">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; calls GenerateDefaultRoute once with a --type per selected route-* feature" time="0.3678504">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; does not prompt for the static file path when static-route is not selected" time="0.4227128">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; passes --force to GenerateDefaultRoute when --force is set on the server command" time="0.3887433">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; --static-path skips the interactive prompt and uses the flag value" time="0.4053544">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; passes --api to GenerateDefaultRoute when the api prefix prompt was confirmed" time="0.3816853">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; --type static without --static-path still prompts for the path interactively" time="0.386532">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; does not pass --api to GenerateDefaultRoute when the api prefix prompt was declined" time="0.375792">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; --type static --static-path is fully non-interactive" time="0.4007524">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.3894006">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; static route type &gt; defaults staticPath to &quot;public&quot; in the context even when static-route is not part of the selection" time="0.3978028">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; calls inputAuthor and uses its return value as the author" time="0.3848159">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; mongodb detection for the ACL route &gt; sets features.mongodb to false when the project has no mongodb datastore" time="0.407275">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; --author skips inputAuthor and uses the flag value" time="0.360608">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; mongodb detection for the ACL route &gt; sets features.mongodb to true when the project has a mongodb datastore" time="0.3956978">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; passes the resolved author through to GenerateDefaultRoute for selected route-* features" time="0.3865346">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; mongodb detection for the ACL route &gt; reads datastores from the current working directory" time="0.3726881">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; runs GenerateDocker with --output-dir after server generation when docker is selected" time="0.3664292">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; author resolution &gt; uses the --author flag and skips inputAuthor entirely" time="0.4100423">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; does not run GenerateDocker when docker is not selected" time="0.4020333">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4034148">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; passes --force to GenerateDocker when --force is set on the server command" time="0.3843098">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.3771334">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.393808">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; output and template options &gt; uses --output-dir when provided" time="0.3537302">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs GenerateHelm with --output-dir after server generation when k8s is selected" time="0.3962221">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.4199914">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; does not run GenerateHelm when k8s is not selected" time="0.3864907">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; output and template options &gt; points processTemplate at the default-route template directory" time="0.4201364">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; passes --force to GenerateHelm when --force is set on the server command" time="0.3880735">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.3744271">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.3903614">
+        <testcase classname="test/commands/generate/default-route.test.ts" name="generate default-route &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.4364786">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs both GenerateDocker and GenerateHelm when both features are selected" time="0.3962669">
+    </testsuite>
+    <testsuite name="test/commands/generate/docker.test.ts" timestamp="2026-07-14T18:19:34.116Z" hostname="Jane" tests="21" failures="0" errors="0" skipped="0" time="8.7049352">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; passes datastores from the project config into context" time="0.6296139">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs GenerateReact with --output-dir after server generation when react is selected" time="0.3921524">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; includes the current year in context" time="0.4198586">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; does not run GenerateReact when react is not selected" time="0.3653162">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; context building &gt; includes project_name from package.json in context" time="0.409857">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; passes --force to GenerateReact when --force is set on the server command" time="0.383938">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasMongoDB true when any datastore type is mongodb" time="0.3982626">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.3784052">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasPostgres true when any datastore type is postgresql" time="0.4180428">
         </testcase>
-        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs docker, helm, react, and default-route subcommands when all are selected" time="0.3947379">
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets hasRedis true when any datastore type is redis" time="0.4200493">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets all boolean flags true when all three types are present" time="0.3882226">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; sets all boolean flags false when datastores is empty" time="0.3791529">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; database boolean flags &gt; ignores unknown datastore types for boolean flags" time="0.3794637">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; uses process.cwd() as the output directory when --output-dir is not set" time="0.3760981">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; uses --output-dir as the output directory and project source when provided" time="0.4166663">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; points processTemplate at the docker template directory" time="0.4503082">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.397706">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.3967586">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; calls readProjectDatastores with the current working directory" time="0.4239355">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; output and template options &gt; calls readProjectName with the current working directory" time="0.4194928">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; sets pkgMgr.npm true and pkgMgr.yarn false when detectPackageManager returns npm" time="0.4196938">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; sets pkgMgr.yarn true and pkgMgr.npm false when detectPackageManager returns yarn" time="0.3876428">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; package manager context &gt; calls detectPackageManager with the project cwd" time="0.3997166">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.397345">
+        </testcase>
+        <testcase classname="test/commands/generate/docker.test.ts" name="generate docker &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.3755257">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/job.test.ts" timestamp="2026-07-14T18:19:34.118Z" hostname="Jane" tests="14" failures="0" errors="0" skipped="0" time="5.6352254">
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6204165">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; context building &gt; includes project_name from the project config in the context" time="0.4096988">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.3998816">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --schedule skips the schedule input prompt" time="0.3752104">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.3785589">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; flag shortcuts bypass prompts &gt; skips all prompts when description, schedule, and author flags are all provided" time="0.3591165">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.41577">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.3882319">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; uses --output-dir when provided" time="0.3579855">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3838783">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; passes projectDir: cwd to processTemplate" time="0.390266">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; output and template options &gt; points processTemplate at the job template directory" time="0.3827899">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.3853752">
+        </testcase>
+        <testcase classname="test/commands/generate/job.test.ts" name="generate job &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.3866891">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/k8s.test.ts" timestamp="2026-07-14T18:19:34.120Z" hostname="Jane" tests="18" failures="0" errors="0" skipped="0" time="7.0194331">
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; passes datastores from the project config into context" time="0.6211213">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; includes the current year in context" time="0.3817451">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; context building &gt; includes project_name from package.json in context" time="0.3910061">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasMongoDB true when any datastore type is mongodb" time="0.3824417">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasPostgres true when any datastore type is postgresql" time="0.3899438">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets hasRedis true when any datastore type is redis" time="0.3539204">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets all boolean flags true when all three types are present" time="0.3810943">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; sets all boolean flags false when datastores is empty" time="0.3739054">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; database boolean flags &gt; ignores unknown datastore types for boolean flags" time="0.3914044">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; uses process.cwd() as the output directory when --output-dir is not set" time="0.3718418">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; uses --output-dir as the output directory and project source when provided" time="0.376687">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; points processTemplate at the helm template directory" time="0.3766404">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3876792">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.3606843">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; calls readProjectDatastores with the current working directory" time="0.3686885">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; output and template options &gt; calls readProjectName with the current working directory" time="0.3702442">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.3601253">
+        </testcase>
+        <testcase classname="test/commands/generate/k8s.test.ts" name="generate k8s &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.3788434">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/model.test.ts" timestamp="2026-07-14T18:19:34.121Z" hostname="Jane" tests="34" failures="0" errors="0" skipped="0" time="13.6506757">
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6081495">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; prompts for a cache TTL when --cache is omitted entirely and the user enables caching" time="0.3852678">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; includes protect: false when the protect prompt answers no" time="0.4237367">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; disables caching when the user declines the enable-caching prompt" time="0.3659633">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; sets isMongoDb true and other db booleans false when datastoreType is mongodb" time="0.392442">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; context building &gt; includes project_name from package.json in the context" time="0.4025156">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; shows only non-acl datastores in the select choices, plus a new option" time="0.3929685">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; resolves datastoreType from the config list for the selected name" time="0.3781212">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; resolves an empty datastoreType when the selected name is not in the configured list" time="0.379826">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; selecting &quot;+ New datastore...&quot; prompts for db type and uses it as both name and type" time="0.4208098">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — configured datastores present &gt; does not show the &quot;set up new database&quot; prompt when datastores are configured" time="0.3927575">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — no configured datastores &gt; asks to set up a new database and selects the type when the user says yes" time="0.3872084">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; datastore selection — no configured datastores &gt; sets datastore and datastoreType to empty string when the user declines" time="0.3861351">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --datastore skips the datastore select but still resolves datastoreType from config" time="0.4159863">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --datastore leaves datastoreType empty when the name is not in the project config" time="0.3972448">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.3793893">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with a value overrides the default TTL and skips the cache prompt" time="0.3958204">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with no value defaults to &quot;60&quot; and skips the cache prompt" time="0.4180164">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --cache with no value still resolves to &quot;60&quot; when immediately followed by another flag" time="0.3797495">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; explicitly setting --cache to an empty string still triggers the enable-caching prompt" time="0.376993">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --protect skips the protect confirm prompt" time="0.4409464">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4073365">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.3701228">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.4131196">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3696246">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; output and template options &gt; points processTemplate at the model template directory" time="0.4011674">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; does not call GenerateDocker or GenerateHelm when an existing datastore is selected" time="0.3844027">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update docker when a new datastore is added and docker-compose.yml exists" time="0.3871601">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; skips docker update when the user declines" time="0.3649812">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update helm when a new datastore is added and helm/Chart.yaml exists" time="0.3996118">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; skips helm update when the user declines" time="0.4120131">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; docker and helm subcommands after new datastore &gt; offers to update both docker and helm when both exist for a new datastore" time="0.4170635">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.3697339">
+        </testcase>
+        <testcase classname="test/commands/generate/model.test.ts" name="generate model &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.4326216">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/react-page.test.ts" timestamp="2026-07-14T18:19:34.124Z" hostname="Jane" tests="16" failures="0" errors="0" skipped="0" time="6.3537651">
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.5981809">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; includes service: false when the service prompt answers no" time="0.4396394">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; context building &gt; includes project_name from the project config in the context" time="0.4031121">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; keeps name as the raw path but PascalCases className for a nested path" time="0.3838409">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; capitalizes a single lowercase segment" time="0.3835747">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; className derivation from a (possibly nested) page path &gt; joins hyphen- and underscore-separated words within a segment" time="0.3521489">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; flag shortcuts bypass prompts &gt; --service skips the service confirm prompt" time="0.3848135">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.3960475">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.3610835">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; uses process.cwd() as the default output directory" time="0.3977611">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; uses --output-dir when provided" time="0.3600702">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3672367">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.39432">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; output and template options &gt; points processTemplate at the react-page template directory" time="0.3853844">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.3597499">
+        </testcase>
+        <testcase classname="test/commands/generate/react-page.test.ts" name="generate react-page &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.385403">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/react.test.ts" timestamp="2026-07-14T18:19:34.126Z" hostname="Jane" tests="14" failures="0" errors="0" skipped="0" time="5.6176383">
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6359412">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes hydrate: false when the hydrate select answers no" time="0.3791131">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; includes project_name from package.json in the context" time="0.3940874">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; context building &gt; uses the app name as the default suggestion for the path prompt" time="0.3886307">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --path skips the path input prompt" time="0.376199">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --hydrate skips the hydrate confirm prompt" time="0.3951547">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.3874824">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4073451">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; uses the project root as the default output directory" time="0.3732782">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes force: true to processTemplate when --force is set" time="0.3567352">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; passes projectDir: process.cwd() to processTemplate" time="0.4074507">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; output and template options &gt; points processTemplate at the react template directory" time="0.3553162">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.3737373">
+        </testcase>
+        <testcase classname="test/commands/generate/react.test.ts" name="generate react &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.3858424">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/route.test.ts" timestamp="2026-07-14T18:19:34.127Z" hostname="Jane" tests="25" failures="0" errors="0" skipped="0" time="10.1940101">
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; builds the correct context from prompts and passes it to processTemplate" time="0.6228309">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; resolves datastoreType from the model&apos;s @DataStore decorator via the project config" time="0.3966202">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; leaves datastoreType empty when the model&apos;s datastore is not in the project config" time="0.3809754">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; sets hasRedis true when a redis datastore is configured alongside the model datastore" time="0.3912726">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; sets datastore and datastoreType to empty when model is &quot;(none)&quot;" time="0.3612439">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; context building &gt; leaves datastoreType empty when the model has no @DataStore decorator" time="0.3681452">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; api flag &gt; sets apiRoute: false and apiVersion: undefined when the &quot;Is this an API route?&quot; prompt is declined" time="0.3991033">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; api flag &gt; sets apiRoute: true and apiVersion from the follow-up prompt when confirmed" time="0.3797049">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; api flag &gt; --api with a value skips both the confirm and version prompts" time="0.4282649">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; api flag &gt; --api with an empty string still triggers the &quot;Is this an API route?&quot; prompt, but apiRoute stays true since the flag was passed" time="0.3948888">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; shows a select with &quot;(none)&quot;, project models, and a &quot;+ New model...&quot; option" time="0.3892303">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; runs generate model inline when &quot;+ New model...&quot; is selected and uses the newly created model" time="0.4042562">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; falls back to an empty model name when no new model is detected after generate model runs" time="0.4029632">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; falls back to a free-form input when no models exist in the project" time="0.3933302">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; model selection &gt; --no-model skips all model prompts and leaves model undefined in context" time="0.4241865">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --model skips the model select and resolves datastore from the named model file" time="0.4017136">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --description skips the description input prompt" time="0.3980259">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --path skips the route path input prompt" time="0.4043334">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --protect skips the protect confirm prompt" time="0.3988526">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; flag shortcuts bypass prompts &gt; --author skips inputAuthor entirely" time="0.4457522">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; author resolution &gt; calls inputAuthor with the project cwd and uses its return value" time="0.4204074">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; output and template options &gt; uses project root as the default output directory for the route file" time="0.3840388">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; output and template options &gt; passes force: true to both processTemplate calls when --force is set" time="0.4118439">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.4002885">
+        </testcase>
+        <testcase classname="test/commands/generate/route.test.ts" name="generate route &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.3901436">
+        </testcase>
+    </testsuite>
+    <testsuite name="test/commands/generate/server.test.ts" timestamp="2026-07-14T18:19:34.130Z" hostname="Jane" tests="38" failures="0" errors="0" skipped="0" time="15.4479346">
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; builds the correct base context from prompts" time="0.6182016">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps selected database and feature choices to boolean flags on context.features" time="0.4018016">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase true when any persistent store is selected" time="1.1317741">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets hasDatabase false when only non-persistent features are selected" time="0.3685511">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the SCM choice to a boolean map on context.scm" time="0.3660502">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; sets scm.git and scm.gitlab true when scm is &quot;gitlab&quot;" time="0.3982447">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; maps the package manager choice to a boolean map on context.pkgMgr" time="0.386305">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses ./&lt;name&gt; as the default output directory" time="0.3702095">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; uses --output-dir when provided" time="0.3593885">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; points processTemplate at the server template directory" time="0.3999636">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; passes force: true when --force is set" time="0.364519">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; api flag &gt; sets apiRoute: false and apiVersion: undefined when the api prefix prompt is declined" time="0.3610083">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; api flag &gt; sets apiRoute: true and apiVersion from the follow-up prompt when confirmed" time="0.3602864">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; does not call GenerateDefaultRoute when no route-* features are selected" time="0.3899717">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; calls GenerateDefaultRoute once with a --type per selected route-* feature" time="0.360582">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; passes --force to GenerateDefaultRoute when --force is set on the server command" time="0.3997084">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; passes --api to GenerateDefaultRoute when the api prefix prompt was confirmed" time="0.4045518">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; does not pass --api to GenerateDefaultRoute when the api prefix prompt was declined" time="0.3807737">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; default routes subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.3670938">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; calls inputAuthor and uses its return value as the author" time="0.3876785">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; --author skips inputAuthor and uses the flag value" time="0.3774788">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; author resolution &gt; passes the resolved author through to GenerateDefaultRoute for selected route-* features" time="0.3700365">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; runs GenerateDocker with --output-dir after server generation when docker is selected" time="0.3661528">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; does not run GenerateDocker when docker is not selected" time="0.4077914">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; passes --force to GenerateDocker when --force is set on the server command" time="0.3903572">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; docker subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.3641368">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs GenerateHelm with --output-dir after server generation when k8s is selected" time="0.3878856">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; does not run GenerateHelm when k8s is not selected" time="0.389464">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; passes --force to GenerateHelm when --force is set on the server command" time="0.4069251">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.3892216">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; helm subcommand &gt; runs both GenerateDocker and GenerateHelm when both features are selected" time="0.3561945">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs GenerateReact with --output-dir after server generation when react is selected" time="0.3855589">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; does not run GenerateReact when react is not selected" time="0.4053232">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; passes --force to GenerateReact when --force is set on the server command" time="0.3558171">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; uses the default output directory (./&lt;name&gt;) when --output-dir is not set" time="0.3841009">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; react subcommand &gt; runs docker, helm, react, and default-route subcommands when all are selected" time="0.3764254">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; error handling &gt; propagates an error thrown by processTemplate" time="0.363191">
+        </testcase>
+        <testcase classname="test/commands/generate/server.test.ts" name="generate server &gt; error handling &gt; falls back to String(err) when processTemplate rejects with a non-Error value" time="0.393558">
         </testcase>
     </testsuite>
 </testsuites>

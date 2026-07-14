@@ -23,11 +23,17 @@ vi.mock('../../src/lib/port.js', () => ({
   findAvailablePort: vi.fn(),
 }));
 
+vi.mock('../../src/lib/bun.js', () => ({
+  MIN_BUN_VERSION: '1.4.0',
+  resolveBunExecutable: vi.fn(),
+}));
+
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { detectDatabases, startDatabases } from '../../src/lib/db.js';
 import { detectPackageManager, detectReact } from '../../src/lib/project.js';
 import { findAvailablePort } from '../../src/lib/port.js';
+import { resolveBunExecutable } from '../../src/lib/bun.js';
 import Start from '../../src/commands/start.js';
 
 const ROOT = process.cwd();
@@ -85,6 +91,7 @@ describe('start', () => {
     vi.mocked(startDatabases).mockResolvedValue({ databases: [], env: {} });
     vi.mocked(detectReact).mockResolvedValue(false);
     vi.mocked(findAvailablePort).mockImplementation(async (port) => port);
+    vi.mocked(resolveBunExecutable).mockResolvedValue('bun');
   });
 
   afterEach(() => {
@@ -512,11 +519,69 @@ describe('start', () => {
   });
 
   describe('--bun flag', () => {
-    it('spawns "bun" instead of the node executable when --bun is set', async () => {
+    it('spawns the resolved Bun executable instead of the node executable when --bun is set', async () => {
       await Start.run(['--no-build', '--bun'], ROOT);
 
       const [cmd] = serverSpawnCall()!;
       expect(cmd).toBe('bun');
+      expect(resolveBunExecutable).toHaveBeenCalledOnce();
+    });
+
+    it('spawns a downloaded Bun binary path when resolveBunExecutable returns one', async () => {
+      vi.mocked(resolveBunExecutable).mockResolvedValue('/fake-home/.rapidrest/bun/1.4.0/bun');
+
+      await Start.run(['--no-build', '--bun'], ROOT);
+
+      const [cmd] = serverSpawnCall()!;
+      expect(cmd).toBe('/fake-home/.rapidrest/bun/1.4.0/bun');
+    });
+
+    it('does not call resolveBunExecutable when --bun is not set', async () => {
+      await Start.run(['--no-build'], ROOT);
+
+      expect(resolveBunExecutable).not.toHaveBeenCalled();
+      const [cmd] = serverSpawnCall()!;
+      expect(cmd).toBe(process.execPath);
+    });
+
+    it('throws when resolveBunExecutable rejects (e.g. download failure)', async () => {
+      vi.mocked(resolveBunExecutable).mockRejectedValue(new Error('Failed to download Bun'));
+
+      await expect(Start.run(['--no-build', '--bun'], ROOT)).rejects.toThrow('Failed to download Bun');
+    });
+
+    it('falls back to String(e) when resolveBunExecutable rejects with a non-Error value', async () => {
+      vi.mocked(resolveBunExecutable).mockRejectedValue('bun-download-non-error');
+
+      await expect(Start.run(['--no-build', '--bun'], ROOT)).rejects.toThrow('bun-download-non-error');
+    });
+
+    it('does not spawn the server when resolveBunExecutable rejects', async () => {
+      vi.mocked(resolveBunExecutable).mockRejectedValue(new Error('boom'));
+
+      await expect(Start.run(['--no-build', '--bun'], ROOT)).rejects.toThrow();
+
+      expect(serverSpawnCall()).toBeUndefined();
+    });
+
+    it('forwards resolveBunExecutable log/warn messages through to the command', async () => {
+      vi.mocked(resolveBunExecutable).mockImplementation(async (log, warn) => {
+        log('Bun not found, downloading...');
+        warn('Installed Bun version 1.0.0 is below the required v1.4.0');
+        return 'bun';
+      });
+      const logSpy = vi.spyOn(Start.prototype, 'log').mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(Start.prototype, 'warn').mockImplementation(() => undefined as never);
+
+      try {
+        await Start.run(['--no-build', '--bun'], ROOT);
+
+        expect(logSpy).toHaveBeenCalledWith('Bun not found, downloading...');
+        expect(warnSpy).toHaveBeenCalledWith('Installed Bun version 1.0.0 is below the required v1.4.0');
+      } finally {
+        logSpy.mockRestore();
+        warnSpy.mockRestore();
+      }
     });
   });
 
