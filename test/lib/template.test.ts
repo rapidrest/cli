@@ -52,6 +52,27 @@ describe('processTemplate', () => {
     expect(out).not.toContain('const redis = true;');
   });
 
+  it('supports the isUndefined helper for conditional blocks', async () => {
+    await writeFile(
+      join(templateDir, 'file.ts'),
+      '{{#if (isUndefined missing)}}was undefined{{else}}was defined{{/if}}',
+    );
+    await processTemplate(templateDir, outputDir, {});
+    const out = await readFile(join(outputDir, 'file.ts'), 'utf-8');
+    expect(out).toBe('was undefined');
+  });
+
+  it('treats a conditionalFiles condition that traverses through a non-object value as falsy', async () => {
+    await writeFile(join(templateDir, 'Dockerfile'), 'FROM node:lts');
+    await writeFile(
+      join(templateDir, 'template.config.json'),
+      JSON.stringify({ conditionalFiles: [{ file: 'Dockerfile', condition: 'docker.enabled' }] }),
+    );
+    // context.docker is a string, not an object — 'enabled' cannot be read off it
+    await processTemplate(templateDir, outputDir, { docker: 'yes' });
+    await expect(readFile(join(outputDir, 'Dockerfile'), 'utf-8')).rejects.toThrow();
+  });
+
   it('copies binary files (.cjs, .gz) byte-for-byte without Handlebars processing', async () => {
     // A buffer whose byte 0x7B is '{' — if Handlebars ran it would parse "{{name}}"
     const binary = Buffer.from([0x7b, 0x7b, 0x6e, 0x61, 0x6d, 0x65, 0x7d, 0x7d]); // "{{name}}"
@@ -265,6 +286,29 @@ describe('processTemplate', () => {
       expect(result).toContain('postgres: { type: "postgresql" }');
       expect(result).toContain('mongo: { type: "mongodb" }');
     });
+
+    it('falls back to process.cwd() as the patch target when opts.projectDir is not provided', async () => {
+      await mkdir(join(templateDir, 'patches'), { recursive: true });
+      await writeFile(join(templateDir, '{{name}}.ts'), 'class {{name}} {}');
+      await writeFile(join(templateDir, 'patches', 'frag.hbs'), 'should not be applied');
+      await writeFile(
+        join(templateDir, 'template.config.json'),
+        JSON.stringify({
+          patches: [{
+            template: 'patches/frag.hbs',
+            target: 'src/config.ts',
+            strategy: 'ts-block-insert',
+            insertInto: 'datastores',
+            condition: 'never', // falsy — applyPatches skips before touching any file
+          }],
+        }),
+      );
+
+      // No `opts` argument at all — exercises the `opts?.projectDir ?? process.cwd()` fallback
+      await expect(
+        processTemplate(templateDir, outputDir, { name: 'Widget', never: false }),
+      ).resolves.toBeUndefined();
+    });
   });
 
   describe('Helm-safe mode (helmPaths)', () => {
@@ -284,6 +328,24 @@ describe('processTemplate', () => {
       expect(out).toBe('name: myapp\ndesc: My App');
     });
 
+    it('substitutes an empty string for an undefined variable in Helm file content', async () => {
+      await mkdir(join(templateDir, 'helm'), { recursive: true });
+      await writeFile(join(templateDir, 'helm', 'Chart.yaml'), 'name: [[missing]]');
+      await writeConfig(['helm']);
+      await processTemplate(templateDir, outputDir, {});
+      const out = await readFile(join(outputDir, 'helm', 'Chart.yaml'), 'utf-8');
+      expect(out).toBe('name: ');
+    });
+
+    it('substitutes an empty string for an undefined variable in a Helm-safe output file path', async () => {
+      await mkdir(join(templateDir, 'helm'), { recursive: true });
+      await writeFile(join(templateDir, 'helm', '[[missing]].yaml'), 'value: 1');
+      await writeConfig(['helm']);
+      await processTemplate(templateDir, outputDir, {});
+      const out = await readFile(join(outputDir, 'helm', '.yaml'), 'utf-8');
+      expect(out).toBe('value: 1');
+    });
+
     it('resolves [[#if condition]]...[[/if]] blocks in Helm files', async () => {
       await mkdir(join(templateDir, 'helm'), { recursive: true });
       const src = '[[#if features.mongodb]]\nmongodb: true\n[[/if]]\n[[#if features.redis]]\nredis: true\n[[/if]]';
@@ -293,6 +355,15 @@ describe('processTemplate', () => {
       const out = await readFile(join(outputDir, 'helm', 'values.yaml'), 'utf-8');
       expect(out).toContain('mongodb: true');
       expect(out).not.toContain('redis: true');
+    });
+
+    it('substitutes [[var]] placeholders in Helm-safe output file paths', async () => {
+      await mkdir(join(templateDir, 'helm'), { recursive: true });
+      await writeFile(join(templateDir, 'helm', '[[name]].yaml'), 'value: 1');
+      await writeConfig(['helm']);
+      await processTemplate(templateDir, outputDir, { name: 'myapp' });
+      const out = await readFile(join(outputDir, 'helm', 'myapp.yaml'), 'utf-8');
+      expect(out).toBe('value: 1');
     });
 
     it('preserves Helm {{ }} Go-template expressions in helmPaths files', async () => {

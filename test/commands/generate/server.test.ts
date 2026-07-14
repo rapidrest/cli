@@ -174,6 +174,20 @@ describe('generate server', () => {
     });
   });
 
+  it('sets scm.git and scm.gitlab true when scm is "gitlab"', async () => {
+    stubPrompts({ scm: 'gitlab' });
+    await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);
+
+    const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+    expect((context as Record<string, Record<string, boolean>>).scm).toMatchObject({
+      git: true,
+      github: false,
+      gitlab: true,
+      p4: false,
+      svn: false,
+    });
+  });
+
   it('maps the package manager choice to a boolean map on context.pkgMgr', async () => {
     stubPrompts({ pkgMgr: 'yarn' });
     await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);
@@ -475,6 +489,26 @@ describe('generate server', () => {
       expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
       expect((GenerateReact as any).run).toHaveBeenCalledOnce();
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('error handling', () => {
+    it('propagates an error thrown by processTemplate', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue(new Error('template boom'));
+
+      await expect(
+        GenerateServer.run(['my-service', '--output-dir', '/tmp/server-out'], ROOT),
+      ).rejects.toThrow('template boom');
+    });
+
+    it('falls back to String(err) when processTemplate rejects with a non-Error value', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue('non-error-boom');
+
+      await expect(
+        GenerateServer.run(['my-service', '--output-dir', '/tmp/server-out'], ROOT),
+      ).rejects.toThrow('non-error-boom');
     });
   });
 });

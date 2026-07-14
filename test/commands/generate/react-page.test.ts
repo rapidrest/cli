@@ -187,4 +187,24 @@ describe('generate react-page', () => {
       expect(templateDir).toContain(join('templates', 'react-page'));
     });
   });
+
+  describe('error handling', () => {
+    it('propagates an error thrown by processTemplate', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue(new Error('template boom'));
+
+      await expect(
+        GenerateReactPage.run(['app', 'Dashboard'], ROOT),
+      ).rejects.toThrow('template boom');
+    });
+
+    it('falls back to String(err) when processTemplate rejects with a non-Error value', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue('non-error-boom');
+
+      await expect(
+        GenerateReactPage.run(['app', 'Dashboard'], ROOT),
+      ).rejects.toThrow('non-error-boom');
+    });
+  });
 });

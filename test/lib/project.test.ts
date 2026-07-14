@@ -1,15 +1,25 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { mkdir, mkdtemp, rm, writeFile } from 'fs/promises';
 import { join } from 'path';
 import os from 'os';
+
+vi.mock('child_process', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('child_process')>();
+  return { ...actual, execFile: vi.fn() };
+});
+
+import { execFile } from 'child_process';
 import {
+  detectPackageManager,
   detectReact,
   extractDatastoreInfo,
   extractModelDatastore,
+  readGitAuthor,
   readModelDatastore,
   readProjectAuthor,
   readProjectDatastores,
   readProjectModels,
+  readProjectName,
 } from '../../src/lib/project.js';
 
 describe('detectReact', () => {
@@ -61,6 +71,14 @@ describe('readProjectAuthor', () => {
     expect(await readProjectAuthor(tmpDir)).toBe('Jane Doe');
   });
 
+  it('returns undefined when author is an object without a name field', async () => {
+    await writeFile(
+      join(tmpDir, 'package.json'),
+      JSON.stringify({ author: { email: 'jane@example.com' } }),
+    );
+    expect(await readProjectAuthor(tmpDir)).toBeUndefined();
+  });
+
   it('returns undefined when author is an empty string', async () => {
     await writeFile(join(tmpDir, 'package.json'), JSON.stringify({ author: '' }));
     expect(await readProjectAuthor(tmpDir)).toBeUndefined();
@@ -78,6 +96,128 @@ describe('readProjectAuthor', () => {
   it('returns undefined when package.json is invalid JSON', async () => {
     await writeFile(join(tmpDir, 'package.json'), 'not json');
     expect(await readProjectAuthor(tmpDir)).toBeUndefined();
+  });
+});
+
+describe('readProjectName', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(os.tmpdir(), 'rrname-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns the name field from package.json', async () => {
+    await writeFile(join(tmpDir, 'package.json'), JSON.stringify({ name: 'my-app' }));
+    expect(await readProjectName(tmpDir)).toBe('my-app');
+  });
+
+  it('returns an empty string when the name field is absent', async () => {
+    await writeFile(join(tmpDir, 'package.json'), JSON.stringify({ version: '1.0.0' }));
+    expect(await readProjectName(tmpDir)).toBe('');
+  });
+
+  it('returns an empty string when package.json does not exist', async () => {
+    expect(await readProjectName(join(tmpDir, 'nonexistent'))).toBe('');
+  });
+
+  it('returns an empty string when package.json is invalid JSON', async () => {
+    await writeFile(join(tmpDir, 'package.json'), 'not json');
+    expect(await readProjectName(tmpDir)).toBe('');
+  });
+});
+
+describe('detectPackageManager', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(os.tmpdir(), 'rrpm-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns "yarn" when package.json packageManager field starts with "yarn"', async () => {
+    await writeFile(join(tmpDir, 'package.json'), JSON.stringify({ packageManager: 'yarn@4.5.3' }));
+    expect(await detectPackageManager(tmpDir)).toBe('yarn');
+  });
+
+  it('returns "yarn" when yarn.lock exists and there is no packageManager field', async () => {
+    await writeFile(join(tmpDir, 'package.json'), JSON.stringify({ name: 'my-app' }));
+    await writeFile(join(tmpDir, 'yarn.lock'), '');
+    expect(await detectPackageManager(tmpDir)).toBe('yarn');
+  });
+
+  it('returns "npm" when there is no package.json, yarn.lock, or packageManager field', async () => {
+    expect(await detectPackageManager(tmpDir)).toBe('npm');
+  });
+
+  it('returns "npm" when package.json is invalid JSON and no yarn.lock exists', async () => {
+    await writeFile(join(tmpDir, 'package.json'), 'not json');
+    expect(await detectPackageManager(tmpDir)).toBe('npm');
+  });
+
+  it('returns "npm" when packageManager field does not start with "yarn"', async () => {
+    await writeFile(join(tmpDir, 'package.json'), JSON.stringify({ packageManager: 'npm@10.0.0' }));
+    expect(await detectPackageManager(tmpDir)).toBe('npm');
+  });
+});
+
+describe('readGitAuthor', () => {
+  function mockExecFile(responses: Record<string, { stdout: string } | Error>): void {
+    vi.mocked(execFile).mockImplementation(((file: string, args: readonly string[], callback: any) => {
+      const key = args.join(' ');
+      const resp = responses[key];
+      if (resp instanceof Error) callback(resp);
+      else callback(null, { stdout: resp?.stdout ?? '', stderr: '' });
+      return {} as any;
+    }) as any);
+  }
+
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns "Name <email>" when both user.name and user.email are configured', async () => {
+    mockExecFile({
+      'config user.name': { stdout: 'Jane Doe\n' },
+      'config user.email': { stdout: 'jane@example.com\n' },
+    });
+    expect(await readGitAuthor()).toBe('Jane Doe <jane@example.com>');
+  });
+
+  it('returns just the name when the email lookup fails', async () => {
+    mockExecFile({
+      'config user.name': { stdout: 'Jane Doe\n' },
+      'config user.email': new Error('no email configured'),
+    });
+    expect(await readGitAuthor()).toBe('Jane Doe');
+  });
+
+  it('returns just the name when user.email resolves to an empty string', async () => {
+    mockExecFile({
+      'config user.name': { stdout: 'Jane Doe\n' },
+      'config user.email': { stdout: '\n' },
+    });
+    expect(await readGitAuthor()).toBe('Jane Doe');
+  });
+
+  it('returns undefined when the user.name lookup fails (git unavailable)', async () => {
+    mockExecFile({
+      'config user.name': new Error('git not found'),
+    });
+    expect(await readGitAuthor()).toBeUndefined();
+  });
+
+  it('returns undefined when user.name resolves to an empty string', async () => {
+    mockExecFile({
+      'config user.name': { stdout: '   \n' },
+    });
+    expect(await readGitAuthor()).toBeUndefined();
   });
 });
 
@@ -138,6 +278,11 @@ describe('extractDatastoreInfo', () => {
         },
       }
     `;
+    expect(extractDatastoreInfo(src)).toEqual([{ name: 'acl', type: 'mongodb' }]);
+  });
+
+  it('handles escaped quotes inside string literals without ending the string early', () => {
+    const src = `datastores: { acl: { url: 'it\\'s here', type: 'mongodb' } }`;
     expect(extractDatastoreInfo(src)).toEqual([{ name: 'acl', type: 'mongodb' }]);
   });
 

@@ -384,4 +384,24 @@ describe('generate default-route', () => {
       expect(templateDir).toContain(join('templates', 'default-route'));
     });
   });
+
+  describe('error handling', () => {
+    it('propagates an error thrown by processTemplate', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue(new Error('template boom'));
+
+      await expect(
+        GenerateDefaultRoute.run(['--output-dir', '/tmp/routes'], ROOT),
+      ).rejects.toThrow('template boom');
+    });
+
+    it('falls back to String(err) when processTemplate rejects with a non-Error value', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue('non-error-boom');
+
+      await expect(
+        GenerateDefaultRoute.run(['--output-dir', '/tmp/routes'], ROOT),
+      ).rejects.toThrow('non-error-boom');
+    });
+  });
 });

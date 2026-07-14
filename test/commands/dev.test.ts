@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'events';
-import { join } from 'path';
+import { join, delimiter } from 'path';
 
 vi.mock('child_process', () => ({ spawn: vi.fn() }));
 
@@ -44,13 +44,23 @@ function fakeDb(type: string) {
   };
 }
 
+async function withPlatform<T>(platform: string, fn: () => Promise<T>): Promise<T> {
+  const original = Object.getOwnPropertyDescriptor(process, 'platform')!;
+  Object.defineProperty(process, 'platform', { value: platform });
+  try {
+    return await fn();
+  } finally {
+    Object.defineProperty(process, 'platform', original);
+  }
+}
+
 describe('dev', () => {
   beforeEach(() => {
     vi.mocked(spawn).mockImplementation(() => makeFakeProcess() as any);
     vi.mocked(detectDatabases).mockResolvedValue({ mongodb: false, redis: false, postgresql: false });
     vi.mocked(startDatabases).mockResolvedValue({ databases: [], env: {} });
     vi.mocked(detectReact).mockResolvedValue(false);
-    vi.mocked(findAvailablePort).mockImplementation(async (port) => port as number);
+    vi.mocked(findAvailablePort).mockImplementation(async (port) => port);
   });
 
   afterEach(() => {
@@ -338,6 +348,76 @@ describe('dev', () => {
         expect((viteOpts as any).env).toMatchObject({ [testKey]: 'shell-value' });
       } finally {
         delete process.env[testKey];
+      }
+    });
+  });
+
+  describe('error handling', () => {
+    it('throws when startDatabases rejects with an Error', async () => {
+      vi.mocked(startDatabases).mockRejectedValue(new Error('Failed to start Redis: boom'));
+
+      await expect(Dev.run([], ROOT)).rejects.toThrow('Failed to start Redis: boom');
+    });
+
+    it('falls back to String(e) when startDatabases rejects with a non-Error value', async () => {
+      vi.mocked(startDatabases).mockRejectedValue('db-non-error');
+
+      await expect(Dev.run([], ROOT)).rejects.toThrow('db-non-error');
+    });
+
+    it('does not spawn the server when startDatabases rejects', async () => {
+      vi.mocked(startDatabases).mockRejectedValue(new Error('boom'));
+
+      await expect(Dev.run([], ROOT)).rejects.toThrow();
+
+      expect(spawn).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('platform-specific behavior', () => {
+    it('does not append .cmd to the tsx/vite binary names on non-Windows platforms', async () => {
+      vi.mocked(detectReact).mockResolvedValue(true);
+
+      await withPlatform('linux', () => Dev.run([], ROOT));
+
+      const [tsxCmd] = vi.mocked(spawn).mock.calls[0];
+      const [viteCmd] = vi.mocked(spawn).mock.calls[1];
+      expect(tsxCmd).not.toContain('.cmd');
+      expect(viteCmd).not.toContain('.cmd');
+    });
+
+    it('falls back to an empty string when process.env.PATH is unset', async () => {
+      const originalPath = process.env.PATH;
+      delete process.env.PATH;
+      try {
+        await Dev.run([], ROOT);
+        const [, , opts] = vi.mocked(spawn).mock.calls[0];
+        const projectBin = join(ROOT, 'node_modules', '.bin');
+        expect((opts as any).env.PATH).toBe(`${projectBin}${delimiter}`); // nothing appended after the delimiter
+      } finally {
+        process.env.PATH = originalPath;
+      }
+    });
+  });
+
+  describe('database log/warn forwarding', () => {
+    it('forwards log and warn messages from startDatabases through to the command', async () => {
+      const logSpy = vi.spyOn(Dev.prototype, 'log').mockImplementation(() => undefined);
+      const warnSpy = vi.spyOn(Dev.prototype, 'warn').mockImplementation(() => undefined as never);
+      vi.mocked(startDatabases).mockImplementation(async (_cwd, _dbs, log, warn) => {
+        log('db log message');
+        warn('db warn message');
+        return { databases: [], env: {} };
+      });
+
+      try {
+        await Dev.run([], ROOT);
+
+        expect(logSpy).toHaveBeenCalledWith('db log message');
+        expect(warnSpy).toHaveBeenCalledWith('db warn message');
+      } finally {
+        logSpy.mockRestore();
+        warnSpy.mockRestore();
       }
     });
   });

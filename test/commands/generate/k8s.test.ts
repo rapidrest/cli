@@ -176,4 +176,18 @@ describe('generate k8s', () => {
       expect(readProjectName).toHaveBeenCalledWith(process.cwd());
     });
   });
+
+  describe('error handling', () => {
+    it('propagates an error thrown by processTemplate', async () => {
+      vi.mocked(processTemplate).mockRejectedValue(new Error('template boom'));
+
+      await expect(GenerateHelm.run([], ROOT)).rejects.toThrow('template boom');
+    });
+
+    it('falls back to String(err) when processTemplate rejects with a non-Error value', async () => {
+      vi.mocked(processTemplate).mockRejectedValue('non-error-boom');
+
+      await expect(GenerateHelm.run([], ROOT)).rejects.toThrow('non-error-boom');
+    });
+  });
 });

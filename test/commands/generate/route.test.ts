@@ -125,6 +125,32 @@ describe('generate route', () => {
       expect(readModelDatastore).toHaveBeenCalledWith(expect.any(String), 'Product');
     });
 
+    it('leaves datastoreType empty when the model\'s datastore is not in the project config', async () => {
+      vi.mocked(readModelDatastore).mockResolvedValue('orphan');
+      vi.mocked(readProjectDatastores).mockResolvedValue([{ name: 'acl', type: 'mongodb' }]);
+      stubPrompts({ model: 'Product', author: 'Author' });
+
+      await GenerateRoute.run(['ProductRoute'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.datastore).toBe('orphan');
+      expect(context.datastoreType).toBe('');
+    });
+
+    it('sets hasRedis true when a redis datastore is configured alongside the model datastore', async () => {
+      vi.mocked(readModelDatastore).mockResolvedValue('acl');
+      vi.mocked(readProjectDatastores).mockResolvedValue([
+        { name: 'acl', type: 'mongodb' },
+        { name: 'cache', type: 'redis' },
+      ]);
+      stubPrompts({ model: 'Product', author: 'Author' });
+
+      await GenerateRoute.run(['ProductRoute'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.hasRedis).toBe(true);
+    });
+
     it('sets datastore and datastoreType to empty when model is "(none)"', async () => {
       stubPrompts({ model: '', author: 'Author' }); // '' = (none) option
 
@@ -236,6 +262,22 @@ describe('generate route', () => {
       expect(context.model).toBe('Order');
       expect(context.datastore).toBe('acl');
       expect(context.datastoreType).toBe('mongodb');
+    });
+
+    it('falls back to an empty model name when no new model is detected after generate model runs', async () => {
+      // "before" and "after" snapshots are identical — no new model can be detected
+      vi.mocked(readProjectModels).mockResolvedValue(['Product', 'User']);
+      vi.mocked(input)
+        .mockResolvedValueOnce('A desc')
+        .mockResolvedValueOnce('/api/v1/x');
+      vi.mocked(confirm).mockResolvedValueOnce(false);         // isApi
+      vi.mocked(select).mockResolvedValueOnce('__new__');      // model select
+      vi.mocked(confirm).mockResolvedValueOnce(false);         // protect
+
+      await GenerateRoute.run(['OrderRoute'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.model).toBe('');
     });
 
     it('falls back to a free-form input when no models exist in the project', async () => {
@@ -376,6 +418,26 @@ describe('generate route', () => {
       for (const call of vi.mocked(processTemplate).mock.calls) {
         expect(call[3]).toMatchObject({ force: true });
       }
+    });
+  });
+
+  describe('error handling', () => {
+    it('propagates an error thrown by processTemplate', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue(new Error('template boom'));
+
+      await expect(
+        GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes'], ROOT),
+      ).rejects.toThrow('template boom');
+    });
+
+    it('falls back to String(err) when processTemplate rejects with a non-Error value', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue('non-error-boom');
+
+      await expect(
+        GenerateRoute.run(['OrderRoute', '--output-dir', '/tmp/routes'], ROOT),
+      ).rejects.toThrow('non-error-boom');
     });
   });
 });

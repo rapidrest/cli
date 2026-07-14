@@ -188,6 +188,15 @@ describe('generate model', () => {
       expect(context.datastoreType).toBe('mongodb');
     });
 
+    it('resolves an empty datastoreType when the selected name is not in the configured list', async () => {
+      stubPrompts({ datastore: 'orphan', author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.datastore).toBe('orphan');
+      expect(context.datastoreType).toBe('');
+    });
+
     it('selecting "+ New datastore..." prompts for db type and uses it as both name and type', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
       vi.mocked(select)
@@ -481,6 +490,24 @@ describe('generate model', () => {
       );
     });
 
+    it('skips helm update when the user declines', async () => {
+      vi.mocked(existsSync).mockImplementation((p) =>
+        String(p).endsWith('Chart.yaml'),
+      );
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__')
+        .mockResolvedValueOnce('mongodb');
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(true)   // enable caching?
+        .mockResolvedValueOnce(false)  // protect
+        .mockResolvedValueOnce(false); // update helm? → no
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      expect((GenerateHelm as any).run).not.toHaveBeenCalled();
+    });
+
     it('offers to update both docker and helm when both exist for a new datastore', async () => {
       vi.mocked(existsSync).mockReturnValue(true);
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
@@ -497,6 +524,26 @@ describe('generate model', () => {
 
       expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
       expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('error handling', () => {
+    it('propagates an error thrown by processTemplate', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue(new Error('template boom'));
+
+      await expect(
+        GenerateModel.run(['Product', '--output-dir', '/tmp/test-models'], ROOT),
+      ).rejects.toThrow('template boom');
+    });
+
+    it('falls back to String(err) when processTemplate rejects with a non-Error value', async () => {
+      stubPrompts();
+      vi.mocked(processTemplate).mockRejectedValue('non-error-boom');
+
+      await expect(
+        GenerateModel.run(['Product', '--output-dir', '/tmp/test-models'], ROOT),
+      ).rejects.toThrow('non-error-boom');
     });
   });
 });

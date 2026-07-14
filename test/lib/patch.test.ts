@@ -48,11 +48,36 @@ describe('tsBlockInsert', () => {
     ).toThrow("Could not find 'datastores' block");
   });
 
+  it('throws a descriptive error when the block has no matching closing brace', () => {
+    const malformed = 'export default { datastores: { mongo: { type: "mongodb" }';
+    expect(() =>
+      tsBlockInsert(malformed, 'datastores', 'foo', ''),
+    ).toThrow("Malformed 'datastores' block: no matching closing brace");
+  });
+
+  it('throws a descriptive error when the root config block has no matching closing brace', () => {
+    const malformed = 'conf.defaults({ auth: { strategy: "jwt" }';
+    expect(() =>
+      tsBlockInsert(malformed, '', 'foo', ''),
+    ).toThrow('Malformed root config block: no matching closing brace');
+  });
+
   it('handles an empty block', () => {
     const src = 'const c = { datastores: { } };';
     const snippet = '    acl: { type: "mongodb" },\n';
     const result = tsBlockInsert(src, 'datastores', snippet, '');
     expect(result).toContain('acl: { type: "mongodb" }');
+  });
+
+  it('handles escaped quotes inside string literals within the scanned block', () => {
+    const src = `export default {
+  datastores: {
+    acl: { url: 'it\\'s here', type: "mongodb" },
+  },
+};`;
+    const result = tsBlockInsert(src, 'datastores', '    redis: {},\n', 'redis');
+    expect(result).toContain('redis:');
+    expect(result).toContain("it\\'s here"); // original content preserved despite escaped quote
   });
 
   it('does not match property names inside string literals', () => {
@@ -220,6 +245,34 @@ describe('tsPropertySet', () => {
     expect(result).toContain('// enabled: true,');  // comment unchanged
     expect(result).not.toContain('\n    enabled: false,'); // real property replaced
   });
+
+  it('skips over a string-valued property (with an escaped quote) that appears before the target property', () => {
+    const src = `conf.defaults({ session: { secret: "ab\\"cd", enabled: false } });`;
+    const result = tsPropertySet(src, 'session', 'enabled', 'true');
+    expect(result).toContain('secret: "ab\\"cd"'); // preceding string value untouched
+    expect(result).toContain('enabled: true');
+    expect(result).not.toContain('enabled: false');
+  });
+
+  it('correctly finds the end of a string-valued target property containing an escaped quote', () => {
+    const src = `conf.defaults({ session: { secret: "old \\"escaped\\" value" } });`;
+    const result = tsPropertySet(src, 'session', 'secret', '"new-secret"');
+    expect(result).toContain('secret: "new-secret"');
+    expect(result).not.toContain('escaped');
+  });
+
+  it('handles an unterminated string value at the end of the source gracefully', () => {
+    const src = `conf.defaults({ session: { secret: "unterminated`;
+    const result = tsPropertySet(src, 'session', 'secret', '"new-secret"');
+    expect(result).toContain('"new-secret"');
+  });
+
+  it('skips a nested object value on a property preceding the target', () => {
+    const src = `conf.defaults({ session: { options: { secure: false }, enabled: false } });`;
+    const result = tsPropertySet(src, 'session', 'enabled', 'true');
+    expect(result).toContain('options: { secure: false }'); // preceding nested object untouched
+    expect(result).toContain('enabled: true');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -369,6 +422,33 @@ describe('applyPatches', () => {
     ).rejects.toThrow('not found');
   });
 
+  it('ts-block-insert: defaults to no idempotency check when idempotencyKey is omitted', async () => {
+    const configSource = `export default conf.defaults({
+  datastores: {
+    mongo: { type: "mongodb" },
+  },
+});`;
+    await writeFile(join(projectDir, 'src', 'config.ts'), configSource);
+    await writeFile(
+      join(templateDir, 'patches', 'config.ts.hbs'),
+      '    postgres: { type: "postgresql" },\n',
+    );
+
+    const patches: PatchEntry[] = [{
+      template: 'patches/config.ts.hbs',
+      target: 'src/config.ts',
+      strategy: 'ts-block-insert',
+      insertInto: 'datastores',
+      // idempotencyKey intentionally omitted
+    }];
+
+    await applyPatches(templateDir, projectDir, {}, patches);
+
+    const result = await readFile(join(projectDir, 'src', 'config.ts'), 'utf-8');
+    expect(result).toContain('postgres: { type: "postgresql" }');
+    expect(result).toContain('mongo: { type: "mongodb" }');
+  });
+
   // --- json-merge ---
 
   it('json-merge: merges dependency entries into existing package.json', async () => {
@@ -475,6 +555,22 @@ describe('applyPatches', () => {
     expect(result).toBe(configSource);
   });
 
+  it('ts-property-set: throws when target file does not exist', async () => {
+    await writeFile(join(templateDir, 'patches', 'rbac.txt'), 'true');
+
+    const patches: PatchEntry[] = [{
+      template: 'patches/rbac.txt',
+      target: 'src/missing.ts',
+      strategy: 'ts-property-set',
+      insertInto: 'rbac',
+      property: 'enabled',
+    }];
+
+    await expect(
+      applyPatches(templateDir, projectDir, {}, patches),
+    ).rejects.toThrow('not found');
+  });
+
   // --- condition gate ---
 
   it('skips a patch entirely when condition evaluates to falsy', async () => {
@@ -491,6 +587,42 @@ describe('applyPatches', () => {
     }];
 
     await applyPatches(templateDir, projectDir, { datastore: '' }, patches);
+
+    const result = await readFile(join(projectDir, 'src', 'config.ts'), 'utf-8');
+    expect(result).toBe(original);
+  });
+
+  it('treats a condition that traverses through a non-object value as falsy', async () => {
+    const original = 'original content';
+    await writeFile(join(projectDir, 'src', 'config.ts'), original);
+    await writeFile(join(templateDir, 'patches', 'frag.hbs'), 'should not appear');
+
+    const patches: PatchEntry[] = [{
+      template: 'patches/frag.hbs',
+      target: 'src/config.ts',
+      strategy: 'ts-block-insert',
+      insertInto: 'datastores',
+      condition: 'datastore.nested', // context.datastore is a string — 'nested' can't be read off it
+    }];
+
+    await applyPatches(templateDir, projectDir, { datastore: 'postgres' }, patches);
+
+    const result = await readFile(join(projectDir, 'src', 'config.ts'), 'utf-8');
+    expect(result).toBe(original);
+  });
+
+  it('does nothing for an unrecognized strategy', async () => {
+    const original = 'original content';
+    await writeFile(join(projectDir, 'src', 'config.ts'), original);
+    await writeFile(join(templateDir, 'patches', 'frag.hbs'), 'should not appear');
+
+    const patches = [{
+      template: 'patches/frag.hbs',
+      target: 'src/config.ts',
+      strategy: 'unknown-strategy',
+    }] as unknown as PatchEntry[];
+
+    await expect(applyPatches(templateDir, projectDir, {}, patches)).resolves.toBeUndefined();
 
     const result = await readFile(join(projectDir, 'src', 'config.ts'), 'utf-8');
     expect(result).toBe(original);
