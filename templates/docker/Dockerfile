@@ -38,7 +38,6 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/scripts ./scripts
-COPY ./scripts /app/scripts
 RUN chmod +x /app/scripts/*.sh
 # Add curl for health check
 RUN apt update && apt upgrade -f && apt install curl -y
