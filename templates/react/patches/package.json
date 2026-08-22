@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "rimraf dist && tsc && tsc -p tsconfig.client.json && vite build",
+    "export": "rapidrest react export",
     "lint": "eslint ./apps ./src ./test"
   },
   "dependencies": { "@rapidrest/react": "^0.8.0", "react": "^19.2.7", "react-dom": "^19.2.7" },

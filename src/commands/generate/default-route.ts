@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////////////
+// Copyright (C) 2026 Jean-Philippe Steinmetz
+// SPDX-License-Identifier: MPL-2.0
+///////////////////////////////////////////////////////////////////////////////
 import { checkbox, confirm, input } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';

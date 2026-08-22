@@ -65,6 +65,7 @@ rapidrest dev
 - [`rapidrest dev`](#rapidrest-dev)
 - [`rapidrest start`](#rapidrest-start)
 - [`rapidrest build`](#rapidrest-build)
+- [`rapidrest react export`](#rapidrest-react-export)
 
 ---
 
@@ -486,6 +487,47 @@ USAGE
 ```
 
 Runs the project's `build` script via the detected package manager. Equivalent to `yarn build` or `npm run build` from the project root.
+
+---
+
+### `rapidrest react export`
+
+Crawl the React app and write a static HTML/CSS/JS site to disk — no server required to serve the
+result. Namespaced under the `react` topic (rather than a bare top-level `export`) so it's clear
+what's being exported. Requires a React app to be configured (see
+[`rapidrest generate react`](#rapidrest-generate-react-name)).
+
+```
+USAGE
+  $ rapidrest react export [--docker] [--port <value>]
+
+FLAGS
+  -d, --docker  Run in Docker mode (skips starting in-memory database servers)
+  -p, --port    Preferred port to bind the transient export server to (default 3000). If already in use, the next available port is used instead.
+```
+
+Run this command from the root of a generated RapidREST project with React support. It:
+
+1. Reads `src/config.ts` to detect which databases are configured and starts an in-memory server for each one — unless `--docker` is passed, in which case this step is skipped. The export entry boots a real, fully-wired server, so it has the same database requirements as `dev`/`start`.
+2. Finds an available port to bind the transient export server to, starting at 3000 (or `--port`, if given), so it doesn't collide with an already-running `rapidrest dev`/`rapidrest start`. Nothing is served on this port afterward — it only exists for the duration of the crawl.
+3. Delegates to `@rapidrest/react`'s own CLI (`rapidreact export`), which builds the client bundle (`vite build`) and then runs the project's `src/export.ts` entry (generated automatically by `rapidrest generate react`) under `NODE_ENV=production`.
+
+The result is written to `dist/export/` — `index.html`, one `index.html` per page path, `404.html` for static-host fallback routing, and a copy of the built hydration assets. Deploy that directory to any static host (S3, Netlify, GitHub Pages, a CDN).
+
+**Known limitations** (inherited from `rapidreact export` — see [`@rapidrest/react`'s README](https://github.com/rapidrest/react#static-export)):
+
+- No support for dynamic/parameterized routes.
+- Hydration only works correctly when the exported site is served from `/`.
+- Props are frozen at export time — pages depending on per-request or authenticated data will bake in whatever an unauthenticated crawl renders.
+
+**Example:**
+
+```sh
+cd my-api
+rapidrest react export
+rapidrest react export --docker     # assume databases are already running
+rapidrest react export --port 4000  # prefer port 4000 for the transient export server
+```
 
 ---
 

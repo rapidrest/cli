@@ -1,8 +1,11 @@
 {
   "name": "@rapidrest/cli",
   "description": "The official CLI tool for RapidREST projects",
+  "repository": "rapidrest/cli",
   "version": "0.18.0",
-  "author": "Jean-Philippe Steinmetz",
+  "author": "RapidREST <rapidrests@gmail.com>",
+  "homepage": "https://github.com/rapidrest/cli",
+  "license": "MPL-2.0",
   "bin": {
     "rapidrest": "./bin/run.js",
     "rr": "./bin/run.js"
@@ -56,11 +59,9 @@
     "./oclif.manifest.json",
     "./templates"
   ],
-  "homepage": "https://github.com/rapidrest/cli",
   "keywords": [
     "oclif"
   ],
-  "license": "MIT",
   "main": "dist/index.js",
   "type": "module",
   "oclif": {
@@ -78,10 +79,12 @@
     "topics": {
       "generate": {
         "description": "Generate RapidREST projects, models, and routes"
+      },
+      "react": {
+        "description": "Manage the React front-end of a RapidREST project"
       }
     }
   },
-  "repository": "rapidrest/cli",
   "scripts": {
     "build": "shx rm -rf dist && tsc -b",
     "lint": "eslint",
