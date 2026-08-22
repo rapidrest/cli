@@ -36,44 +36,41 @@
 		"trailingComma": "es5"
 	},
 	"dependencies": {
-		"@rapidrest/core": "^1.4.0",
-		"@rapidrest/service-core": "^1.0.0-rc.22",
-		"@types/node": "^25.9.3",
-		"argon2": "^0.44.0",
-		"axios": "^1.17.0",
+		"@rapidrest/core": "^5.0.1",
+		"@rapidrest/service-core": "^1.2.1",
+		"@types/node": "^26.2.0",
+		"axios": "^1.19.0",
 		"lodash-es": "^4.18.1",
-		{{#if features.mongodb}}"mongodb": "^7.3.0",{{/if}}
+		{{#if features.mongodb}}"mongodb": "^7.5.0",{{/if}}
 		"nconf": "^0.13.0",
-		"openapi3-ts": "^4.6.0",
+		"openapi3-ts": "^4.6.1",
 		"prom-client": "^15.1.3",
 		"reflect-metadata": "^0.2.2",
+		{{#if features.redis}}"redis": "^6.2.1",{{/if}}
+		{{#if features.postgresql}}"typeorm": "^1.1.0",{{/if}}
 		"winston": "^3.19.0",
 		"winston-transport": "^4.9.0"
 	},
 	"devDependencies": {
 		"@rapidrest/cli": "^0.18.0",
-		"@swc/core": "^1.15.41",
-		{{#if features.redis}}"@types/ioredis-mock": "^8",{{/if}}
+		"@swc/core": "^1.16.1",
 		"@types/nconf": "^0.10.7",
-		"@vitest/coverage-v8": "^4.1.8",
+		"@vitest/coverage-v8": "^4.1.11",
 		"coveralls": "^3.1.1",
 		"eslint": "^10.5.0",
 		"eslint-plugin-import": "^2.32.0",
 		"eslint-plugin-jsdoc": "^63.0.2",
-		"globals": "^17.6.0",
-		{{#if features.redis}}"ioredis": "^5.11.1",{{/if}}
-		{{#if features.redis}}"ioredis-mock": "^8.13.1",{{/if}}
+		"globals": "^17.11.0",
 		{{#if features.mongodb}}"mongodb-memory-server": "^11.2.0",{{/if}}
 		"nodemon": "^3.1.14",
 		"rimraf": "^6.1.3",
-		"tsx": "^4.22.4",
-		"typedoc": "^0.28.19",
+		"tsx": "^4.23.12",
+		"typedoc": "^0.28.20",
 		"typedoc-plugin-markdown": "^4.12.0",
-		{{#if features.postgresql}}"typeorm": "^0.3.20",{{/if}}
 		"typescript": "^6.0.3",
-		"unplugin-swc": "^1.5.9",
-		"uuid": "^14.0.0",
-		"vitest": "^4.1.8"
+		"unplugin-swc": "^1.5.11",
+		"uuid": "^14.0.2",
+		"vitest": "^4.1.11"
 	},
 	"resolutions": {
 		"semver": "^7.5.2",

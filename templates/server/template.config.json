@@ -6,11 +6,6 @@
     { "file": ".github",                            "condition": "scm.github" },
     { "file": ".gitlab-ci.yml",                     "condition": "scm.gitlab" },
     { "file": ".yarn",                              "condition": "pkgMgr.yarn" },
-    { "file": ".yarnrc.yml",                        "condition": "pkgMgr.yarn" },
-    { "file": "src/models/User.ts",                 "condition": "features.hasDatabase" },
-    { "file": "src/routes/AuthRoute.ts",            "condition": "features.hasDatabase" },
-    { "file": "src/routes/UserRoute.ts",            "condition": "features.hasDatabase" },
-    { "file": "test/routes/AuthRoute.test.ts",      "condition": "features.hasDatabase" },
-    { "file": "test/routes/UserRoute.test.ts",      "condition": "features.hasDatabase" }
+    { "file": ".yarnrc.yml",                        "condition": "pkgMgr.yarn" }
   ]
 }

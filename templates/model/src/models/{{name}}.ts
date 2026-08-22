@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
-import { Base{{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Entity, DocDecorators, ModelDecorators, PersistenceDecorators } from "@rapidrest/service-core";
+import { ACLAction, Base{{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Entity, DocDecorators, ModelDecorators, PersistenceDecorators } from "@rapidrest/service-core";
 const { Column, Entity, Index } = PersistenceDecorators;
 const { Cache, DataStore, Identifier, Protect } = ModelDecorators;
 const { Description } = DocDecorators;
@@ -23,21 +23,11 @@ const { Description } = DocDecorators;
         records: [
             {
                 userOrRoleId: "anonymous",
-                create: false,
-                read: true,
-                update: false,
-                delete: false,
-                special: false,
-                full: false,
+                actions: [ACLAction.READ, ACLAction.LIST, ACLAction.COUNT, ACLAction.EXISTS],
             },
             {
                 userOrRoleId: ".*",
-                create: false,
-                read: true,
-                update: false,
-                delete: false,
-                special: false,
-                full: false,
+                actions: [ACLAction.READ, ACLAction.LIST, ACLAction.COUNT, ACLAction.EXISTS],
             }
         ]
     },

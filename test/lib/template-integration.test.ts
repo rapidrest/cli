@@ -413,36 +413,6 @@ describe('generate server', () => {
     });
   });
 
-  it('includes database model and routes when features.hasDatabase is enabled', async () => {
-    await withTmpDir(async (dir) => {
-      const ctx = makeServerContext({ features: { hasDatabase: true, react: false, docker: false, k8s: false, redis: false } });
-      await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
-      const files = await listFiles(dir);
-      expect(files.some(f => f.includes('User.ts'))).toBe(true);
-      expect(files.some(f => f.includes('AuthRoute.ts'))).toBe(true);
-    });
-  });
-
-  it('includes the database route tests under test/routes when features.hasDatabase is enabled', async () => {
-    await withTmpDir(async (dir) => {
-      const ctx = makeServerContext({ features: { hasDatabase: true, react: false, docker: false, k8s: false, redis: false } });
-      await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
-      const files = await listFiles(dir);
-      expect(files).toContain('/test/routes/AuthRoute.test.ts');
-      expect(files).toContain('/test/routes/UserRoute.test.ts');
-    });
-  });
-
-  it('excludes the database route tests when features.hasDatabase is disabled', async () => {
-    await withTmpDir(async (dir) => {
-      const ctx = makeServerContext();
-      await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
-      const files = await listFiles(dir);
-      expect(files).not.toContain('/test/routes/AuthRoute.test.ts');
-      expect(files).not.toContain('/test/routes/UserRoute.test.ts');
-    });
-  });
-
   it('does not include react app files when features.react is disabled', async () => {
     await withTmpDir(async (dir) => {
       const ctx = makeServerContext();
@@ -454,25 +424,21 @@ describe('generate server', () => {
   });
 
   describe('apiRoute prefix', () => {
-    const dbContext = { features: { hasDatabase: true, react: false, docker: false, k8s: false, redis: false } };
-
     it('uses the plain @Route decorator when apiRoute is unset', async () => {
       await withTmpDir(async (dir) => {
-        const ctx = makeServerContext(dbContext);
+        const ctx = makeServerContext();
         await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
-        const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'UserRoute.ts'), 'utf-8'));
-        expect(content).toContain('@Route("/user")');
+        const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'HelloRoute.ts'), 'utf-8'));
+        expect(content).toContain('@Route("/hello")');
         expect(content).not.toContain('@ApiRoute');
       });
     });
 
-    it('uses @ApiRoute with a version on the generated User, Auth, and Hello routes when apiRoute is set', async () => {
+    it('uses @ApiRoute with a version on the generated Hello route when apiRoute is set', async () => {
       await withTmpDir(async (dir) => {
-        const ctx = makeServerContext({ ...dbContext, apiRoute: true, apiVersion: '1' });
+        const ctx = makeServerContext({ apiRoute: true, apiVersion: '1' });
         await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
         const readFile = (p: string) => import('fs/promises').then(fs => fs.readFile(join(dir, ...p.split('/')), 'utf-8'));
-        expect(await readFile('src/routes/UserRoute.ts')).toContain('@ApiRoute("/user", "1")');
-        expect(await readFile('src/routes/AuthRoute.ts')).toContain('@ApiRoute("/auth", "1")');
         expect(await readFile('src/routes/HelloRoute.ts')).toContain('@ApiRoute("/hello", "1")');
       });
     });

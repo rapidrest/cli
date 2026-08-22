@@ -3,6 +3,9 @@
 ///////////////////////////////////////////////////////////////////////////////
 import { JWTUser, ObjectDecorators } from "@rapidrest/core";
 import {
+    {{#if protect}}
+    ACLAction,
+    {{/if}}
     DocDecorators,
     RouteDecorators,
     {{#if model}}
@@ -38,6 +41,9 @@ const {
     Request,
     Response,
     {{/if}}
+    {{#if protect}}
+    Protect,
+    {{/if}}
     {{#if apiRoute}}Api{{/if}}Route,
     User,
     {{#if model}}
@@ -62,21 +68,11 @@ const {
         records: [
             {
                 userOrRoleId: "anonymous",
-                create: false,
-                read: true,
-                update: false,
-                delete: false,
-                special: false,
-                full: false,
+                actions: [ACLAction.READ, ACLAction.LIST, ACLAction.COUNT, ACLAction.EXISTS],
             },
             {
                 userOrRoleId: ".*",
-                create: false,
-                read: true,
-                update: false,
-                delete: false,
-                special: false,
-                full: false,
+                actions: [ACLAction.READ, ACLAction.LIST, ACLAction.COUNT, ACLAction.EXISTS],
             }
         ]
     },

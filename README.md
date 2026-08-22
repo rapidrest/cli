@@ -163,7 +163,7 @@ USAGE
       [--path <route-path>] [--api <version>] [--model <name>] [--no-model] [--protect] [--no-test] [--force]
 
 ARGUMENTS
-  NAME  Name of the route class (e.g. ProductRoute, AuthRoute)
+  NAME  Name of the route class (e.g. ProductRoute, OrderRoute)
 
 FLAGS
   --output-dir <path>       Directory to write the generated route into. Defaults to ./src/routes

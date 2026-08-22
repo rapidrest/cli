@@ -16,7 +16,7 @@ import { inputAuthor } from '../../lib/prompts.js';
 
 export default class GenerateRoute extends Command {
   static override args = {
-    name: Args.string({ description: 'Name of the route class (e.g. ProductRoute, AuthRoute).', required: true }),
+    name: Args.string({ description: 'Name of the route class (e.g. ProductRoute, OrderRoute).', required: true }),
   };
 
   static override description = 'Generate a RapidREST route handler in the current project.';

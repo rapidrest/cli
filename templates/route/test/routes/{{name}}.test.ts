@@ -3,24 +3,48 @@
 ///////////////////////////////////////////////////////////////////////////////
 {{#if hasRedis}}
 // This mock MUST be defined before we import ConnectionManager (or anything that pulls it in such as Server)
-vi.mock("ioredis", async () => {
-    const RedisMock = await import("ioredis-mock");
-    return { Redis: RedisMock.default || RedisMock };
+vi.mock("redis", () => {
+    const store = new Map<string, string>();
+    const client = {
+        isOpen: false,
+        async connect() { this.isOpen = true; return this; },
+        async disconnect() { this.isOpen = false; },
+        async get(key: string) { return store.has(key) ? store.get(key)! : null; },
+        async set(key: string, value: string) { store.set(key, value); return "OK"; },
+        async setEx(key: string, _seconds: number, value: string) { store.set(key, value); return "OK"; },
+        async ttl() { return -1; },
+        async del(keys: string | string[]) {
+            const list = Array.isArray(keys) ? keys : [keys];
+            let count = 0;
+            for (const key of list) { if (store.delete(key)) count++; }
+            return count;
+        },
+    };
+    return { createClient: () => client };
 });
 {{/if}}
 import config from "./config";
 import { request } from "@rapidrest/service-core/test";
 import {
     {{#if model}}
+    ACLAction,
     ACLRecord,
     {{#if (eq datastoreType "mongodb")}}
     MongoConnection,
     MongoRepository,
+    {{else}}
+    isSqlDataSource,
     {{/if}}
+    ConnectionManager,
     {{/if}}
     Server,
     ObjectFactory
 } from "@rapidrest/service-core";
+{{#if model}}
+{{#unless (eq datastoreType "mongodb")}}
+import type { Repository } from "typeorm";
+{{/unless}}
+{{/if}}
 import { JWTUtils, Logger } from "@rapidrest/core";
 import * as uuid from "uuid";
 {{#if model}}
@@ -43,9 +67,13 @@ describe("Route:{{name}} Tests", () => {
     const server: Server = new Server({ config, basePath: "./src", logger, objectFactory });
     const baseUrl = "{{#if apiRoute}}/api{{#if apiVersion}}/v{{apiVersion}}{{/if}}{{/if}}{{path}}";
     {{#if model}}
+    const admin: any = { uid: uuid.v4(), roles: config.get("trusted_roles") };
+    const adminToken = JWTUtils.createTokenSync(config.get("auth"), admin);
+    let user: any = undefined;
+    let userToken: string = "";
     let repo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<{{model}}>;
     let aclRepo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<any>;
-    
+
     const create{{model}} = async function(data?: any): Promise<{{model}}> {
         const obj: {{model}} = new {{model}}({
             ...data
@@ -58,23 +86,13 @@ describe("Route:{{name}} Tests", () => {
         // Owner has CRUD access
         records.push({
             userOrRoleId: user.uid,
-            create: true,
-            read: true,
-            update: true,
-            delete: true,
-            special: false,
-            full: false,
+            actions: [ACLAction.CREATE, ACLAction.READ, ACLAction.UPDATE, ACLAction.DELETE],
         });
 
-        // Everyone has no access
+        // Everyone can read
         records.push({
             userOrRoleId: ".*",
-            create: false,
-            read: true,
-            update: false,
-            delete: false,
-            special: false,
-            full: false,
+            actions: [ACLAction.READ, ACLAction.LIST, ACLAction.COUNT, ACLAction.EXISTS],
         });
 
         const acl: any = {
@@ -115,7 +133,7 @@ describe("Route:{{name}} Tests", () => {
             aclRepo = conn.getMongoRepository("AccessControlListMongo");
         }
         {{else}}
-        if (conn instanceof Connection) {
+        if (isSqlDataSource(conn)) {
             aclRepo = conn.getRepository("AccessControlListSQL");
         }
         {{/if}}
@@ -124,7 +142,7 @@ describe("Route:{{name}} Tests", () => {
         if (conn instanceof MongoConnection) {
             repo = conn.getMongoRepository("{{model}}");
         {{else}}
-        if (conn instanceof Connection) {
+        if (isSqlDataSource(conn)) {
             repo = conn.getRepository("{{model}}");
         {{/if}}
         } else {
@@ -143,6 +161,9 @@ describe("Route:{{name}} Tests", () => {
 {{#if model}}
 
     beforeEach(async () => {
+        user = { uid: uuid.v4() };
+        userToken = JWTUtils.createTokenSync(config.get("auth"), user);
+
         try {
             await repo.clear();
         } catch (err) {
