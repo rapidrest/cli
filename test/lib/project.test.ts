@@ -20,6 +20,7 @@ import {
   extractFirstModelProperty,
   extractModelDatastore,
   findExistingReactApps,
+  formatDefaultPropertyValue,
   formatExamplePropertyValue,
   readGitAuthor,
   readModelDatastore,
@@ -561,5 +562,33 @@ describe('formatExamplePropertyValue', () => {
   it('falls back to an `as any` string cast for unrecognized types', () => {
     expect(formatExamplePropertyValue('ProductStatus')).toBe('"updated" as any');
     expect(formatExamplePropertyValue('string[]')).toBe('"updated" as any');
+  });
+});
+
+describe('formatDefaultPropertyValue', () => {
+  it('returns an empty string literal for string', () => {
+    expect(formatDefaultPropertyValue('string')).toBe('""');
+  });
+
+  it('returns 0 for number', () => {
+    expect(formatDefaultPropertyValue('number')).toBe('0');
+  });
+
+  it('returns false for boolean', () => {
+    expect(formatDefaultPropertyValue('boolean')).toBe('false');
+  });
+
+  it('returns an empty array literal for string[] and number[]', () => {
+    expect(formatDefaultPropertyValue('string[]')).toBe('[]');
+    expect(formatDefaultPropertyValue('number[]')).toBe('[]');
+  });
+
+  it('returns `new Date()` for Date', () => {
+    expect(formatDefaultPropertyValue('Date')).toBe('new Date()');
+  });
+
+  it('returns an `undefined as any` cast for an unrecognized/custom type', () => {
+    expect(formatDefaultPropertyValue('Record<string, unknown>')).toBe('undefined as any');
+    expect(formatDefaultPropertyValue('ProductStatus')).toBe('undefined as any');
   });
 });

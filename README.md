@@ -121,7 +121,7 @@ Generate a new data model class inside the current project.
 ```
 USAGE
   $ rapidrest generate model NAME [--output-dir <path>] [--author <name>] [--description <text>]
-      [--datastore <name>] [--cache [ttl]] [--protect] [--force]
+      [--datastore <name>] [--cache [ttl]] [--protect] [--property <name:type>...] [--force]
 
 ARGUMENTS
   NAME  Name of the data model class (e.g. Product, UserProfile)
@@ -133,6 +133,8 @@ FLAGS
   -ds, --datastore <name>    Name of the datastore the model will be bound to
   -c, --cache [ttl]          Cache TTL (in seconds) for this model
   -p, --protect              Enable RBAC-based protection for this model
+  --property <name:type>     Add a typed property to the model (e.g. quantity:number). Append ? to the type
+                              for an optional property (e.g. bio:string?). Repeatable
   -f, --force                Overwrite existing files
 ```
 
@@ -144,6 +146,16 @@ If the project does not contain an existing datastore, or you simply want to wan
 - Passed with no value (`--cache`) — caching is enabled with the default TTL of `60` seconds
 - Passed with a value (`--cache 120`) — caching is enabled with that TTL in seconds
 
+Every model already has a `name: string` field (its `@Identifier`, used to look records up by
+their REST URL) — `--property`/the interactive prompt add further data properties alongside it,
+not instead of it. When no `--property` flags are passed, you're prompted in a loop ("Property
+name (leave blank to finish adding properties):", then its type — `string`/`number`/`boolean`/
+`string[]`/`number[]`/`Date`, or a free-text "Other…" type — then whether it's optional, then an
+optional short description); leave the name blank to stop. An optional property is declared as
+`type | undefined` with `@Nullable` and defaults to `undefined`; a required property gets a
+type-appropriate zero value (`""`, `0`, `false`, `[]`, `new Date()`). A custom "Other…" type has no
+known shape, so it's initialized `undefined as any` unless marked optional.
+
 **Example:**
 
 ```sh
@@ -151,6 +163,9 @@ rapidrest generate model Product
 # → creates src/models/Product.ts
 
 rapidrest generate model Product --datastore mongo --cache 120 --protect
+
+rapidrest generate model Product --datastore mongo --cache --protect \
+  --property quantity:number --property tags:string[] --property "bio:string?"
 ```
 
 ---

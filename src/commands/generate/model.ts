@@ -7,10 +7,84 @@ import { Args, Command, Flags } from '@oclif/core';
 import { existsSync } from "fs";
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectDatastores, readProjectName } from '../../lib/project.js';
+import { formatDefaultPropertyValue, readProjectDatastores, readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
 import GenerateHelm from './k8s.js';
+
+export interface PropertyDefinition {
+  name: string;
+  type: string;
+  optional: boolean;
+  description: string;
+  defaultValue: string;
+}
+
+// The base entity fields every model already has (BaseEntity/BaseMongoEntity) plus the template's
+// own hardcoded `name` identifier — a user-defined property can't reuse any of these. Lowercased
+// up front since the membership check below compares against a lowercased candidate name.
+const RESERVED_PROPERTY_NAMES = new Set(
+  ['name', 'uid', 'id', '_id', 'dateCreated', 'dateModified', 'version'].map((n) => n.toLowerCase()),
+);
+
+const PROPERTY_TYPE_CHOICES = [
+  { name: 'string', value: 'string' },
+  { name: 'number', value: 'number' },
+  { name: 'boolean', value: 'boolean' },
+  { name: 'string[]', value: 'string[]' },
+  { name: 'number[]', value: 'number[]' },
+  { name: 'Date', value: 'Date' },
+  { name: 'Other… (enter a custom type)', value: '__other__' },
+];
+
+// Shared between the interactive prompt's `validate` callback (returns a message string on
+// failure, `true` on success — inquirer's own convention) and the non-interactive --property flag
+// parser (which turns a failure message into a thrown CLI error instead).
+function validatePropertyName(name: string, existing: string[]): string | true {
+  if (!/^[A-Za-z_$][\w$]*$/.test(name)) {
+    return `"${name}" is not a valid property name (must be a valid TypeScript identifier).`;
+  }
+  if (RESERVED_PROPERTY_NAMES.has(name.toLowerCase())) {
+    return `"${name}" is already used by the model's base fields and can't be redeclared.`;
+  }
+  if (existing.some((e) => e.toLowerCase() === name.toLowerCase())) {
+    return `"${name}" was already added as a property.`;
+  }
+  return true;
+}
+
+// An optional property always defaults to `undefined` regardless of type — matches how
+// `@Nullable` properties are written throughout service-core's own example models (e.g.
+// `uType: string | number | undefined = undefined`), rather than a type-specific zero value that
+// would misleadingly suggest the property is always present.
+function resolveDefaultValue(type: string, optional: boolean): string {
+  return optional ? 'undefined' : formatDefaultPropertyValue(type);
+}
+
+// Parses one `--property name:type` (or `name:type?` for an optional property) flag value.
+function parsePropertyFlag(raw: string, existing: PropertyDefinition[], error: (msg: string) => never): PropertyDefinition {
+  const colonIndex = raw.indexOf(':');
+  if (colonIndex === -1) {
+    error(`Invalid --property "${raw}" — expected the form name:type (e.g. quantity:number, bio:string?).`);
+  }
+  const name = raw.slice(0, colonIndex).trim();
+  let type = raw.slice(colonIndex + 1).trim();
+
+  const nameCheck = validatePropertyName(name, existing.map((p) => p.name));
+  if (nameCheck !== true) error(nameCheck);
+
+  const optional = type.endsWith('?');
+  if (optional) type = type.slice(0, -1).trim();
+  if (!type) error(`Invalid --property "${raw}" — missing a type after the colon.`);
+
+  return {
+    name,
+    type,
+    optional,
+    description: `The ${name} property.`,
+    defaultValue: resolveDefaultValue(type, optional),
+  };
+}
 
 // Allows `--cache` to be passed with no value (defaulting to '60'), with a value
 // (e.g. `--cache 120`), or omitted entirely (triggering the interactive prompt below).
@@ -50,6 +124,7 @@ export default class GenerateModel extends Command {
     description: Flags.string({ alias: 'd', description: "The short description of the model."}),
     'output-dir': Flags.string({ alias: 'o', description: 'Directory to write the generated model into. Defaults to ./src/models.' }),
     protect: Flags.boolean({ char: 'p', description: "Enable RBAC-based protection of this model."}),
+    property: Flags.string({ description: 'Add a typed property to the model, as name:type (e.g. quantity:number). Append ? to the type to make it optional (e.g. bio:string?). Repeatable.', multiple: true }),
   };
 
   async run(): Promise<void> {
@@ -134,6 +209,45 @@ export default class GenerateModel extends Command {
       default: true
     });
 
+    const properties: PropertyDefinition[] = [];
+    if (flags.property) {
+      for (const raw of flags.property) {
+        properties.push(parsePropertyFlag(raw, properties, (msg) => this.error(msg)));
+      }
+    } else {
+      while (true) {
+        const name = await input({
+          message: 'Property name (leave blank to finish adding properties):',
+          required: false,
+          validate: (value) => (value ? validatePropertyName(value, properties.map((p) => p.name)) : true),
+        });
+        if (!name) break;
+
+        const typeChoice = await select<string>({
+          message: 'Property type:',
+          choices: PROPERTY_TYPE_CHOICES,
+        });
+        const type = typeChoice === '__other__'
+          ? await input({ message: 'Enter the TypeScript type:', required: true })
+          : typeChoice;
+
+        const optional = await confirm({ message: 'Is this property optional?', default: false });
+
+        const propDescription = await input({
+          message: 'Short description of this property (optional):',
+          required: false,
+        });
+
+        properties.push({
+          name,
+          type,
+          optional,
+          description: propDescription || `The ${name} property.`,
+          defaultValue: resolveDefaultValue(type, optional),
+        });
+      }
+    }
+
     const author = flags.author ?? (await inputAuthor(process.cwd()));
 
     const context: Record<string, unknown> = {
@@ -144,6 +258,8 @@ export default class GenerateModel extends Command {
       datastore,
       datastoreType,
       protect,
+      properties,
+      hasOptionalProperty: properties.some((p) => p.optional),
       year: new Date().getFullYear(),
       project_name: await readProjectName(process.cwd()),
       // `datastoreType` is either the friendly value picked in the "Select database type" prompt

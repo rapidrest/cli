@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+**New: `generate model` property definitions**
+
+* `rapidrest generate model` can now scaffold real, typed data properties instead of just the
+  hardcoded `name: string` identifier field. Add them via repeatable `--property name:type` flags
+  (`string`/`number`/`boolean`/`string[]`/`number[]`/`Date`, or a free-text custom type; append `?`
+  to the type for an optional property), or interactively via a new "add a property?" prompt loop
+  when no `--property` flags are given. Generated properties match `@rapidrest/service-core`'s own
+  example model conventions (`@Column()` + `@Description(...)`, `@Nullable` for optional
+  properties) and get matching constructor assignments. The existing `name` field is untouched —
+  it's still the model's `@Identifier`, load-bearing for REST route lookups
+
 **New: `rapidrest doctor`**
 
 * Added a new `rapidrest doctor [--fix] [--json]` command that validates an existing generated

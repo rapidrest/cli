@@ -19,12 +19,16 @@ vi.mock('../../../src/lib/template.js', () => ({
   processTemplate: vi.fn(),
 }));
 
-vi.mock('../../../src/lib/project.js', () => ({
-  readGitAuthor: vi.fn(),
-  readProjectAuthor: vi.fn(),
-  readProjectDatastores: vi.fn(),
-  readProjectName: vi.fn(),
-}));
+vi.mock('../../../src/lib/project.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../../src/lib/project.js')>();
+  return {
+    ...actual,
+    readGitAuthor: vi.fn(),
+    readProjectAuthor: vi.fn(),
+    readProjectDatastores: vi.fn(),
+    readProjectName: vi.fn(),
+  };
+});
 
 vi.mock('../../../src/lib/prompts.js', () => ({
   inputAuthor: vi.fn(),
@@ -60,18 +64,21 @@ const DEFAULT_DATASTORES = [
 
 // Default prompt order when configured datastores are present and --cache is omitted
 // (the normal case): input(description) → select(datastore name) → confirm(enable cache?)
-// → input(cache TTL) → confirm(protect) → inputAuthor(cwd).
+// → input(cache TTL) → confirm(protect) → input(property name, blank to finish) → inputAuthor(cwd).
 //
 // --cache has three distinct behaviors (see model.ts's resolveCacheArgv):
 //   - omitted entirely      → prompts interactively via confirm()+input() (defaults to '60')
 //   - passed with no value  → resolves to '60' with no prompt
 //   - passed with a value   → uses that value with no prompt
+//
+// The property-adding loop is skipped (a single blank-name input) unless `properties` is passed.
 function stubPrompts({
   description = 'A test model',
   datastore = 'mongo',
   cacheEnabled = true,
   cache = '60',
   protect = false,
+  properties = [],
   author,
 }: {
   description?: string;
@@ -79,6 +86,7 @@ function stubPrompts({
   cacheEnabled?: boolean;
   cache?: string;
   protect?: boolean;
+  properties?: Array<{ name: string; type: string; other?: string; optional?: boolean; description?: string }>;
   author?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(description);
@@ -88,6 +96,14 @@ function stubPrompts({
     vi.mocked(input).mockResolvedValueOnce(cache);
   }
   vi.mocked(confirm).mockResolvedValueOnce(protect);
+  for (const p of properties) {
+    vi.mocked(input).mockResolvedValueOnce(p.name);
+    vi.mocked(select).mockResolvedValueOnce(p.type === 'other' ? '__other__' : p.type);
+    if (p.type === 'other') vi.mocked(input).mockResolvedValueOnce(p.other ?? 'CustomType');
+    vi.mocked(confirm).mockResolvedValueOnce(p.optional ?? false);
+    vi.mocked(input).mockResolvedValueOnce(p.description ?? '');
+  }
+  vi.mocked(input).mockResolvedValueOnce(''); // property name prompt → blank, ends the loop
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
 
@@ -130,7 +146,7 @@ describe('generate model', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe('90');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + cache prompt
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(3); // description + cache prompt + property name (blank)
       expect(vi.mocked(confirm)).toHaveBeenCalledWith(expect.objectContaining({ message: 'Enable caching for this model?' }));
     });
 
@@ -148,7 +164,7 @@ describe('generate model', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe('');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only, no cache TTL prompt
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + property name (blank), no cache TTL prompt
     });
 
     it('sets isMongoDb true and other db booleans false when datastoreType is mongodb', async () => {
@@ -365,7 +381,7 @@ describe('generate model', () => {
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.description).toBe('From flag');
       expect(context.cache).toBe('60');
-      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // property name (blank) only
     });
 
     it('--cache with a value overrides the default TTL and skips the cache prompt', async () => {
@@ -377,7 +393,7 @@ describe('generate model', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe('300');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only, no cache prompt
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + property name (blank), no cache prompt
       expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1); // protect only, no enable-caching prompt
     });
 
@@ -390,7 +406,7 @@ describe('generate model', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.cache).toBe('60');
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only, no cache prompt
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + property name (blank), no cache prompt
     });
 
     it('--cache with no value still resolves to "60" when immediately followed by another flag', async () => {
@@ -441,7 +457,7 @@ describe('generate model', () => {
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.author).toBe('Flag Author');
       expect(inputAuthor).not.toHaveBeenCalled();
-      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // only description; cache resolved from bare --cache flag
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(2); // description + property name (blank); cache resolved from bare --cache flag
     });
   });
 
@@ -587,6 +603,286 @@ describe('generate model', () => {
 
       expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
       expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('property definitions — interactive prompt', () => {
+    it('adds no properties by default (blank name ends the loop immediately)', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.properties).toEqual([]);
+      expect(context.hasOptionalProperty).toBe(false);
+    });
+
+    it('adds a single required property from the prompt loop', async () => {
+      stubPrompts({
+        properties: [{ name: 'quantity', type: 'number', description: 'Stock count' }],
+        author: 'Author',
+      });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.properties).toEqual([
+        { name: 'quantity', type: 'number', optional: false, description: 'Stock count', defaultValue: '0' },
+      ]);
+      expect(context.hasOptionalProperty).toBe(false);
+    });
+
+    it('adds an optional property and sets hasOptionalProperty', async () => {
+      stubPrompts({
+        properties: [{ name: 'bio', type: 'string', optional: true, description: 'A bio' }],
+        author: 'Author',
+      });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.properties).toEqual([
+        { name: 'bio', type: 'string', optional: true, description: 'A bio', defaultValue: 'undefined' },
+      ]);
+      expect(context.hasOptionalProperty).toBe(true);
+    });
+
+    it('falls back to a generic description when the property description prompt is left blank', async () => {
+      stubPrompts({
+        properties: [{ name: 'quantity', type: 'number' }], // description omitted → ''
+        author: 'Author',
+      });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context.properties as any[])[0].description).toBe('The quantity property.');
+    });
+
+    it('prompts for a custom type when "Other…" is chosen', async () => {
+      stubPrompts({
+        properties: [{ name: 'meta', type: 'other', other: 'Record<string, unknown>', description: 'Metadata' }],
+        author: 'Author',
+      });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context.properties as any[])[0]).toMatchObject({
+        name: 'meta',
+        type: 'Record<string, unknown>',
+        defaultValue: 'undefined as any',
+      });
+    });
+
+    it('adds multiple properties across repeated loop iterations', async () => {
+      stubPrompts({
+        properties: [
+          { name: 'quantity', type: 'number' },
+          { name: 'bio', type: 'string', optional: true },
+          { name: 'tags', type: 'string[]' },
+        ],
+        author: 'Author',
+      });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context.properties as any[]).map((p) => p.name)).toEqual(['quantity', 'bio', 'tags']);
+      expect(context.hasOptionalProperty).toBe(true);
+    });
+
+    it("passes the already-added property names to the next property's name validator", async () => {
+      stubPrompts({
+        properties: [{ name: 'quantity', type: 'number' }, { name: 'bio', type: 'string' }],
+        author: 'Author',
+      });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      // 2nd property-name input() call is the 4th overall (description, 1st cache-related, cache TTL, quantity, ...)
+      // — simplest to just check the 2nd call's validate() rejects a duplicate of the 1st property's name.
+      const secondPropertyNameCall = vi.mocked(input).mock.calls.find(
+        (c) => (c[0] as any).message === 'Property name (leave blank to finish adding properties):',
+      );
+      const validate = (secondPropertyNameCall![0] as any).validate as (v: string) => string | true;
+      expect(validate('QUANTITY')).toContain('already added');
+    });
+  });
+
+  describe('property definitions — validate callback', () => {
+    it('rejects an invalid identifier', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const call = vi.mocked(input).mock.calls.find((c) => (c[0] as any).message?.startsWith('Property name'));
+      const validate = (call![0] as any).validate as (v: string) => string | true;
+      expect(validate('123bad')).toContain('not a valid property name');
+    });
+
+    it('rejects a reserved base-entity field name (case-insensitively)', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const call = vi.mocked(input).mock.calls.find((c) => (c[0] as any).message?.startsWith('Property name'));
+      const validate = (call![0] as any).validate as (v: string) => string | true;
+      expect(validate('UID')).toContain('base fields');
+      expect(validate('dateCreated')).toContain('base fields');
+    });
+
+    it('accepts a valid, non-reserved, non-duplicate name', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const call = vi.mocked(input).mock.calls.find((c) => (c[0] as any).message?.startsWith('Property name'));
+      const validate = (call![0] as any).validate as (v: string) => string | true;
+      expect(validate('quantity')).toBe(true);
+    });
+
+    it('treats a blank value as valid (it ends the loop, not a validation failure)', async () => {
+      stubPrompts({ author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const call = vi.mocked(input).mock.calls.find((c) => (c[0] as any).message?.startsWith('Property name'));
+      const validate = (call![0] as any).validate as (v: string) => string | true;
+      expect(validate('')).toBe(true);
+    });
+  });
+
+  describe('property definitions — --property flag (non-interactive)', () => {
+    it('parses a single required property', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'quantity:number'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.properties).toEqual([
+        { name: 'quantity', type: 'number', optional: false, description: 'The quantity property.', defaultValue: '0' },
+      ]);
+    });
+
+    it('parses an optional property (trailing ? on the type)', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'bio:string?'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.properties).toEqual([
+        { name: 'bio', type: 'string', optional: true, description: 'The bio property.', defaultValue: 'undefined' },
+      ]);
+      expect(context.hasOptionalProperty).toBe(true);
+    });
+
+    it('parses multiple repeated --property flags', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await GenerateModel.run(
+        ['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'quantity:number', '--property', 'tags:string[]'],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context.properties as any[]).map((p) => p.name)).toEqual(['quantity', 'tags']);
+    });
+
+    it('a non-optional custom type defaults to `undefined as any`, not a bare `undefined` (which would fail to type-check)', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await GenerateModel.run(
+        ['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'sku:CustomSkuType'],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context.properties as any[])[0]).toMatchObject({
+        name: 'sku',
+        type: 'CustomSkuType',
+        optional: false,
+        defaultValue: 'undefined as any',
+      });
+    });
+
+    it('an optional custom type still defaults to bare `undefined` (its declared type already includes it)', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await GenerateModel.run(
+        ['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'sku:CustomSkuType?'],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context.properties as any[])[0]).toMatchObject({
+        name: 'sku',
+        type: 'CustomSkuType',
+        optional: true,
+        defaultValue: 'undefined',
+      });
+    });
+
+    it('skips the interactive property loop entirely when --property is passed', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'quantity:number'], ROOT);
+
+      expect(vi.mocked(input)).toHaveBeenCalledTimes(1); // description only — no property-loop prompts
+    });
+
+    it('errors on a malformed --property value with no colon', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await expect(
+        GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'quantity'], ROOT),
+      ).rejects.toThrow(/expected the form name:type/);
+    });
+
+    it('errors on a --property value with an invalid identifier name', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await expect(
+        GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', '--property', '123bad:string'], ROOT),
+      ).rejects.toThrow(/not a valid property name/);
+    });
+
+    it('errors on a --property value colliding with a reserved base-entity field', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await expect(
+        GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'version:number'], ROOT),
+      ).rejects.toThrow(/base fields/);
+    });
+
+    it('errors on two --property flags with the same name', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await expect(
+        GenerateModel.run(
+          ['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'quantity:number', '--property', 'quantity:string'],
+          ROOT,
+        ),
+      ).rejects.toThrow(/already added/);
+    });
+
+    it('errors on a --property value with no type after the colon', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc');
+      vi.mocked(select).mockResolvedValueOnce('mongo');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // protect
+
+      await expect(
+        GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', '--property', 'quantity:'], ROOT),
+      ).rejects.toThrow(/missing a type/);
     });
   });
 

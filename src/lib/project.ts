@@ -150,6 +150,26 @@ export function formatExamplePropertyValue(type: string): string {
   return '"updated" as any';
 }
 
+// Produces the TypeScript literal used to initialize a newly-declared model property, for the
+// fixed set of types `generate model`'s property prompt/flag offers. Unlike formatExamplePropertyValue
+// (which needs a truthy, "changed" value for update tests), this needs a sensible *zero* value —
+// so the two intentionally disagree on strings/numbers/booleans despite looking similar.
+export function formatDefaultPropertyValue(type: string): string {
+  switch (type) {
+    case 'string': return '""';
+    case 'number': return '0';
+    case 'boolean': return 'false';
+    case 'string[]':
+    case 'number[]': return '[]';
+    case 'Date': return 'new Date()';
+    // A custom/free-typed type (from the property prompt's "Other…" escape hatch) has an unknown
+    // shape — no default is safe to assume. Unlike the recognized types above, this type string
+    // doesn't necessarily include `| undefined`, so a bare `undefined` can fail to type-check;
+    // `as any` sidesteps that the same way formatExamplePropertyValue's own fallback does.
+    default: return 'undefined as any';
+  }
+}
+
 export async function detectReact(cwd: string): Promise<boolean> {
   try {
     await access(join(cwd, 'vite.config.ts'));
