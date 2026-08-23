@@ -1,0 +1,13 @@
+{
+  "conditionalFiles": [],
+  "helmPaths": [],
+  "patches": [
+    {
+      "template": "patches/config-oidc.ts.hbs",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "auth",
+      "idempotencyKey": "{{name}}"
+    }
+  ]
+}

@@ -485,12 +485,14 @@ rapidrest generate react-page app my/path/page --service
 
 ### `rapidrest generate auth`
 
-Add login/session scaffolding to the current project, backed by [`@rapidrest/auth`](https://github.com/rapidrest/auth): self-service registration, HTTP Basic login, logout, and admin user management. Opt-in — nothing in the base `generate server` template depends on this.
+Add login/session scaffolding to the current project, backed by [`@rapidrest/auth`](https://github.com/rapidrest/auth): self-service registration, admin user management, and one or more selectable authentication methods — HTTP Basic, OTP, TOTP, Passkey, FIDO2, MFA, and OAuth 2.0/OpenID Connect (with presets for Google, Apple, Facebook, and Microsoft, or a custom provider). Opt-in — nothing in the base `generate server` template depends on this.
 
 ```
 USAGE
   $ rapidrest generate auth [--datastore-type sql|mongo] [--sql-type postgres|better-sqlite3]
-      [--default-accounts] [--author <name>] [--output-dir <path>] [--force]
+      [--default-accounts] [--method basic|otp|totp|passkey|fido2|mfa|oidc]...
+      [--oidc-provider google|apple|facebook|microsoft|custom]...
+      [--author <name>] [--output-dir <path>] [--force]
 
 FLAGS
   --datastore-type <choice>  Which datastore backs authentication data: sql | mongo
@@ -498,6 +500,10 @@ FLAGS
                               database to create it as: postgres | better-sqlite3
   --default-accounts         Also provision a default admin account the first time the server boots
                               against an empty user table
+  --method <choice>          Which authentication method(s) to enable. Repeatable. One of: basic,
+                              otp, totp, passkey, fido2, mfa, oidc
+  --oidc-provider <choice>   When "oidc" is among --method, which third-party provider(s) to
+                              configure. Repeatable. One of: google, apple, facebook, microsoft, custom
   -a, --author <name>        Author to attribute the generated code to
   --output-dir <path>        Directory to write the generated files into. Defaults to the current
                               working directory
@@ -505,39 +511,62 @@ FLAGS
 ```
 
 `@rapidrest/auth` ships ready-made model and route base classes — this command doesn't hand-write a
-`User` model, it generates thin subclasses that wire them up:
+`User` model, it generates thin subclasses that wire them up. Files marked "always" are generated
+regardless of which methods are selected; the rest are conditional on the matching `--method`:
 
-| File | What it does |
-|------|---------|
-| `src/models/auth.ts` | Re-exports `User`/`Alias`/`Secret`/`Profile` (SQL or Mongo variant) so the server's ClassLoader discovers their metadata |
-| `src/routes/RegistrationRoute.ts` | Self-service sign-up — creates a user, login alias, and password in one call, then issues a token |
-| `src/routes/AuthBasicRoute.ts` | Username/password (HTTP Basic) login, issues a token |
-| `src/routes/AuthLogoutRoute.ts` | Clears the session cookie, if any |
-| `src/routes/UserRoute.ts` | Admin CRUD over user accounts (deny-by-default ACL; grant access via `trusted_roles`) |
-| `src/jobs/DefaultAccounts.ts` | Only with `--default-accounts` — auto-provisions a default admin account on first boot |
+| File | Condition | What it does |
+|------|-----------|---------|
+| `src/models/auth.ts` | always | Re-exports `User`/`Alias`/`Secret`/`Profile` (SQL or Mongo variant) so the server's ClassLoader discovers their metadata |
+| `src/routes/RegistrationRoute.ts` | always | Self-service sign-up — creates a user and login alias, then issues a token |
+| `src/routes/UserRoute.ts` | always | Admin CRUD over user accounts (deny-by-default ACL; grant access via `trusted_roles`) |
+| `src/routes/AuthLogoutRoute.ts` | always | Clears the session cookie, if any |
+| `src/routes/SecretRoute.ts` | always | CRUD over secrets (password, TOTP, passkey, FIDO2, recovery codes) — also how a password gets changed and how TOTP/Passkey/FIDO2 get enrolled |
+| `src/routes/AuthBasicRoute.ts` | `basic` | Username/password (HTTP Basic) login |
+| `src/routes/AuthOTPRoute.ts` | `otp` | One-time password (email/SMS) login |
+| `src/routes/AuthTOTPRoute.ts` | `totp` | Authenticator-app (RFC 6238) login |
+| `src/routes/AuthPasskeyRoute.ts` | `passkey` | WebAuthn passkey (synced credential) login |
+| `src/routes/AuthFIDO2Route.ts` | `fido2` | WebAuthn hardware security key login |
+| `src/routes/AuthMFARoute.ts` | `mfa` | Password + a second factor (FIDO2/OTP/recovery-code/TOTP) login |
+| `src/routes/Auth<Provider>Route.ts` | one per selected `--oidc-provider` | OAuth 2.0/OIDC login for that provider |
+| `src/jobs/DefaultAccounts.ts` | `--default-accounts` | Auto-provisions a default admin account on first boot |
 
 **The datastore name matters.** `@rapidrest/auth`'s `User`/`Alias`/`Secret` model classes have a
 fixed datastore binding baked in — literally named `sql` or `mongo` — so this command reuses an
 existing datastore with that exact name if one exists, or creates one (patching `src/config.ts`)
 if not. This is unlike `generate model`, where you can name a datastore anything.
 
-Token issuing reuses the `auth:` block every generated project's `src/config.ts` already has — no
-new required config. `@rapidrest/auth` and `argon2` (used for password hashing) are added to
-`package.json`; install dependencies after running this command.
+Token issuing reuses the `auth:` block every generated project's `src/config.ts` already has.
+Selecting `totp`/`fido2`/`mfa`/`passkey` adds the matching `auth.totp`/`auth.fido2`/`auth.passkey`
+config block with sensible defaults; each selected OIDC provider adds its own `auth.oidc_<provider>`
+block. `@rapidrest/auth` and `argon2` (used for password hashing) are always added to
+`package.json`; `otplib` and `@simplewebauthn/server` are added when a method that needs them is
+selected, and `jwks-rsa` when a selected OIDC provider uses OpenID Connect. Install dependencies
+after running this command.
+
+**OIDC providers.** Selecting `oidc` prompts for one or more third-party providers. Google, Apple,
+Facebook, and Microsoft come with preset, well-known endpoints (verify these against the provider's
+current `.well-known/openid-configuration` before deploying — they can change); `custom` prompts
+for every endpoint by hand. For each provider you're prompted for a Client ID and Client Secret,
+which are written into `src/config.ts` as plain strings — matching this file's existing convention
+for every other secret-shaped value (`auth.secret`, `cookie_secret`, datastore passwords) — override
+them in a real deployment via the environment (e.g. `AUTH__OIDC_GOOGLE__CLIENTSECRET`), same as any
+other value there. Selecting more than one provider is fully supported: each gets its own route file
+and a distinct registered strategy name, so they don't collide with each other.
 
 **Out of scope** (all real, working parts of `@rapidrest/auth`, just not scaffolded by this
-command): MFA, OIDC, FIDO2, Passkey, TOTP, session refresh, account elevation, auth-method
-discovery, and direct Profile/Account/Alias/Secret management routes. Add those by hand, following
-the same thin-subclass pattern as the routes this command generates.
+command): session refresh, account elevation, auth-method discovery, and direct Profile/Account/
+Alias management routes. Add those by hand, following the same thin-subclass pattern as the routes
+this command generates.
 
 **Example:**
 
 ```sh
 rapidrest generate auth
-# → prompts for the datastore type, then writes the files above
+# → prompts for the datastore type and authentication method(s), then writes the matching files
 
-rapidrest generate auth --datastore-type sql --sql-type better-sqlite3
-rapidrest generate auth --datastore-type mongo --default-accounts
+rapidrest generate auth --datastore-type sql --sql-type better-sqlite3 --method basic
+rapidrest generate auth --datastore-type mongo --default-accounts --method basic --method mfa
+rapidrest generate auth --method oidc --oidc-provider google --oidc-provider apple
 ```
 
 ---

@@ -1,6 +1,12 @@
 {
   "conditionalFiles": [
-    { "file": "src/jobs/DefaultAccounts.ts", "condition": "defaultAccounts" }
+    { "file": "src/jobs/DefaultAccounts.ts", "condition": "defaultAccounts" },
+    { "file": "src/routes/AuthBasicRoute.ts", "condition": "methods.basic" },
+    { "file": "src/routes/AuthOTPRoute.ts", "condition": "methods.otp" },
+    { "file": "src/routes/AuthTOTPRoute.ts", "condition": "methods.totp" },
+    { "file": "src/routes/AuthPasskeyRoute.ts", "condition": "methods.passkey" },
+    { "file": "src/routes/AuthFIDO2Route.ts", "condition": "methods.fido2" },
+    { "file": "src/routes/AuthMFARoute.ts", "condition": "methods.mfa" }
   ],
   "helmPaths": [],
   "patches": [
@@ -13,9 +19,51 @@
       "condition": "datastore"
     },
     {
+      "template": "patches/config-totp.ts.hbs",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "auth",
+      "idempotencyKey": "totp",
+      "condition": "hasTotpConfig"
+    },
+    {
+      "template": "patches/config-passkey.ts.hbs",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "auth",
+      "idempotencyKey": "passkey",
+      "condition": "methods.passkey"
+    },
+    {
+      "template": "patches/config-fido2.ts.hbs",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "auth",
+      "idempotencyKey": "fido2",
+      "condition": "hasFido2Config"
+    },
+    {
       "template": "patches/package.json",
       "target": "package.json",
       "strategy": "json-merge"
+    },
+    {
+      "template": "patches/package-otplib.json",
+      "target": "package.json",
+      "strategy": "json-merge",
+      "condition": "hasOtplib"
+    },
+    {
+      "template": "patches/package-webauthn.json",
+      "target": "package.json",
+      "strategy": "json-merge",
+      "condition": "hasWebauthn"
+    },
+    {
+      "template": "patches/package-jwksrsa.json",
+      "target": "package.json",
+      "strategy": "json-merge",
+      "condition": "hasJwksRsa"
     }
   ]
 }

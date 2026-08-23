@@ -14,6 +14,22 @@
   `@rapidrest/auth` package
 * `detectApiRoute` (recovering a project's `/api` prefix convention from `HelloRoute.ts`) moved
   from `upgrade.ts` to the shared `project.ts`, now used by both `upgrade` and `generate auth`
+* `generate auth` now lets you select which authentication method(s) to scaffold via a new
+  `--method` flag (repeatable) or checkbox prompt: `basic`, `otp`, `totp`, `passkey`, `fido2`,
+  `mfa`, and `oidc` — each conditionally generating its matching route file and, for
+  `totp`/`fido2`/`mfa`, an `auth.totp`/`auth.fido2` config block. A new, always-generated
+  `SecretRoute.ts` handles password changes and TOTP/Passkey/FIDO2 enrollment regardless of which
+  methods are selected. Selecting `oidc` prompts for one or more third-party providers (Google,
+  Apple, Facebook, Microsoft, or a custom provider), each with its own preset endpoints, Client
+  ID/Secret prompt, generated route file, and `auth.oidc_<provider>` config block — selecting more
+  than one provider is fully supported. `otplib`, `@simplewebauthn/server`, and `jwks-rsa` are added
+  to `package.json` only when a selected method/provider actually needs them
+* Fixed a real bug in `@rapidrest/auth` this surfaced, in the library itself rather than worked
+  around here: `BaseAuthOIDCRoute` hardcoded its registered strategy name to the literal `"oauth"`,
+  so wiring up more than one OIDC/OAuth provider in the same app silently collided — whichever
+  route was loaded last won for all of them. Fixed in `@rapidrest/auth@1.1.0` via a new overridable
+  `strategyName` field; `generate auth`'s generated OIDC provider routes each set their own and now
+  require `@rapidrest/auth@^1.1.0`
 
 **New: non-interactive `generate server`**
 

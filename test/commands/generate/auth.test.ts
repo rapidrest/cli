@@ -7,6 +7,9 @@ import { join } from 'path';
 
 vi.mock('@inquirer/prompts', () => ({
   select: vi.fn(),
+  checkbox: vi.fn(),
+  input: vi.fn(),
+  password: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/template.js', () => ({
@@ -23,7 +26,7 @@ vi.mock('../../../src/lib/prompts.js', () => ({
   inputAuthor: vi.fn(),
 }));
 
-import { select } from '@inquirer/prompts';
+import { checkbox, input, password, select } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
 import { detectApiRoute, readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
 import { inputAuthor } from '../../../src/lib/prompts.js';
@@ -38,6 +41,9 @@ describe('generate auth', () => {
     vi.mocked(readProjectDatastores).mockResolvedValue([]);
     vi.mocked(readProjectName).mockResolvedValue('my-app');
     vi.mocked(detectApiRoute).mockResolvedValue({ apiRoute: false });
+    // Default: the auth-method checkbox resolves to just "basic", matching the pre-expansion
+    // behavior, so every test that doesn't care about method selection keeps passing unchanged.
+    vi.mocked(checkbox).mockResolvedValue(['basic']);
   });
 
   afterEach(() => {
@@ -189,6 +195,245 @@ describe('generate auth', () => {
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.defaultAccounts).toBe(true);
+    });
+  });
+
+  describe('auth method selection', () => {
+    it('--method skips the methods checkbox', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'basic', '--method', 'mfa'],
+        ROOT,
+      );
+
+      expect(vi.mocked(checkbox)).not.toHaveBeenCalled();
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({ methods: expect.objectContaining({ basic: true, mfa: true, otp: false, oidc: false }) });
+    });
+
+    it('rejects an invalid --method', async () => {
+      await expect(
+        GenerateAuth.run(['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--method', 'password'], ROOT),
+      ).rejects.toThrow(/Invalid --method "password"/);
+    });
+
+    it('prompts a checkbox for methods when --method is omitted', async () => {
+      vi.mocked(checkbox).mockResolvedValueOnce(['basic', 'totp', 'fido2']);
+
+      await GenerateAuth.run(['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({
+        methods: expect.objectContaining({ basic: true, totp: true, fido2: true, passkey: false, mfa: false, oidc: false }),
+      });
+    });
+
+    it('sets hasTotpConfig/hasOtplib when mfa is selected even without totp', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'mfa'],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({ hasTotpConfig: true, hasFido2Config: true, hasOtplib: true, hasWebauthn: true });
+    });
+
+    it('sets hasWebauthn when passkey is selected, without pulling in TOTP config', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'passkey'],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({ hasWebauthn: true, hasTotpConfig: false, hasFido2Config: false, hasOtplib: false });
+    });
+
+    it('leaves every method/config flag false for a plain basic-only selection', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'basic'],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({
+        hasTotpConfig: false,
+        hasFido2Config: false,
+        hasOtplib: false,
+        hasWebauthn: false,
+        hasJwksRsa: false,
+      });
+    });
+  });
+
+  describe('OIDC provider sub-flow', () => {
+    beforeEach(() => {
+      vi.mocked(input).mockResolvedValue('client-id-value');
+      vi.mocked(password).mockResolvedValue('client-secret-value');
+    });
+
+    it('is skipped entirely when oidc is not among the selected methods', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'basic'],
+        ROOT,
+      );
+
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      expect(vi.mocked(processTemplate)).toHaveBeenCalledTimes(1);
+    });
+
+    it('--oidc-provider skips the provider checkbox', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc', '--oidc-provider', 'google'],
+        ROOT,
+      );
+
+      expect(vi.mocked(checkbox)).toHaveBeenCalledTimes(0); // methods came from --method too
+      expect(vi.mocked(processTemplate)).toHaveBeenCalledTimes(2); // main template + one provider
+    });
+
+    it('rejects an invalid --oidc-provider', async () => {
+      await expect(
+        GenerateAuth.run(
+          ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--method', 'oidc', '--oidc-provider', 'github'],
+          ROOT,
+        ),
+      ).rejects.toThrow(/Invalid --oidc-provider "github"/);
+    });
+
+    it('generates one processTemplate call per selected provider, using the oidc-provider template dir', async () => {
+      await GenerateAuth.run(
+        [
+          '--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A',
+          '--method', 'oidc', '--oidc-provider', 'google', '--oidc-provider', 'apple',
+        ],
+        ROOT,
+      );
+
+      expect(vi.mocked(processTemplate)).toHaveBeenCalledTimes(3);
+      const [providerTemplateDir1] = vi.mocked(processTemplate).mock.calls[1];
+      const [providerTemplateDir2] = vi.mocked(processTemplate).mock.calls[2];
+      expect(providerTemplateDir1).toContain(join('templates', 'auth', 'oidc-provider'));
+      expect(providerTemplateDir2).toContain(join('templates', 'auth', 'oidc-provider'));
+    });
+
+    it('populates Google preset data (openid, known endpoints, jwksURI) into the provider context', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc', '--oidc-provider', 'google'],
+        ROOT,
+      );
+
+      const [, , providerContext] = vi.mocked(processTemplate).mock.calls[1];
+      expect(providerContext).toMatchObject({
+        providerKey: 'google',
+        providerClassName: 'Google',
+        name: 'oidc_google',
+        protocol: 'openid',
+        authorizationURL: 'https://accounts.google.com/o/oauth2/v2/auth',
+        tokenURL: 'https://oauth2.googleapis.com/token',
+        issuer: 'https://accounts.google.com',
+        jwksURI: 'https://www.googleapis.com/oauth2/v3/certs',
+        scope: ['openid', 'email', 'profile'],
+        clientID: 'client-id-value',
+        clientSecret: 'client-secret-value',
+      });
+    });
+
+    it('populates Facebook preset data with protocol oauth2 and no jwksURI/issuer', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc', '--oidc-provider', 'facebook'],
+        ROOT,
+      );
+
+      const [, , providerContext] = vi.mocked(processTemplate).mock.calls[1];
+      expect(providerContext).toMatchObject({ providerKey: 'facebook', protocol: 'oauth2' });
+      expect(providerContext.jwksURI).toBeUndefined();
+      expect(providerContext.issuer).toBeUndefined();
+    });
+
+    it('sets hasJwksRsa true when any selected provider uses openid', async () => {
+      await GenerateAuth.run(
+        [
+          '--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A',
+          '--method', 'oidc', '--oidc-provider', 'facebook', '--oidc-provider', 'google',
+        ],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({ hasJwksRsa: true });
+    });
+
+    it('leaves hasJwksRsa false when every selected provider is oauth2-only', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc', '--oidc-provider', 'facebook'],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({ hasJwksRsa: false });
+    });
+
+    it('prompts additional fields (authorizationURL, tokenURL, protocol, scope) for a custom provider', async () => {
+      vi.mocked(input)
+        .mockResolvedValueOnce('client-id-value') // Client ID
+        .mockResolvedValueOnce('https://example.com/authorize') // authorizationURL
+        .mockResolvedValueOnce('https://example.com/token') // tokenURL
+        .mockResolvedValueOnce('https://example.com/userinfo') // profileURL
+        .mockResolvedValueOnce('custom-scope-1,custom-scope-2'); // scope
+      vi.mocked(select).mockResolvedValueOnce('oauth2'); // protocol
+
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc', '--oidc-provider', 'custom'],
+        ROOT,
+      );
+
+      const [, , providerContext] = vi.mocked(processTemplate).mock.calls[1];
+      expect(providerContext).toMatchObject({
+        providerKey: 'custom',
+        providerClassName: 'Custom',
+        name: 'oidc_custom',
+        protocol: 'oauth2',
+        authorizationURL: 'https://example.com/authorize',
+        tokenURL: 'https://example.com/token',
+        profileURL: 'https://example.com/userinfo',
+        scope: ['custom-scope-1', 'custom-scope-2'],
+      });
+    });
+
+    it('prompts for issuer/jwksURI on a custom provider using openid', async () => {
+      vi.mocked(input)
+        .mockResolvedValueOnce('client-id-value') // Client ID
+        .mockResolvedValueOnce('https://example.com/authorize') // authorizationURL
+        .mockResolvedValueOnce('https://example.com/token') // tokenURL
+        .mockResolvedValueOnce('') // profileURL
+        .mockResolvedValueOnce('https://example.com') // issuer
+        .mockResolvedValueOnce('https://example.com/.well-known/jwks.json') // jwksURI
+        .mockResolvedValueOnce('openid email'); // scope
+      vi.mocked(select).mockResolvedValueOnce('openid'); // protocol
+
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc', '--oidc-provider', 'custom'],
+        ROOT,
+      );
+
+      const [, , providerContext] = vi.mocked(processTemplate).mock.calls[1];
+      expect(providerContext).toMatchObject({
+        protocol: 'openid',
+        issuer: 'https://example.com',
+        jwksURI: 'https://example.com/.well-known/jwks.json',
+        profileURL: undefined,
+      });
+    });
+
+    it('prompts for the provider checkbox when --oidc-provider is omitted', async () => {
+      vi.mocked(checkbox)
+        .mockResolvedValueOnce(['oidc']) // methods checkbox
+        .mockResolvedValueOnce(['microsoft']); // oidc-provider checkbox
+
+      await GenerateAuth.run(['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A'], ROOT);
+
+      expect(vi.mocked(checkbox)).toHaveBeenCalledTimes(2);
+      const [, , providerContext] = vi.mocked(processTemplate).mock.calls[1];
+      expect(providerContext).toMatchObject({ providerKey: 'microsoft', name: 'oidc_microsoft' });
     });
   });
 

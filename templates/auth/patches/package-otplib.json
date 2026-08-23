@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "otplib": "^13.5.0"
+  }
+}

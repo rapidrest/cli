@@ -1,0 +1,27 @@
+    {{#if comment}}
+    // {{comment}}
+    {{/if}}
+    // Verify these endpoints against the provider's current `.well-known/openid-configuration`
+    // before deploying — they can change. clientID/clientSecret are plain strings here, matching
+    // this file's existing convention for every other secret-shaped value (auth.secret,
+    // cookie_secret, datastore passwords) — override them in a real deployment via the
+    // environment (e.g. AUTH__{{envKey}}__CLIENTSECRET), same as any other value here.
+    {{name}}: {
+        name: "{{name}}",
+        authorizationURL: "{{authorizationURL}}",
+        clientID: "{{clientID}}",
+        clientSecret: "{{clientSecret}}",
+        {{#if profileURL}}
+        profileURL: "{{profileURL}}",
+        {{/if}}
+        protocol: "{{protocol}}",
+        redirectURI: "{{redirectURI}}",
+        scope: [{{#each scope}}"{{this}}"{{#unless @last}}, {{/unless}}{{/each}}],
+        tokenURL: "{{tokenURL}}",
+        {{#if jwksURI}}
+        jwksURI: "{{jwksURI}}",
+        {{/if}}
+        {{#if issuer}}
+        issuer: "{{issuer}}",
+        {{/if}}
+    },
