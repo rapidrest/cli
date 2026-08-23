@@ -3,7 +3,9 @@
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mkdtemp, rm, writeFile } from 'fs/promises';
 import { join } from 'path';
+import os from 'os';
 
 vi.mock('@inquirer/prompts', () => ({
   input: vi.fn(),
@@ -293,7 +295,7 @@ describe('generate server', () => {
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledOnce();
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'acl', '--type', 'admin'],
+        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'acl', '--type', 'admin', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -303,27 +305,27 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'status', '--force'],
+        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'status', '--force', '--no-api-route'],
         expect.any(String),
       );
     });
 
-    it('passes --api to GenerateDefaultRoute when the api prefix prompt was confirmed', async () => {
+    it('passes --api-route --api to GenerateDefaultRoute when the api prefix prompt was confirmed', async () => {
       stubPrompts({ author: 'Test Author', otherFeatures: ['route-metrics'], apiEnabled: true, apiVersion: '3' });
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'metrics', '--api', '3'],
+        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'metrics', '--api-route', '--api', '3'],
         expect.any(String),
       );
     });
 
-    it('does not pass --api to GenerateDefaultRoute when the api prefix prompt was declined', async () => {
+    it('passes --no-api-route to GenerateDefaultRoute when the api prefix prompt was declined', async () => {
       stubPrompts({ author: 'Test Author', otherFeatures: ['route-metrics'], apiEnabled: false });
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'metrics'],
+        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'metrics', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -333,7 +335,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', join(process.cwd(), 'my-project'), '--author', 'Test Author', '--type', 'push'],
+        ['--output-dir', join(process.cwd(), 'my-project'), '--author', 'Test Author', '--type', 'push', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -376,7 +378,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--author', 'Flag Author'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Flag Author', '--type', 'acl'],
+        ['--output-dir', '/tmp/out', '--author', 'Flag Author', '--type', 'acl', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -517,6 +519,367 @@ describe('generate server', () => {
       expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
       expect((GenerateReact as any).run).toHaveBeenCalledOnce();
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledOnce();
+    });
+  });
+
+  describe('non-interactive flags', () => {
+    it('--description skips the description prompt', async () => {
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+      vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+      vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--description', 'From flag'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.description).toBe('From flag');
+      expect(input).not.toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('description') }));
+    });
+
+    it('--pkg-manager skips the package manager select', async () => {
+      vi.mocked(input).mockResolvedValueOnce('desc');
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+      vi.mocked(select).mockResolvedValueOnce('github'); // scm only — pkgMgr select skipped
+      vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--pkg-manager', 'npm'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context as any).pkgMgr).toMatchObject({ npm: true, yarn: false });
+    });
+
+    it('rejects an invalid --pkg-manager value', async () => {
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--pkg-manager', 'bun'], ROOT),
+      ).rejects.toThrow(/Invalid package manager "bun"/);
+    });
+
+    it('--db skips the database checkbox', async () => {
+      vi.mocked(input).mockResolvedValueOnce('desc');
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+      vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+      vi.mocked(checkbox).mockResolvedValueOnce(['docker']); // otherFeatures only — db checkbox skipped
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--db', 'postgresql', '--db', 'redis'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context as any).features).toMatchObject({ postgresql: true, redis: true, mongodb: false, sqlite: false });
+    });
+
+    it('rejects an invalid --db value', async () => {
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--db', 'oracle'], ROOT),
+      ).rejects.toThrow(/Invalid database feature "oracle"/);
+    });
+
+    it('pluralizes the error message when multiple invalid --db values are given', async () => {
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--db', 'oracle', '--db', 'mysql'], ROOT),
+      ).rejects.toThrow(/Invalid database features "oracle, mysql"/);
+    });
+
+    describe('grouped feature flags (route/react/docker/k8s)', () => {
+      async function runWithFeatureFlags(extraArgs: string[]) {
+        vi.mocked(input).mockResolvedValueOnce('desc');
+        vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+        vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+        vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']); // db checkbox only — otherFeatures checkbox skipped
+        vi.mocked(confirm).mockResolvedValueOnce(false);
+        await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', ...extraArgs], ROOT);
+      }
+
+      it('skips the "additional features" checkbox entirely when any one of the four flags is present', async () => {
+        await runWithFeatureFlags(['--react']);
+        expect(checkbox).toHaveBeenCalledTimes(1); // db only
+      });
+
+      it('--route sets the selected routes and defaults react/k8s off, docker on', async () => {
+        await runWithFeatureFlags(['--route', 'admin', '--route', 'status']);
+
+        expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+          ['--output-dir', '/tmp/out', '--author', 'Author', '--type', 'admin', '--type', 'status', '--no-api-route'],
+          expect.any(String),
+        );
+        const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+        expect((context as any).features).toMatchObject({ react: false, docker: true, k8s: false });
+      });
+
+      it('rejects an invalid --route value', async () => {
+        await expect(
+          GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--route', 'bogus'], ROOT),
+        ).rejects.toThrow(/Invalid route type "bogus"/);
+      });
+
+      it('--react alone defaults route to empty and docker to true (the checkbox default)', async () => {
+        await runWithFeatureFlags(['--react']);
+
+        expect((GenerateDefaultRoute as any).run).not.toHaveBeenCalled();
+        const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+        expect((context as any).features).toMatchObject({ react: true, docker: true, k8s: false });
+      });
+
+      it('--no-docker explicitly turns docker off instead of using its default-true fallback', async () => {
+        await runWithFeatureFlags(['--react', '--no-docker']);
+
+        expect((GenerateDocker as any).run).not.toHaveBeenCalled();
+        const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+        expect((context as any).features.docker).toBe(false);
+      });
+
+      it('--k8s alone enables k8s and still defaults docker to true', async () => {
+        await runWithFeatureFlags(['--k8s']);
+
+        expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
+        expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
+      });
+    });
+
+    describe('--api-route / --api-version', () => {
+      it('--api-route with --api-version sets both without prompting', async () => {
+        vi.mocked(input).mockResolvedValueOnce('desc');
+        vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+        vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+        vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+
+        await GenerateServer.run(
+          ['my-api', '--output-dir', '/tmp/out', '--api-route', '--api-version', '2'],
+          ROOT,
+        );
+
+        const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+        expect(context.apiRoute).toBe(true);
+        expect(context.apiVersion).toBe('2');
+        expect(confirm).not.toHaveBeenCalled();
+      });
+
+      it('--api-route without --api-version resolves to an empty-string version (no version segment)', async () => {
+        vi.mocked(input).mockResolvedValueOnce('desc');
+        vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+        vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+        vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['route-status']);
+
+        await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--api-route'], ROOT);
+
+        const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+        expect(context.apiRoute).toBe(true);
+        expect(context.apiVersion).toBe('');
+        expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+          ['--output-dir', '/tmp/out', '--author', 'Author', '--type', 'status', '--api-route', '--api', ''],
+          expect.any(String),
+        );
+      });
+
+      it('--no-api-route sets apiRoute false without prompting, even though api-version was not given', async () => {
+        vi.mocked(input).mockResolvedValueOnce('desc');
+        vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+        vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+        vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+
+        await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--no-api-route'], ROOT);
+
+        const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+        expect(context.apiRoute).toBe(false);
+        expect(context.apiVersion).toBeUndefined();
+        expect(confirm).not.toHaveBeenCalled();
+      });
+    });
+
+    it('--scm skips the SCM select', async () => {
+      vi.mocked(input).mockResolvedValueOnce('desc');
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+      vi.mocked(select).mockResolvedValueOnce('yarn'); // pkgMgr only — scm select skipped
+      vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--scm', 'gitlab'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context as any).scm).toMatchObject({ gitlab: true, github: false, git: true });
+    });
+
+    it('--scm none maps to an empty repository/scm prefix, matching the interactive "(none)" choice', async () => {
+      vi.mocked(input).mockResolvedValueOnce('desc');
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+      vi.mocked(select).mockResolvedValueOnce('yarn');
+      vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--scm', 'none'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.repository).toBe('/my-api');
+      expect((context as any).scm).toMatchObject({ git: false, github: false, gitlab: false });
+    });
+
+    it('rejects an invalid --scm value', async () => {
+      stubPrompts();
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--scm', 'cvs'], ROOT),
+      ).rejects.toThrow(/Invalid SCM "cvs"/);
+    });
+  });
+
+  describe('--answers file', () => {
+    let answersDir: string;
+
+    beforeEach(async () => {
+      answersDir = await mkdtemp(join(os.tmpdir(), 'rr-answers-'));
+    });
+
+    afterEach(async () => {
+      await rm(answersDir, { recursive: true, force: true });
+    });
+
+    async function writeAnswers(data: Record<string, unknown>): Promise<string> {
+      const path = join(answersDir, 'answers.json');
+      await writeFile(path, JSON.stringify(data), 'utf-8');
+      return path;
+    }
+
+    it('applies every field from the file without prompting for any of them', async () => {
+      const path = await writeAnswers({
+        description: 'From file', author: 'File Author', pkgManager: 'npm',
+        db: ['sqlite'], route: ['acl'], react: true, docker: false, k8s: true,
+        apiRoute: true, apiVersion: '1', scm: 'gitlab',
+      });
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT);
+
+      expect(input).not.toHaveBeenCalled();
+      expect(select).not.toHaveBeenCalled();
+      expect(checkbox).not.toHaveBeenCalled();
+      expect(confirm).not.toHaveBeenCalled();
+      expect(inputAuthor).not.toHaveBeenCalled();
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({ description: 'From file', author: 'File Author', apiRoute: true, apiVersion: '1' });
+      expect((context as any).pkgMgr).toMatchObject({ npm: true });
+      expect((context as any).features).toMatchObject({ sqlite: true, react: true, docker: false, k8s: true });
+      expect((context as any).scm).toMatchObject({ gitlab: true });
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--author', 'File Author', '--type', 'acl', '--api-route', '--api', '1'],
+        expect.any(String),
+      );
+    });
+
+    it('an explicit flag overrides the same field in the answers file', async () => {
+      const path = await writeAnswers({
+        description: 'From file', author: 'File Author', pkgManager: 'npm', db: ['mongodb'],
+        docker: true, apiRoute: false, scm: 'github',
+      });
+
+      await GenerateServer.run(
+        ['my-api', '--output-dir', '/tmp/out', '--answers', path, '--description', 'From flag'],
+        ROOT,
+      );
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.description).toBe('From flag');
+      expect(context.author).toBe('File Author'); // still comes from the file
+    });
+
+    it('falls through to the interactive prompt for any field the file omits', async () => {
+      const path = await writeAnswers({ description: 'From file' });
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Prompted Author');
+      vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+      vi.mocked(checkbox).mockResolvedValueOnce(['mongodb']).mockResolvedValueOnce(['docker']);
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.description).toBe('From file');
+      expect(context.author).toBe('Prompted Author');
+      expect(input).not.toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('description') }));
+    });
+
+    it('a db/route array in the file is treated the same as the flag being present (skips the checkbox)', async () => {
+      const path = await writeAnswers({ description: 'd', author: 'a', pkgManager: 'npm', db: ['mongodb'], route: ['status'], scm: 'github' });
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT);
+
+      expect(checkbox).not.toHaveBeenCalled();
+      expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--author', 'a', '--type', 'status', '--no-api-route'],
+        expect.any(String),
+      );
+    });
+
+    it('errors clearly when the file does not exist', async () => {
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', join(answersDir, 'missing.json')], ROOT),
+      ).rejects.toThrow(/Could not read --answers file/);
+    });
+
+    it('errors clearly on invalid JSON', async () => {
+      const path = join(answersDir, 'bad.json');
+      await writeFile(path, '{ not valid json', 'utf-8');
+
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT),
+      ).rejects.toThrow(/not valid JSON/);
+    });
+
+    it('errors clearly when the file is valid JSON but not an object (e.g. an array)', async () => {
+      const path = join(answersDir, 'array.json');
+      await writeFile(path, '[1, 2, 3]', 'utf-8');
+
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT),
+      ).rejects.toThrow(/must contain a JSON object/);
+    });
+
+    it('errors clearly when a string field has the wrong type', async () => {
+      const path = await writeAnswers({ description: 123 });
+
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT),
+      ).rejects.toThrow(/"description" must be a string/);
+    });
+
+    it('errors clearly when an array field has the wrong type', async () => {
+      const path = await writeAnswers({ db: 'mongodb' });
+
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT),
+      ).rejects.toThrow(/"db" must be an array of strings/);
+    });
+
+    it('errors clearly when an array field contains a non-string element', async () => {
+      const path = await writeAnswers({ db: ['mongodb', 42] });
+
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT),
+      ).rejects.toThrow(/"db" must be an array of strings/);
+    });
+
+    it('errors clearly when a boolean field has the wrong type', async () => {
+      const path = await writeAnswers({ react: 'yes' });
+
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT),
+      ).rejects.toThrow(/"react" must be a boolean/);
+    });
+
+    it('validates an enum value sourced from the file the same way as from a flag', async () => {
+      const path = await writeAnswers({ pkgManager: 'bun' });
+
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT),
+      ).rejects.toThrow(/Invalid package manager "bun"/);
+    });
+
+    it('ignores unknown keys in the file rather than rejecting them', async () => {
+      const path = await writeAnswers({
+        description: 'd', author: 'a', pkgManager: 'npm', db: ['mongodb'],
+        docker: true, apiRoute: false, scm: 'github', somethingUnrelated: true,
+      });
+
+      await expect(
+        GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--answers', path], ROOT),
+      ).resolves.toBeUndefined();
     });
   });
 

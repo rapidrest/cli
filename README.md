@@ -78,29 +78,70 @@ Scaffold a new RapidREST server project.
 ```
 USAGE
   $ rapidrest generate server NAME [--output-dir <path>] [--author <name>] [--force]
+      [--answers <path>] [--description <text>] [--pkg-manager npm|yarn]
+      [--db <feature>...] [--route <type>...] [--react] [--docker] [--k8s]
+      [--api-route] [--api-version <value>] [--scm <choice>]
 
 ARGUMENTS
   NAME  Name of the new project (also used as the output directory name)
 
 FLAGS
-  --output-dir <path>  Directory to write the generated project into. Defaults to ./<NAME>
-  -a, --author <name>  Author to attribute the generated code to
-  --force               Overwrite existing files
+  --output-dir <path>     Directory to write the generated project into. Defaults to ./<NAME>
+  -a, --author <name>     Author to attribute the generated code to
+  --force                 Overwrite existing files
+  --answers <path>        Path to a JSON file supplying any of the flags below, for reuse across projects
+  --description <text>    Short description of the project
+  --pkg-manager <choice>  Node.js package manager: npm | yarn
+  --db <feature>          A database feature to enable: mongodb | postgresql | redis | sqlite. Repeatable
+  --route <type>          A default route to include: acl | admin | metrics | openapi | push | status. Repeatable
+  --react / --no-react    Include React frontend support
+  --docker / --no-docker  Include Docker support
+  --k8s / --no-k8s        Include Kubernetes (Helm) support
+  --api-route / --no-api-route  Prefix all non-React routes with `/api`
+  --api-version <value>   API version segment when --api-route is set (e.g. "1" for /api/v1)
+  --scm <choice>          Source control manager: github | gitlab | git | p4 | svn | none
 ```
 
-The command walks through an interactive prompt to configure the generated project:
+Every flag above stands in for one interactive prompt — pass it (or supply it via `--answers`) to
+skip that prompt; omit both to be asked interactively, exactly as before these flags existed:
 
-| Prompt | Description | Options |
-|--------|---------|
-| Project description | Textual description of your project | Free input |
-| Author | The author of the project (skipped if `--author` is passed) | Auto-filled from your Git config when available; otherwise you're prompted |
-| Package manager | The desired Node.js package manager | `yarn` \| `npm` |
-| Databases | Desired database(s) to use in the project | `MongoDB` , `PostgreSQL`, `Redis` , `SQLite` |
-| Additional features | Additional RapidREST features to enable | Default routes (`ACL`, `Admin`, `Metrics`, `OpenAPI`, `Push`, `Status` — all checked by default), `React`, `Docker`, `Kubernetes (Helm)` (multi-select) |
-| API prefix | Whether to prefix all non-React routes with `/api` | Yes/No, then optionally a version (e.g. `1` → `/api/v1`) |
-| Source control | The SCM to use for the project | `GitHub`, `GitLab`, `Git`, `Perforce (Helix)`, `Subversion`, or none |
+| Prompt | Description | Flag |
+|--------|---------|------|
+| Project description | Textual description of your project | `--description` |
+| Author | The author of the project | `--author` (falls back to your Git config, then prompts) |
+| Package manager | The desired Node.js package manager | `--pkg-manager` |
+| Databases | Desired database(s) to use in the project | `--db` (repeatable) |
+| Additional features | Default routes, React, Docker, Kubernetes | `--route` (repeatable) / `--react` / `--docker` / `--k8s` — see note below |
+| API prefix | Whether to prefix all non-React routes with `/api` | `--api-route` (+ `--api-version`) |
+| Source control | The SCM to use for the project | `--scm` |
+
+`--route`/`--react`/`--docker`/`--k8s` all stand in for the same single "additional features"
+checkbox, so they're treated as one group: passing **any one** of them (or its `--answers`
+equivalent) skips that checkbox entirely, and any of the four you didn't specify falls back to
+that checkbox's own default (`--route` → none, `--react` → off, `--docker` → **on**, `--k8s` →
+off) rather than prompting for just the rest.
 
 Any default routes selected above are generated via [`generate default-route`](#rapidrest-generate-default-route) immediately after the project is scaffolded, using the same author and API prefix you chose here.
+
+**`--answers <file>`** — a JSON file with any of the flags above as camelCase keys, every key
+optional:
+```json
+{
+  "description": "A product catalog service",
+  "author": "Jane Doe <jane@example.com>",
+  "pkgManager": "npm",
+  "db": ["mongodb", "redis"],
+  "route": ["admin", "status"],
+  "react": false,
+  "docker": true,
+  "k8s": false,
+  "apiRoute": true,
+  "apiVersion": "1",
+  "scm": "github"
+}
+```
+An explicit flag always overrides the same field in the file; either overrides the interactive
+prompt for that field.
 
 **Example:**
 
@@ -110,6 +151,14 @@ rapidrest generate server my-api
 
 rapidrest generate server my-api --output-dir ~/projects/my-api
 rapidrest generate server my-api --author "Jane Doe <jane@example.com>"
+
+# Fully non-interactive, via flags:
+rapidrest generate server my-api --description "..." --pkg-manager npm \
+  --db mongodb --db redis --route admin --route status \
+  --docker --api-route --api-version 1 --scm github
+
+# Fully non-interactive, via a reusable profile:
+rapidrest generate server my-api --answers ./server-profile.json
 ```
 
 ---
@@ -226,20 +275,27 @@ Generate one or more of RapidREST's built-in default route handlers (Access Cont
 
 ```
 USAGE
-  $ rapidrest generate default-route [--output-dir <path>] [--author <name>] [--api <version>]
-      [--type <type>]... [--static-path <path>] [--force]
+  $ rapidrest generate default-route [--output-dir <path>] [--author <name>]
+      [--api-route] [--api <version>] [--type <type>]... [--static-path <path>] [--force]
 
 FLAGS
   --output-dir <path>    Directory to write the generated route(s) into. Defaults to the current working directory
   -a, --author <name>    Author to attribute the generated code to
-  --api <version>        Use @ApiRoute instead of @Route for the generated route(s). Pass a version to prefix paths
-                          with /api/v<version>; pass an empty value for /api with no version
+  --api-route / --no-api-route  Use @ApiRoute instead of @Route for the generated route(s). Omit both
+                          --api-route and --api to be prompted
+  --api <version>        API version to prefix paths with (e.g. "1" for /api/v1) when --api-route is set. Passing
+                          --api with a value on its own also implies --api-route
   -t, --type <type>      The type of default route to generate: acl, admin, metrics, openapi, push, static, status.
                           Pass more than once to generate multiple route types
   --static-path <path>   Path containing the static files to serve, when the static route is included. Defaults to
                           `public`
   -f, --force             Overwrite existing files
 ```
+
+A bare `--api` with no value can't reliably be told apart from `--api` followed by another flag,
+so it's not supported — pass `--api-route` alone (no value needed) for "on, no version", or
+`--api-route --api <version>` / `--api <version>` for a specific version, or `--no-api-route` to
+skip the prompt and force it off.
 
 If `--type` is omitted, you're shown a checklist of all seven default routes to choose from interactively (Admin, Metrics, OpenAPI, and Status are checked by default; ACL, Push, and Static are not). Pass `--type` one or more times to generate specific routes non-interactively — handy for scripting or CI:
 

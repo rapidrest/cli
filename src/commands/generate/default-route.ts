@@ -25,7 +25,8 @@ export default class GenerateDefaultRoute extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
-    api: Flags.string({ description: "Use @ApiRoute instead of @Route for the generated route(s). Pass a value to specify an api version." }),
+    'api-route': Flags.boolean({ allowNo: true, description: 'Use @ApiRoute instead of @Route for the generated route(s). Use --api to also set a version; omit both --api-route and --api to be prompted.' }),
+    api: Flags.string({ description: "The api version to use with --api-route (e.g. \"1\" for /api/v1). Passing --api alone (without --api-route) also implies --api-route." }),
     author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated route into. Defaults to ./src/routes.' }),
     type: Flags.string({ alias: 't', multiple: true, description: 'The type of default route to generate: acl, admin, metrics, openapi, push, static, status. Pass more than once to generate multiple route types.'}),
@@ -41,13 +42,24 @@ export default class GenerateDefaultRoute extends Command {
 
     const author = flags.author ?? (await inputAuthor(cwd));
 
-    let api = flags.api ?? undefined;
-    if (!api && await confirm({ message: "Is this an API route?" })) {
-      api = await input({
-        message: 'Enter the API version (enter blank for no version prefix):',
-        default: '1',
-        required: false
-      });
+    // A bare --api (no value) can't be distinguished from --api immediately followed by another
+    // flag by oclif's string-flag parsing, and would throw "Flag --api expects a value" — passing
+    // --api-route alone (a boolean, no value needed) is the reliable way to say "on, no version"
+    // non-interactively. --api with a value implies --api-route so existing --api <version> usage
+    // keeps working unchanged.
+    const apiRouteFlag = flags['api-route'] ?? (flags.api !== undefined ? true : undefined);
+    let api: string | undefined;
+    if (apiRouteFlag !== undefined) {
+      api = apiRouteFlag ? (flags.api ?? '') : undefined;
+    } else {
+      api = undefined;
+      if (await confirm({ message: "Is this an API route?" })) {
+        api = await input({
+          message: 'Enter the API version (enter blank for no version prefix):',
+          default: '1',
+          required: false
+        });
+      }
     }
 
     let routes: string[];

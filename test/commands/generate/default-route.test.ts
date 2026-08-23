@@ -141,6 +141,38 @@ describe('generate default-route', () => {
       expect(context.apiVersion).toBe('3');
       expect(vi.mocked(confirm)).not.toHaveBeenCalled();
     });
+
+    it('--api-route alone (no --api) sets apiRoute true with an empty apiVersion, without prompting', async () => {
+      vi.mocked(checkbox).mockResolvedValueOnce(['acl-route']);
+
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m', '--api-route'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(true);
+      expect(context.apiVersion).toBe('');
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+    });
+
+    it('--no-api-route sets apiRoute false without prompting, unlike omitting --api entirely', async () => {
+      vi.mocked(checkbox).mockResolvedValueOnce(['acl-route']);
+
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m', '--no-api-route'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(false);
+      expect(context.apiVersion).toBeUndefined();
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+    });
+
+    it('--api-route with --api sets both explicitly', async () => {
+      vi.mocked(checkbox).mockResolvedValueOnce(['acl-route']);
+
+      await GenerateDefaultRoute.run(['--output-dir', '/tmp/m', '--api-route', '--api', '5'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(true);
+      expect(context.apiVersion).toBe('5');
+    });
   });
 
   describe('--type flag', () => {

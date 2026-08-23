@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+**New: non-interactive `generate server`**
+
+* `rapidrest generate server` can now be run fully non-interactively: a new flag per prompt
+  (`--description`, `--pkg-manager`, `--db`, `--route`/`--react`/`--docker`/`--k8s`, `--api-route`/
+  `--api-version`, `--scm`) plus a new `--answers <file>` JSON-profile flag for reuse across
+  projects. Any flag (or its `--answers` equivalent) skips that one prompt; omitting both keeps the
+  existing interactive behavior exactly as before. Flags always take precedence over the same field
+  in `--answers`; either takes precedence over the prompt
+* Fixed a real bug this surfaced: `generate server` invokes `generate default-route` internally for
+  any default routes selected, but when the API prefix was declined (or, now, resolved to "off" via
+  a flag/`--answers` with routes still selected), it omitted `default-route`'s own `--api` flag
+  entirely rather than expressing "off" — which is indistinguishable from "not specified" to that
+  command, so it fell through to its *own* "Is this an API route?" prompt. Harmless but redundant
+  in interactive use; a silent hang for a fully non-interactive `generate server` run. Fixed by
+  giving `generate default-route` a proper `--api-route`/`--no-api-route` boolean (existing
+  `--api <version>` usage keeps working, now implying `--api-route`) that `generate server` always
+  passes explicitly, and that also happens to be the reliable way to request "on, no version"
+  non-interactively (a bare `--api` with no value throws `Flag --api expects a value` in oclif —
+  pre-existing, not fixed here, just no longer needed for this case)
+
 **New: `generate model` property definitions**
 
 * `rapidrest generate model` can now scaffold real, typed data properties instead of just the
