@@ -14,6 +14,22 @@
   scaffolded a while ago that may have drifted from what the currently installed `@rapidrest/*`
   libraries expect
 
+**New: `rapidrest upgrade`**
+
+* Added a new `rapidrest upgrade [--write] [--json]` command that refreshes an already-generated
+  project's generator-owned boilerplate files and dependency version pins against the currently
+  installed templates — the complement to `doctor`'s fixed known-bad-pattern checks. Only ever
+  touches a file that already exists in the project (never creates one, so opt-in features like
+  Docker/Kubernetes/default-routes a project never added are left alone); `src/config.ts`/
+  `test/config.ts` are never touched (patch-mutated and user-edited, out of scope — see `doctor`);
+  `package.json` is never overwritten wholesale, only known dependency version pins are updated or
+  added, with the project's own added dependencies and `scripts` left untouched
+* Fixed `templates/server/README.md` using `{{project_description}}`, a Handlebars variable
+  `generate server` never actually sets (the context key is `description`) — every project this
+  CLI has ever scaffolded has shipped with an empty description line in its README. Found via
+  `upgrade`'s own end-to-end verification; `rapidrest upgrade --write` will backfill it for
+  existing projects
+
 **Dependencies**
 
 * Upgraded `@rapidrest/core`, `@rapidrest/service-core`, and `@rapidrest/react` to their latest releases

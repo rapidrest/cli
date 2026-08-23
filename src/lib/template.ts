@@ -173,3 +173,67 @@ export async function processTemplate(
     await applyPatches(templateDir, cwd, context, config.patches);
   }
 }
+
+export interface RenderedFile {
+  relPath: string;
+  content: string;
+}
+
+// Renders every non-binary output file the same way processTemplate() would (same walk, same
+// template.config.json exclusions/conditionals, same Handlebars compilation of both path and
+// content), but returns the results instead of writing them — used by `rapidrest upgrade` to
+// compare a template's current output against an already-generated project without touching disk.
+// Deliberately does not apply patches: every patch target (src/config.ts, package.json) is
+// user-edited/mutated after generation, so `upgrade` handles those separately, not via this path.
+export async function renderTemplateFiles(
+  templateDir: string,
+  context: Record<string, unknown>,
+): Promise<RenderedFile[]> {
+  let config: TemplateConfig = {};
+  const manifestPath = join(templateDir, 'template.config.json');
+  if (await fsExtra.pathExists(manifestPath)) {
+    const raw = await readFile(manifestPath, 'utf-8');
+    config = JSON.parse(raw) as TemplateConfig;
+  }
+  const conditionalFiles = config.conditionalFiles ?? [];
+  const helmPaths = config.helmPaths ?? [];
+
+  const patchTemplates = new Set(
+    (config.patches ?? []).map((p) => p.template.replace(/\\/g, '/')),
+  );
+
+  const allFiles = await walk(templateDir);
+  const results: RenderedFile[] = [];
+
+  for (const filePath of allFiles) {
+    const relPath = relative(templateDir, filePath);
+
+    if (relPath === 'template.config.json') continue;
+    if (patchTemplates.has(relPath.replace(/\\/g, '/'))) continue;
+    if (isExcluded(relPath, conditionalFiles, context)) continue;
+    if (BINARY_EXTENSIONS.has(extname(filePath).toLowerCase())) continue;
+
+    const useHelm = helmPaths.length > 0 && isHelmPath(relPath, helmPaths);
+
+    const relNorm = relPath.replace(/\\/g, '/');
+    const compiledRel = useHelm
+      ? relNorm.replace(/\[\[\s*([\w.]+)\s*\]\]/g, (_m, p: string) => {
+          const v = resolveContextValue(p.trim(), context);
+          return v !== undefined && v !== null ? String(v) : '';
+        })
+      : Handlebars.compile(relNorm, { noEscape: true })(context);
+
+    const raw = await readFile(filePath, 'utf-8');
+    let content: string;
+    if (useHelm) {
+      content = processHelmSafe(raw, context);
+    } else {
+      const escaped = raw.replace(/\$\{\{/g, '$\\{{');
+      content = Handlebars.compile(escaped, { noEscape: true })(context);
+    }
+
+    results.push({ relPath: compiledRel, content });
+  }
+
+  return results;
+}

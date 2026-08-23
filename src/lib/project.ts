@@ -3,7 +3,7 @@
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
 import { execFile } from 'child_process';
-import { access, readFile, readdir } from 'fs/promises';
+import { access, readFile, readdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { promisify } from 'util';
 
@@ -256,4 +256,31 @@ export async function readProjectAuthor(cwd: string): Promise<string | undefined
     if (typeof pkg.author === 'object' && pkg.author !== null) return pkg.author.name || undefined;
   } catch { /* no package.json or parse error */ }
   return undefined;
+}
+
+export interface ProjectPackageJson {
+  data: Record<string, unknown>;
+  indent: string;
+}
+
+// Detects the indentation unit used by the file's first indented line (e.g. "\t" for the
+// tab-indented package.json the server template ships). Anything writing package.json back out
+// should reuse this rather than a hardcoded 2-space indent, or every write silently reformats the
+// whole file.
+function detectIndent(raw: string): string {
+  const match = raw.match(/^[ \t]+/m);
+  return match ? match[0] : '  ';
+}
+
+export async function readProjectPackageJson(cwd: string): Promise<ProjectPackageJson | undefined> {
+  try {
+    const raw = await readFile(join(cwd, 'package.json'), 'utf-8');
+    return { data: JSON.parse(raw) as Record<string, unknown>, indent: detectIndent(raw) };
+  } catch {
+    return undefined;
+  }
+}
+
+export async function writeProjectPackageJson(cwd: string, data: Record<string, unknown>, indent: string): Promise<void> {
+  await writeFile(join(cwd, 'package.json'), JSON.stringify(data, null, indent) + '\n', 'utf-8');
 }

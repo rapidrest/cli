@@ -1,6 +1,6 @@
 # {{project_name}}
 
-{{project_description}}
+{{description}}
 
 ## Getting Started
 

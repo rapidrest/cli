@@ -5,7 +5,7 @@
 import { access, copyFile, mkdir, readdir, readFile, writeFile } from 'fs/promises';
 import { dirname, join } from 'path';
 import { minVersion } from 'semver';
-import { extractDatastoreInfo } from './project.js';
+import { extractDatastoreInfo, readProjectPackageJson, writeProjectPackageJson } from './project.js';
 
 export type Severity = 'error' | 'warning';
 
@@ -52,19 +52,6 @@ async function fileExists(path: string): Promise<boolean> {
 interface PackageJsonShape {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
-}
-
-async function readPackageJson(cwd: string): Promise<PackageJsonShape | undefined> {
-  try {
-    const raw = await readFile(join(cwd, 'package.json'), 'utf-8');
-    return JSON.parse(raw) as PackageJsonShape;
-  } catch {
-    return undefined;
-  }
-}
-
-async function writePackageJson(cwd: string, pkg: PackageJsonShape & Record<string, unknown>): Promise<void> {
-  await writeFile(join(cwd, 'package.json'), JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
 }
 
 // Walks a config.ts-style `datastores: { ... }` block the same way extractDatastoreInfo() does,
@@ -256,8 +243,9 @@ function missingTypesDependency(pkgName: string, version: string): Check {
       const hasServiceCore = await fileExists(join(cwd, 'node_modules', '@rapidrest', 'service-core'));
       if (!hasServiceCore) return [];
 
-      const pkg = await readPackageJson(cwd);
-      if (!pkg) return [];
+      const pkgFile = await readProjectPackageJson(cwd);
+      if (!pkgFile) return [];
+      const pkg = pkgFile.data as PackageJsonShape;
       const present = !!pkg.dependencies?.[pkgName] || !!pkg.devDependencies?.[pkgName];
       if (present) return [];
 
@@ -268,13 +256,13 @@ function missingTypesDependency(pkgName: string, version: string): Check {
           file: 'package.json',
           message: `"${pkgName}" isn't declared as a dependency or devDependency — @rapidrest/service-core's type declarations reference it unconditionally, so \`tsc\` will fail to resolve its types even if this project never uses that feature. Run with --fix to add it as a devDependency.`,
           fix: async () => {
-            const current = await readPackageJson(cwd);
+            const current = await readProjectPackageJson(cwd);
             if (!current) return;
-            const raw = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf-8')) as Record<string, unknown>;
-            const devDeps = { ...(current.devDependencies ?? {}) };
+            const raw = current.data;
+            const devDeps = { ...((raw.devDependencies as Record<string, string> | undefined) ?? {}) };
             devDeps[pkgName] = version;
             raw.devDependencies = devDeps;
-            await writePackageJson(cwd, raw);
+            await writeProjectPackageJson(cwd, raw, current.indent);
           },
         },
       ];
@@ -289,8 +277,9 @@ const eslintPluginImportConflict: Check = {
   id: 'eslint-plugin-import-conflict',
   description: 'eslint-plugin-import does not support eslint@10+',
   async run({ cwd }) {
-    const pkg = await readPackageJson(cwd);
-    if (!pkg) return [];
+    const pkgFile = await readProjectPackageJson(cwd);
+    if (!pkgFile) return [];
+    const pkg = pkgFile.data as PackageJsonShape;
     const hasPluginImport = !!pkg.devDependencies?.['eslint-plugin-import'] || !!pkg.dependencies?.['eslint-plugin-import'];
     const eslintRange = pkg.devDependencies?.eslint ?? pkg.dependencies?.eslint;
     if (!hasPluginImport || !eslintRange) return [];
@@ -305,20 +294,22 @@ const eslintPluginImportConflict: Check = {
         file: 'package.json',
         message: `eslint-plugin-import is installed alongside eslint ${eslintRange} — no version of eslint-plugin-import supports eslint@10+, which makes \`npm install\` fail outright. Run with --fix to remove it (only worth keeping if you've migrated to eslint-plugin-import-x and actually use its rules).`,
         fix: async () => {
-          const current = await readPackageJson(cwd);
+          const current = await readProjectPackageJson(cwd);
           if (!current) return;
-          const raw = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf-8')) as Record<string, unknown>;
-          if (current.devDependencies?.['eslint-plugin-import']) {
-            const devDeps = { ...current.devDependencies };
+          const raw = current.data;
+          const currentDevDeps = raw.devDependencies as Record<string, string> | undefined;
+          if (currentDevDeps?.['eslint-plugin-import']) {
+            const devDeps = { ...currentDevDeps };
             delete devDeps['eslint-plugin-import'];
             raw.devDependencies = devDeps;
           }
-          if (current.dependencies?.['eslint-plugin-import']) {
-            const deps = { ...current.dependencies };
+          const currentDeps = raw.dependencies as Record<string, string> | undefined;
+          if (currentDeps?.['eslint-plugin-import']) {
+            const deps = { ...currentDeps };
             delete deps['eslint-plugin-import'];
             raw.dependencies = deps;
           }
-          await writePackageJson(cwd, raw);
+          await writeProjectPackageJson(cwd, raw, current.indent);
         },
       },
     ];

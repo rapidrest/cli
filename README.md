@@ -66,6 +66,7 @@ rapidrest dev
 - [`rapidrest start`](#rapidrest-start)
 - [`rapidrest build`](#rapidrest-build)
 - [`rapidrest doctor`](#rapidrest-doctor)
+- [`rapidrest upgrade`](#rapidrest-upgrade)
 - [`rapidrest react export`](#rapidrest-react-export)
 
 ---
@@ -537,6 +538,54 @@ rapidrest doctor          # report findings
 rapidrest doctor --fix    # apply automatic fixes, then report what remains
 rapidrest doctor --json   # machine-readable output, e.g. for CI
 ```
+
+---
+
+### `rapidrest upgrade`
+
+Refresh an existing RapidREST project's generator-owned boilerplate files and dependency versions
+against the currently installed templates.
+
+```
+USAGE
+  $ rapidrest upgrade [--write] [--json]
+
+FLAGS
+  --write  Apply the changes. Without this flag, only reports what would change
+  --json   Output the plan as JSON instead of a formatted report
+```
+
+Run this from the root of a generated RapidREST project. Unlike [`doctor`](#rapidrest-doctor),
+which detects a fixed set of known-bad patterns, `upgrade` re-syncs a project against whatever the
+currently installed CLI's templates actually contain — dependency version bumps, config/build-file
+fixes, new boilerplate — the same way you'd get by hand-diffing a fresh scaffold against your
+existing project, but automated.
+
+It only ever touches a file that already exists in the project, and never creates a new one — a
+project that never opted into Docker/Kubernetes/a given default route simply doesn't have that
+file on disk, so nothing is added on its behalf. `src/config.ts` and `test/config.ts` are never
+touched at all (they're user-edited and mutated by `generate model`/`generate route`'s patches, so
+they need surgical handling — see `doctor`), and `package.json` is never overwritten wholesale:
+only known dependency version pins are updated or added, your own added dependencies and `scripts`
+are left exactly as they are.
+
+**Example:**
+
+```sh
+rapidrest upgrade          # report what would change
+rapidrest upgrade --write  # apply it
+rapidrest upgrade --json   # machine-readable output, e.g. for CI
+```
+
+**Known limitations:**
+
+- Copyright-year headers (`Copyright (C) {{year}} {{author}}`) will show as "changed" every time
+  the calendar year rolls over — harmless, but expect a one-line diff on otherwise-unchanged files
+  each January.
+- If `src/routes/HelloRoute.ts` was deleted, the API route prefix can't be recovered, which can
+  cause a false-positive diff on any surviving default-route file's decorator line.
+- Dependency sync never *removes* a stale or renamed dependency (e.g. a package the template
+  dropped) — that's [`doctor`](#rapidrest-doctor)'s job.
 
 ---
 

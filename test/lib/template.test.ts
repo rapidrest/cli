@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach, afterAll, afterEach } from 'vitest';
 import { mkdtemp, rm, writeFile, mkdir, readFile } from 'fs/promises';
 import { join } from 'path';
 import os from 'os';
-import { processTemplate } from '../../src/lib/template.js';
+import { processTemplate, renderTemplateFiles } from '../../src/lib/template.js';
 
 describe('processTemplate', () => {
   let templateDir: string;
@@ -411,5 +411,111 @@ describe('processTemplate', () => {
       expect(helmOut).toBe('name: myapp');
       expect(readmeOut).toBe('Project: myapp');
     });
+  });
+});
+
+describe('renderTemplateFiles', () => {
+  let templateDir: string;
+  const cleanupDirs: string[] = [];
+
+  async function tmpDir(): Promise<string> {
+    const dir = await mkdtemp(join(os.tmpdir(), 'rr-render-'));
+    cleanupDirs.push(dir);
+    return dir;
+  }
+
+  beforeEach(async () => {
+    templateDir = await tmpDir();
+  });
+
+  afterAll(async () => {
+    await Promise.all(cleanupDirs.map((d) => rm(d, { recursive: true, force: true })));
+  });
+
+  it('renders content and the compiled output path without writing anything to disk', async () => {
+    await writeFile(join(templateDir, '{{name}}.ts'), 'export const greeting = "Hello, {{name}}!";');
+    const results = await renderTemplateFiles(templateDir, { name: 'World' });
+    expect(results).toEqual([{ relPath: 'World.ts', content: 'export const greeting = "Hello, World!";' }]);
+  });
+
+  it('skips template.config.json itself', async () => {
+    await writeFile(join(templateDir, 'template.config.json'), JSON.stringify({}));
+    await writeFile(join(templateDir, 'a.ts'), 'a');
+    const results = await renderTemplateFiles(templateDir, {});
+    expect(results.map((r) => r.relPath)).toEqual(['a.ts']);
+  });
+
+  it('excludes conditionalFiles whose condition is falsy', async () => {
+    await writeFile(
+      join(templateDir, 'template.config.json'),
+      JSON.stringify({ conditionalFiles: [{ file: 'Dockerfile', condition: 'features.docker' }] }),
+    );
+    await writeFile(join(templateDir, 'Dockerfile'), 'FROM node');
+    const results = await renderTemplateFiles(templateDir, { features: { docker: false } });
+    expect(results).toHaveLength(0);
+  });
+
+  it('includes conditionalFiles whose condition is truthy', async () => {
+    await writeFile(
+      join(templateDir, 'template.config.json'),
+      JSON.stringify({ conditionalFiles: [{ file: 'Dockerfile', condition: 'features.docker' }] }),
+    );
+    await writeFile(join(templateDir, 'Dockerfile'), 'FROM node');
+    const results = await renderTemplateFiles(templateDir, { features: { docker: true } });
+    expect(results.map((r) => r.relPath)).toEqual(['Dockerfile']);
+  });
+
+  it('excludes patch template fragments from the results', async () => {
+    await mkdir(join(templateDir, 'patches'), { recursive: true });
+    await writeFile(join(templateDir, 'patches', 'frag.json'), '{}');
+    await writeFile(
+      join(templateDir, 'template.config.json'),
+      JSON.stringify({
+        patches: [{ template: 'patches/frag.json', target: 'package.json', strategy: 'json-merge' }],
+      }),
+    );
+    await writeFile(join(templateDir, 'a.ts'), 'a');
+    const results = await renderTemplateFiles(templateDir, {});
+    expect(results.map((r) => r.relPath)).toEqual(['a.ts']);
+  });
+
+  it('does not apply patches (no target files are touched, no error)', async () => {
+    await mkdir(join(templateDir, 'patches'), { recursive: true });
+    await writeFile(join(templateDir, 'patches', 'frag.json'), '{ "dependencies": { "foo": "1.0.0" } }');
+    await writeFile(
+      join(templateDir, 'template.config.json'),
+      JSON.stringify({
+        patches: [{ template: 'patches/frag.json', target: 'package.json', strategy: 'json-merge' }],
+      }),
+    );
+    await expect(renderTemplateFiles(templateDir, {})).resolves.toBeDefined();
+  });
+
+  it('skips binary files entirely', async () => {
+    await writeFile(join(templateDir, 'logo.png'), Buffer.from([0, 1, 2, 3]));
+    await writeFile(join(templateDir, 'a.ts'), 'a');
+    const results = await renderTemplateFiles(templateDir, {});
+    expect(results.map((r) => r.relPath)).toEqual(['a.ts']);
+  });
+
+  it('renders Helm-safe [[ ]] syntax for helmPaths files, leaving other files using Handlebars', async () => {
+    await mkdir(join(templateDir, 'helm'), { recursive: true });
+    await writeFile(join(templateDir, 'helm', 'Chart.yaml'), 'name: [[name]]');
+    await writeFile(join(templateDir, 'README.md'), 'Project: {{name}}');
+    await writeFile(join(templateDir, 'template.config.json'), JSON.stringify({ helmPaths: ['helm'] }));
+    const results = await renderTemplateFiles(templateDir, { name: 'myapp' });
+    const byPath = Object.fromEntries(results.map((r) => [r.relPath, r.content]));
+    expect(byPath['helm/Chart.yaml']).toBe('name: myapp');
+    expect(byPath['README.md']).toBe('Project: myapp');
+  });
+
+  it('escapes ${{ }} (CI syntax) so Handlebars does not try to parse it', async () => {
+    await writeFile(join(templateDir, 'workflow.yml'), 'run: echo ${{ secrets.TOKEN }}');
+    const results = await renderTemplateFiles(templateDir, {});
+    expect(results[0].content).toBe('run: echo ${{ secrets.TOKEN }}');
+  });
+
+  it('returns an empty array for a template dir with no template.config.json and no files', async () => {
+    expect(await renderTemplateFiles(templateDir, {})).toEqual([]);
   });
 });
