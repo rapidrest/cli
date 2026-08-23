@@ -62,6 +62,7 @@ rapidrest dev
 - [`rapidrest generate k8s`](#rapidrest-generate-k8s)
 - [`rapidrest generate react NAME`](#rapidrest-generate-react-name)
 - [`rapidrest generate react-page APP NAME`](#rapidrest-generate-react-page-app-name)
+- [`rapidrest generate auth`](#rapidrest-generate-auth)
 - [`rapidrest dev`](#rapidrest-dev)
 - [`rapidrest start`](#rapidrest-start)
 - [`rapidrest build`](#rapidrest-build)
@@ -478,6 +479,65 @@ rapidrest generate react-page app Dashboard --service
 
 # Nested page path — creates apps/app/my/path/page/index.tsx and src/services/MyPathPageService.ts
 rapidrest generate react-page app my/path/page --service
+```
+
+---
+
+### `rapidrest generate auth`
+
+Add login/session scaffolding to the current project, backed by [`@rapidrest/auth`](https://github.com/rapidrest/auth): self-service registration, HTTP Basic login, logout, and admin user management. Opt-in — nothing in the base `generate server` template depends on this.
+
+```
+USAGE
+  $ rapidrest generate auth [--datastore-type sql|mongo] [--sql-type postgres|better-sqlite3]
+      [--default-accounts] [--author <name>] [--output-dir <path>] [--force]
+
+FLAGS
+  --datastore-type <choice>  Which datastore backs authentication data: sql | mongo
+  --sql-type <choice>        When --datastore-type sql and no "sql" datastore exists yet, which SQL
+                              database to create it as: postgres | better-sqlite3
+  --default-accounts         Also provision a default admin account the first time the server boots
+                              against an empty user table
+  -a, --author <name>        Author to attribute the generated code to
+  --output-dir <path>        Directory to write the generated files into. Defaults to the current
+                              working directory
+  -f, --force                 Overwrite existing files
+```
+
+`@rapidrest/auth` ships ready-made model and route base classes — this command doesn't hand-write a
+`User` model, it generates thin subclasses that wire them up:
+
+| File | What it does |
+|------|---------|
+| `src/models/auth.ts` | Re-exports `User`/`Alias`/`Secret`/`Profile` (SQL or Mongo variant) so the server's ClassLoader discovers their metadata |
+| `src/routes/RegistrationRoute.ts` | Self-service sign-up — creates a user, login alias, and password in one call, then issues a token |
+| `src/routes/AuthBasicRoute.ts` | Username/password (HTTP Basic) login, issues a token |
+| `src/routes/AuthLogoutRoute.ts` | Clears the session cookie, if any |
+| `src/routes/UserRoute.ts` | Admin CRUD over user accounts (deny-by-default ACL; grant access via `trusted_roles`) |
+| `src/jobs/DefaultAccounts.ts` | Only with `--default-accounts` — auto-provisions a default admin account on first boot |
+
+**The datastore name matters.** `@rapidrest/auth`'s `User`/`Alias`/`Secret` model classes have a
+fixed datastore binding baked in — literally named `sql` or `mongo` — so this command reuses an
+existing datastore with that exact name if one exists, or creates one (patching `src/config.ts`)
+if not. This is unlike `generate model`, where you can name a datastore anything.
+
+Token issuing reuses the `auth:` block every generated project's `src/config.ts` already has — no
+new required config. `@rapidrest/auth` and `argon2` (used for password hashing) are added to
+`package.json`; install dependencies after running this command.
+
+**Out of scope** (all real, working parts of `@rapidrest/auth`, just not scaffolded by this
+command): MFA, OIDC, FIDO2, Passkey, TOTP, session refresh, account elevation, auth-method
+discovery, and direct Profile/Account/Alias/Secret management routes. Add those by hand, following
+the same thin-subclass pattern as the routes this command generates.
+
+**Example:**
+
+```sh
+rapidrest generate auth
+# → prompts for the datastore type, then writes the files above
+
+rapidrest generate auth --datastore-type sql --sql-type better-sqlite3
+rapidrest generate auth --datastore-type mongo --default-accounts
 ```
 
 ---

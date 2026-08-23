@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+**New: `generate auth`**
+
+* Added `rapidrest generate auth`, an opt-in command that scaffolds login/session support backed
+  by the now-stable `@rapidrest/auth@1.0.0`: self-service registration, HTTP Basic login, logout,
+  and admin user management, as thin subclasses of the library's own ready-made model/route base
+  classes (no hand-written `User` model). Supports both SQL and MongoDB, and an opt-in
+  `--default-accounts` flag that provisions a default admin account on first boot. Reintroduces,
+  as an opt-in command rather than baked into every scaffold, the auth scaffolding that was removed
+  earlier when `BasicStrategy` moved out of `@rapidrest/service-core` into the (then-prerelease)
+  `@rapidrest/auth` package
+* `detectApiRoute` (recovering a project's `/api` prefix convention from `HelloRoute.ts`) moved
+  from `upgrade.ts` to the shared `project.ts`, now used by both `upgrade` and `generate auth`
+
 **New: non-interactive `generate server`**
 
 * `rapidrest generate server` can now be run fully non-interactively: a new flag per prompt

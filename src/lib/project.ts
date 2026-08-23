@@ -304,3 +304,22 @@ export async function readProjectPackageJson(cwd: string): Promise<ProjectPackag
 export async function writeProjectPackageJson(cwd: string, data: Record<string, unknown>, indent: string): Promise<void> {
   await writeFile(join(cwd, 'package.json'), JSON.stringify(data, null, indent) + '\n', 'utf-8');
 }
+
+export interface ApiRouteInfo {
+  apiRoute: boolean;
+  apiVersion?: string;
+}
+
+// Recovers a project's apiRoute/apiVersion convention from the one place it's already baked into
+// generated content — there's no other record of what API prefix a project was scaffolded with.
+// Falls back to no prefix if HelloRoute.ts was deleted or doesn't match the expected shape.
+export async function detectApiRoute(cwd: string): Promise<ApiRouteInfo> {
+  try {
+    const content = await readFile(join(cwd, 'src', 'routes', 'HelloRoute.ts'), 'utf-8');
+    const match = content.match(/@(Api)?Route\(\s*["']\/hello["'](?:\s*,\s*["']([^"']*)["'])?\s*\)/);
+    if (!match) return { apiRoute: false };
+    return { apiRoute: !!match[1], apiVersion: match[2] || undefined };
+  } catch {
+    return { apiRoute: false };
+  }
+}

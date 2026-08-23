@@ -1,0 +1,21 @@
+{
+  "conditionalFiles": [
+    { "file": "src/jobs/DefaultAccounts.ts", "condition": "defaultAccounts" }
+  ],
+  "helmPaths": [],
+  "patches": [
+    {
+      "template": "patches/config-datastore.ts.hbs",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "datastores",
+      "idempotencyKey": "{{datastore}}",
+      "condition": "datastore"
+    },
+    {
+      "template": "patches/package.json",
+      "target": "package.json",
+      "strategy": "json-merge"
+    }
+  ]
+}

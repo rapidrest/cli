@@ -6,6 +6,7 @@ import { access, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { jsonMerge } from './patch.js';
 import {
+  detectApiRoute,
   detectPackageManager,
   detectReact,
   readProjectAuthor,
@@ -70,20 +71,6 @@ const SYNCABLE_TEMPLATE_DIRS = ['server', 'docker', 'helm', 'default-route'];
 // datastore), and the file is hand-edited after generation (RBAC flags, connection details). A
 // naive re-render from just features.* would silently drop anything beyond the base scaffold.
 const EXCLUDED_RELPATHS = new Set(['src/config.ts', 'test/config.ts']);
-
-// Recovers apiRoute/apiVersion from the one place they're baked into generated content — there's
-// no other record of what prefix a project was scaffolded with. Falls back to no prefix if
-// HelloRoute.ts was deleted or doesn't match the expected shape (a plain @Route/@ApiRoute call).
-async function detectApiRoute(cwd: string): Promise<{ apiRoute: boolean; apiVersion?: string }> {
-  try {
-    const content = await readFile(join(cwd, 'src', 'routes', 'HelloRoute.ts'), 'utf-8');
-    const match = content.match(/@(Api)?Route\(\s*["']\/hello["'](?:\s*,\s*["']([^"']*)["'])?\s*\)/);
-    if (!match) return { apiRoute: false };
-    return { apiRoute: !!match[1], apiVersion: match[2] || undefined };
-  } catch {
-    return { apiRoute: false };
-  }
-}
 
 async function buildContext(cwd: string): Promise<Record<string, unknown>> {
   const [datastores, pkgManager, author, projectName, apiInfo, pkgFile] = await Promise.all([

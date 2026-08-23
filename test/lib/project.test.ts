@@ -14,6 +14,7 @@ vi.mock('child_process', async (importOriginal) => {
 
 import { execFile } from 'child_process';
 import {
+  detectApiRoute,
   detectPackageManager,
   detectReact,
   extractDatastoreInfo,
@@ -30,6 +31,47 @@ import {
   readProjectModels,
   readProjectName,
 } from '../../src/lib/project.js';
+
+describe('detectApiRoute', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(os.tmpdir(), 'rrapi-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  async function writeHelloRoute(content: string): Promise<void> {
+    await mkdir(join(tmpDir, 'src', 'routes'), { recursive: true });
+    await writeFile(join(tmpDir, 'src', 'routes', 'HelloRoute.ts'), content, 'utf-8');
+  }
+
+  it('returns apiRoute: false when HelloRoute.ts uses a plain @Route', async () => {
+    await writeHelloRoute('@Route("/hello")\nexport default class HelloRoute {}');
+    expect(await detectApiRoute(tmpDir)).toEqual({ apiRoute: false });
+  });
+
+  it('returns apiRoute: true with the version when @ApiRoute has one', async () => {
+    await writeHelloRoute('@ApiRoute("/hello", "2")\nexport default class HelloRoute {}');
+    expect(await detectApiRoute(tmpDir)).toEqual({ apiRoute: true, apiVersion: '2' });
+  });
+
+  it('returns apiRoute: true with an undefined version when @ApiRoute has none', async () => {
+    await writeHelloRoute('@ApiRoute("/hello")\nexport default class HelloRoute {}');
+    expect(await detectApiRoute(tmpDir)).toEqual({ apiRoute: true, apiVersion: undefined });
+  });
+
+  it('falls back to apiRoute: false when HelloRoute.ts has no recognizable decorator', async () => {
+    await writeHelloRoute('export default class HelloRoute {}');
+    expect(await detectApiRoute(tmpDir)).toEqual({ apiRoute: false });
+  });
+
+  it('falls back to apiRoute: false when HelloRoute.ts does not exist', async () => {
+    expect(await detectApiRoute(tmpDir)).toEqual({ apiRoute: false });
+  });
+});
 
 describe('detectReact', () => {
   let tmpDir: string;
