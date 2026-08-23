@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+**New: `rapidrest doctor`**
+
+* Added a new `rapidrest doctor [--fix] [--json]` command that validates an existing generated
+  project against a set of known issues — a datastore `type` using this CLI's own feature-flag name
+  instead of TypeORM's driver literal, a `better-sqlite3` datastore missing its placeholder `host`,
+  a missing `vitest.config.ts`, `typeorm`/`redis` not resolvable for type-checking, an
+  `eslint-plugin-import` + `eslint@10` conflict, the old boolean-flag `ACLRecord` shape, and a
+  `JWTUser` object literal carrying an unsupported `name` field. Mechanically-safe findings can be
+  auto-fixed with `--fix`; the rest are reported for manual follow-up. Useful for validating projects
+  scaffolded a while ago that may have drifted from what the currently installed `@rapidrest/*`
+  libraries expect
+
 **Dependencies**
 
 * Upgraded `@rapidrest/core`, `@rapidrest/service-core`, and `@rapidrest/react` to their latest releases

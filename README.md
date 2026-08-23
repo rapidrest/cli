@@ -65,6 +65,7 @@ rapidrest dev
 - [`rapidrest dev`](#rapidrest-dev)
 - [`rapidrest start`](#rapidrest-start)
 - [`rapidrest build`](#rapidrest-build)
+- [`rapidrest doctor`](#rapidrest-doctor)
 - [`rapidrest react export`](#rapidrest-react-export)
 
 ---
@@ -497,6 +498,45 @@ USAGE
 ```
 
 Runs the project's `build` script via the detected package manager. Equivalent to `yarn build` or `npm run build` from the project root.
+
+---
+
+### `rapidrest doctor`
+
+Validate an existing RapidREST project against known issues and optionally fix them.
+
+```
+USAGE
+  $ rapidrest doctor [--fix] [--json]
+
+FLAGS
+  --fix   Automatically apply fixes for findings that support it
+  --json  Output findings as JSON instead of a formatted report
+```
+
+Run this from the root of a generated RapidREST project to check it against a set of known issues
+— bug patterns that have been found to break generated projects (a datastore's `type` using this
+CLI's own feature-flag name instead of TypeORM's driver literal, a missing `vitest.config.ts`,
+`typeorm`/`redis` not resolvable for type-checking, an `eslint-plugin-import` + `eslint@10` conflict,
+the old boolean-flag `ACLRecord` shape, and a few others). This is useful for projects that were
+scaffolded a while ago and may have drifted from what the currently installed `@rapidrest/*`
+libraries expect, not just freshly generated ones.
+
+Each finding is reported with a severity (`error` or `warning`) and, where the fix is mechanical and
+safe to apply automatically, a note that `--fix` can resolve it. Findings without a safe automatic
+fix (e.g. the old ACL format, which needs a per-record judgment call to migrate correctly) are
+reported for you to address by hand.
+
+Exits with a non-zero code if any `error`-severity finding remains after fixing (or immediately, if
+`--fix` wasn't passed).
+
+**Example:**
+
+```sh
+rapidrest doctor          # report findings
+rapidrest doctor --fix    # apply automatic fixes, then report what remains
+rapidrest doctor --json   # machine-readable output, e.g. for CI
+```
 
 ---
 
