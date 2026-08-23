@@ -10,6 +10,8 @@ import {
   readProjectDatastores,
   readProjectModels,
   readModelDatastore,
+  readModelProperty,
+  formatExamplePropertyValue,
 } from '../../lib/project.js';
 import GenerateModel from './model.js';
 import { inputAuthor } from '../../lib/prompts.js';
@@ -105,12 +107,22 @@ export default class GenerateRoute extends Command {
     let datastore = '';
     let datastoreType = '';
     let hasRedis: boolean = false;
+    // Picks a real property off the model to exercise in the generated update tests, rather than
+    // assuming a hardcoded field that may not exist on the model (e.g. a `status` enum).
+    let examplePropertyName = 'name';
+    let examplePropertyValue = '"updated"';
     if (model) {
       datastore = await readModelDatastore(cwd, model);
       if (datastore) {
         const configured = await readProjectDatastores(cwd);
         datastoreType = configured.find((d) => d.name === datastore)?.type ?? '';
         hasRedis = configured.find((d) => d.type === 'redis') ? true : hasRedis;
+      }
+
+      const property = await readModelProperty(cwd, model);
+      if (property) {
+        examplePropertyName = property.name;
+        examplePropertyValue = formatExamplePropertyValue(property.type);
       }
     }
 
@@ -130,6 +142,8 @@ export default class GenerateRoute extends Command {
       description,
       datastore,
       datastoreType,
+      examplePropertyName,
+      examplePropertyValue,
       hasRedis,
       model,
       name: args.name,

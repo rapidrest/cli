@@ -162,6 +162,65 @@ describe('generate model', () => {
       expect(context.isRedis).toBe(false);
     });
 
+    it('sets isPostgreSql true when an existing datastore\'s type is "postgres" (TypeORM\'s own driver literal)', async () => {
+      vi.mocked(readProjectDatastores).mockResolvedValue([
+        ...DEFAULT_DATASTORES,
+        { name: 'pg', type: 'postgres' },
+      ]);
+      stubPrompts({ datastore: 'pg', author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.isPostgreSql).toBe(true);
+      expect(context.isMongoDb).toBe(false);
+      expect(context.isSqlite).toBe(false);
+    });
+
+    it('sets isSqlite true when an existing datastore\'s type is "better-sqlite3" (TypeORM\'s own driver literal)', async () => {
+      vi.mocked(readProjectDatastores).mockResolvedValue([
+        ...DEFAULT_DATASTORES,
+        { name: 'sqlite', type: 'better-sqlite3' },
+      ]);
+      stubPrompts({ datastore: 'sqlite', author: 'Author' });
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.isSqlite).toBe(true);
+      expect(context.isMongoDb).toBe(false);
+      expect(context.isPostgreSql).toBe(false);
+    });
+
+    it('sets isSqlite true for a brand new datastore (the "Select database type" prompt uses the friendly "sqlite" value)', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60');
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__')
+        .mockResolvedValueOnce('sqlite');
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.isSqlite).toBe(true);
+    });
+
+    it('sets isPostgreSql true for a brand new datastore (the "Select database type" prompt already uses TypeORM\'s "postgres" value)', async () => {
+      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60');
+      vi.mocked(select)
+        .mockResolvedValueOnce('__new__')
+        .mockResolvedValueOnce('postgres');
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.isPostgreSql).toBe(true);
+      expect(context.datastore).toBe('postgres');
+    });
+
     it('includes project_name from package.json in the context', async () => {
       stubPrompts({ author: 'Author' });
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);

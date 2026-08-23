@@ -27,9 +27,9 @@ export default class HelloRoute {
      */
     @Summary("hello")
     @Description("Sends a friendly greeting to the user.")
-    @Returns([string])
+    @Returns([String])
     @Get()
     private async hello(@User user?: JWTUser): Promise<string> {
-        return `Hello ${user ? user.name : 'World'}!`;
+        return `Hello ${user ? user.uid : 'World'}!`;
     }
 }

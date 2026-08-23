@@ -50,7 +50,7 @@ conf.defaults({
             database: "acls",
             synchronize: true,
             {{else if features.postgresql}}
-            type: "postgresql",
+            type: "postgres",
             host: "localhost",
             port: 5432,
             database: "acls",
@@ -58,7 +58,8 @@ conf.defaults({
             password: "postgres",
             synchronize: true,
             {{else if features.sqlite}}
-            type: "sqlite",
+            type: "better-sqlite3",
+            host: "localhost",
             database: "./data/acls.db",
             synchronize: true,
             {{/if}}
@@ -73,7 +74,7 @@ conf.defaults({
         {{/if}}
         {{#if features.postgresql}}
         postgres: {
-            type: "postgresql",
+            type: "postgres",
             host: "localhost",
             port: 5432,
             database: "{{project_name}}",
@@ -84,7 +85,11 @@ conf.defaults({
         {{/if}}
         {{#if features.sqlite}}
         sqlite: {
-            type: "sqlite",
+            type: "better-sqlite3",
+            // better-sqlite3 is file-based and never actually connects over the network, but
+            // ConnectionManager.buildConnectionUri() requires a `host` regardless (unless `url`
+            // is set) to build a connection string, so this stays a harmless placeholder.
+            host: "localhost",
             database: "./data/{{project_name}}.db",
             synchronize: true,
         },

@@ -146,9 +146,15 @@ export default class GenerateModel extends Command {
       protect,
       year: new Date().getFullYear(),
       project_name: await readProjectName(process.cwd()),
+      // `datastoreType` is either the friendly value picked in the "Select database type" prompt
+      // below ('mongodb'/'postgres'/'sqlite') when setting up a brand new datastore, or read back
+      // verbatim from an existing datastore's `type:` field in config.ts otherwise — which, for a
+      // SQL store, is TypeORM's own driver literal ('postgres'/'better-sqlite3', not 'postgresql'/
+      // 'sqlite' — see the DatabaseType union in typeorm/driver/types/DatabaseType.ts). Both forms
+      // are accepted here so an existing sqlite datastore is still recognized correctly.
       isMongoDb:    datastoreType === 'mongodb',
-      isPostgreSql: datastoreType === 'postgresql',
-      isSqlite:     datastoreType === 'sqlite',
+      isPostgreSql: datastoreType === 'postgres',
+      isSqlite:     datastoreType === 'sqlite' || datastoreType === 'better-sqlite3',
       isRedis:      datastoreType === 'redis',
     };
 

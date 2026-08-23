@@ -17,9 +17,13 @@ import {
   detectPackageManager,
   detectReact,
   extractDatastoreInfo,
+  extractFirstModelProperty,
   extractModelDatastore,
+  findExistingReactApps,
+  formatExamplePropertyValue,
   readGitAuthor,
   readModelDatastore,
+  readModelProperty,
   readProjectAuthor,
   readProjectDatastores,
   readProjectModels,
@@ -326,6 +330,79 @@ describe('readProjectDatastores', () => {
   });
 });
 
+describe('findExistingReactApps', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(os.tmpdir(), 'rrapps-'));
+    await mkdir(join(tmpDir, 'src', 'routes'), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns an empty array when src/routes does not exist', async () => {
+    await rm(join(tmpDir, 'src', 'routes'), { recursive: true, force: true });
+    expect(await findExistingReactApps(tmpDir)).toEqual([]);
+  });
+
+  it('returns an empty array when src/routes has no ReactRoute subclasses', async () => {
+    await writeFile(join(tmpDir, 'src', 'routes', 'UserRoute.ts'), `export class UserRoute extends ModelRoute {}`);
+    expect(await findExistingReactApps(tmpDir)).toEqual([]);
+  });
+
+  it('extracts className, appDir, and the @Route mount path from a ReactRoute subclass', async () => {
+    await writeFile(
+      join(tmpDir, 'src', 'routes', 'AppRoute.ts'),
+      `import { ReactRoute } from "@rapidrest/react";\n` +
+        `@Route("/")\n` +
+        `export class AppRoute extends ReactRoute {\n` +
+        `    protected readonly appDir: string = "app";\n` +
+        `}\n`,
+    );
+    expect(await findExistingReactApps(tmpDir)).toEqual([
+      { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/' },
+    ]);
+  });
+
+  it('defaults routePath to "" when no @Route decorator is present', async () => {
+    await writeFile(
+      join(tmpDir, 'src', 'routes', 'AppRoute.ts'),
+      `export class AppRoute extends ReactRoute {\n    protected readonly appDir: string = "app";\n}\n`,
+    );
+    const [app] = await findExistingReactApps(tmpDir);
+    expect(app.routePath).toBe('');
+  });
+
+  it('skips a ReactRoute subclass with no appDir field (nothing to migrate/report)', async () => {
+    await writeFile(join(tmpDir, 'src', 'routes', 'AppRoute.ts'), `export class AppRoute extends ReactRoute {}`);
+    expect(await findExistingReactApps(tmpDir)).toEqual([]);
+  });
+
+  it('finds every app across multiple route files', async () => {
+    await writeFile(
+      join(tmpDir, 'src', 'routes', 'WwwRoute.ts'),
+      `@Route("/")\nexport class WwwRoute extends ReactRoute {\n    protected readonly appDir: string = "apps/www";\n}\n`,
+    );
+    await writeFile(
+      join(tmpDir, 'src', 'routes', 'AdminRoute.ts'),
+      `@Route("/admin")\nexport class AdminRoute extends ReactRoute {\n    protected readonly appDir: string = "apps/admin";\n}\n`,
+    );
+    const apps = await findExistingReactApps(tmpDir);
+    expect(apps.map((a) => a.appDir).sort()).toEqual(['apps/admin', 'apps/www']);
+  });
+
+  it('ignores non-.ts files and .d.ts files in src/routes', async () => {
+    await writeFile(join(tmpDir, 'src', 'routes', 'readme.txt'), 'not a route');
+    await writeFile(
+      join(tmpDir, 'src', 'routes', 'AppRoute.d.ts'),
+      `export class AppRoute extends ReactRoute {\n    protected readonly appDir: string = "app";\n}\n`,
+    );
+    expect(await findExistingReactApps(tmpDir)).toEqual([]);
+  });
+});
+
 describe('extractModelDatastore', () => {
   it('extracts the datastore name from a @DataStore decorator', () => {
     expect(extractModelDatastore(`@DataStore('acl')\nclass Foo {}`)).toBe('acl');
@@ -398,5 +475,91 @@ describe('readModelDatastore', () => {
   it('returns an empty string when the model has no @DataStore decorator', async () => {
     await writeFile(join(tmpDir, 'src', 'models', 'Simple.ts'), 'export default class Simple {}');
     expect(await readModelDatastore(tmpDir, 'Simple')).toBe('');
+  });
+});
+
+describe('extractFirstModelProperty', () => {
+  it('finds the first public field declared on the model', () => {
+    const source = `
+class Product {
+    @Identifier
+    @Column()
+    public name: string = "";
+
+    @Column()
+    public price: number = 0;
+}`;
+    expect(extractFirstModelProperty(source)).toEqual({ name: 'name', type: 'string' });
+  });
+
+  it('skips constructor body assignments like `this.name = ...`', () => {
+    const source = `
+class Product {
+    public name: string = "";
+
+    constructor(other?: any) {
+        this.name = "name" in other ? other.name.trim() : this.name;
+    }
+}`;
+    expect(extractFirstModelProperty(source)).toEqual({ name: 'name', type: 'string' });
+  });
+
+  it('handles optional properties with no default value', () => {
+    const source = `class Product {\n    public sku?: string;\n}`;
+    expect(extractFirstModelProperty(source)).toEqual({ name: 'sku', type: 'string' });
+  });
+
+  it('handles union types', () => {
+    const source = `class Product {\n    public phone: string | undefined = undefined;\n}`;
+    expect(extractFirstModelProperty(source)).toEqual({ name: 'phone', type: 'string | undefined' });
+  });
+
+  it('returns undefined when no public field is declared', () => {
+    expect(extractFirstModelProperty(`class Product {}`)).toBeUndefined();
+  });
+});
+
+describe('readModelProperty', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(os.tmpdir(), 'rrmp-'));
+    await mkdir(join(tmpDir, 'src', 'models'), { recursive: true });
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('reads the first declared property from the named model file', async () => {
+    await writeFile(
+      join(tmpDir, 'src', 'models', 'Product.ts'),
+      `export default class Product {\n    public sku: string = "";\n}`,
+    );
+    expect(await readModelProperty(tmpDir, 'Product')).toEqual({ name: 'sku', type: 'string' });
+  });
+
+  it('returns undefined when the model file does not exist', async () => {
+    expect(await readModelProperty(tmpDir, 'Missing')).toBeUndefined();
+  });
+});
+
+describe('formatExamplePropertyValue', () => {
+  it('returns a string literal for string types', () => {
+    expect(formatExamplePropertyValue('string')).toBe('"updated"');
+    expect(formatExamplePropertyValue('string | undefined')).toBe('"updated"');
+  });
+
+  it('returns a numeric literal for number types', () => {
+    expect(formatExamplePropertyValue('number')).toBe('42');
+  });
+
+  it('returns a boolean literal for boolean types', () => {
+    expect(formatExamplePropertyValue('boolean')).toBe('true');
+  });
+
+  it('falls back to an `as any` string cast for unrecognized types', () => {
+    expect(formatExamplePropertyValue('ProductStatus')).toBe('"updated" as any');
+    expect(formatExamplePropertyValue('string[]')).toBe('"updated" as any');
   });
 });

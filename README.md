@@ -350,6 +350,13 @@ FLAGS
   -f, --force          Overwrite existing files
 ```
 
+Running this a second time with a different `NAME` adds a second app to the same project — every
+app gets its own `apps/<name>/` directory, its own `ReactRoute` subclass (its own `appDir` and
+`@Route` mount path), and `vite.config.ts`/`tsconfig.client.json` are regenerated to cover every
+app in the project. If the project's first app was generated before multi-app support existed
+(a plain `app/` directory, not yet under `apps/`), it's **migrated automatically** — moved to
+`apps/<name>/` and its route class updated — no manual restructuring step required.
+
 **Example:**
 
 ```sh
@@ -357,6 +364,9 @@ cd my-api
 rapidrest generate react app
 rapidrest generate react app --path /dashboard --hydrate
 rapidrest dev
+
+# Add a second app — migrates app/ to apps/app/ if needed, regenerates vite.config.ts for both
+rapidrest generate react admin --path /admin
 ```
 
 ---

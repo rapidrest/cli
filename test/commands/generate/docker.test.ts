@@ -73,8 +73,8 @@ describe('generate docker', () => {
       expect(context.hasRedis).toBe(false);
     });
 
-    it('sets hasPostgres true when any datastore type is postgresql', async () => {
-      vi.mocked(readProjectDatastores).mockResolvedValue([{ name: 'db', type: 'postgresql' }]);
+    it('sets hasPostgres true when any datastore type is postgres', async () => {
+      vi.mocked(readProjectDatastores).mockResolvedValue([{ name: 'db', type: 'postgres' }]);
 
       await GenerateDocker.run([], ROOT);
 
@@ -98,7 +98,7 @@ describe('generate docker', () => {
     it('sets all boolean flags true when all three types are present', async () => {
       vi.mocked(readProjectDatastores).mockResolvedValue([
         { name: 'acl', type: 'mongodb' },
-        { name: 'pg', type: 'postgresql' },
+        { name: 'pg', type: 'postgres' },
         { name: 'cache', type: 'redis' },
       ]);
 

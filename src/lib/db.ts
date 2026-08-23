@@ -32,7 +32,9 @@ export async function detectDatabases(cwd: string): Promise<DatabaseConfig> {
     return {
       mongodb: hasType('mongodb'),
       redis: hasType('redis'),
-      postgresql: hasType('postgresql'),
+      // config.ts declares TypeORM's own driver literal ("postgres", not "postgresql" — see
+      // typeorm's DatabaseType union), not the "postgresql" feature-flag name.
+      postgresql: hasType('postgres'),
     };
   } catch {
     return { mongodb: false, redis: false, postgresql: false };

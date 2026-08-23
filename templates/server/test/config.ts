@@ -30,17 +30,17 @@ conf.defaults({
             port: 9999,
             database: "acls",
             synchronize: true,
-            {{else if features.postgresql}}
-            type: "postgresql",
+            {{else if features.hasSqlDatastore}}
+            // Tests always run the SQL datastore(s) against better-sqlite3 rather than a real
+            // Postgres server, even when the project's own config.ts targets postgres — TypeORM's
+            // driver abstraction means the same entities/queries work against either, and an
+            // in-memory sqlite database needs no external server and gets a clean slate every run.
+            // `host` is a harmless placeholder — better-sqlite3 never uses it, but
+            // ConnectionManager.buildConnectionUri() requires one (unless `url` is set) to build
+            // a connection string.
+            type: "better-sqlite3",
             host: "localhost",
-            port: 5432,
-            database: "acls",
-            username: "postgres",
-            password: "postgres",
-            synchronize: true,
-            {{else if features.sqlite}}
-            type: "sqlite",
-            database: "./data/acls.db",
+            database: ":memory:",
             synchronize: true,
             {{/if}}
         },
@@ -51,6 +51,22 @@ conf.defaults({
             host: "localhost",
             port: 9999,
             database: "{{project_name}}",
+        },
+        {{/if}}
+        {{#if features.postgresql}}
+        postgres: {
+            type: "better-sqlite3",
+            host: "localhost",
+            database: ":memory:",
+            synchronize: true,
+        },
+        {{/if}}
+        {{#if features.sqlite}}
+        sqlite: {
+            type: "better-sqlite3",
+            host: "localhost",
+            database: ":memory:",
+            synchronize: true,
         },
         {{/if}}
     },

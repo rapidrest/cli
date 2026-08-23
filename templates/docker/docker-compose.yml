@@ -10,7 +10,7 @@ services:
             - datastores__{{name}}__type={{type}}
 {{#if (eq type "mongodb")}}
             - datastores__{{name}}__url=mongodb://mongo
-{{else if (eq type "postgresql")}}
+{{else if (eq type "postgres")}}
             - datastores__{{name}}__url=postgres://postgres
 {{else if (eq type "redis")}}
             - datastores__{{name}}__url=redis://redis

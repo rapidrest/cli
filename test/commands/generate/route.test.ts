@@ -25,7 +25,9 @@ vi.mock('../../../src/lib/project.js', () => ({
   readProjectAuthor: vi.fn(),
   readProjectModels: vi.fn(),
   readModelDatastore: vi.fn(),
+  readModelProperty: vi.fn(),
   readProjectDatastores: vi.fn(),
+  formatExamplePropertyValue: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/prompts.js', () => ({
@@ -41,7 +43,9 @@ import { processTemplate } from '../../../src/lib/template.js';
 import {
   readProjectModels,
   readModelDatastore,
+  readModelProperty,
   readProjectDatastores,
+  formatExamplePropertyValue,
 } from '../../../src/lib/project.js';
 import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateModel from '../../../src/commands/generate/model.js';
@@ -86,6 +90,8 @@ describe('generate route', () => {
     vi.mocked(inputAuthor).mockResolvedValue('Default Author');
     vi.mocked(readProjectModels).mockResolvedValue(['Product', 'User']);
     vi.mocked(readModelDatastore).mockResolvedValue('acl');
+    vi.mocked(readModelProperty).mockResolvedValue({ name: 'name', type: 'string' });
+    vi.mocked(formatExamplePropertyValue).mockReturnValue('"updated"');
     vi.mocked(readProjectDatastores).mockResolvedValue([{ name: 'acl', type: 'mongodb' }]);
     (GenerateModel as any).run.mockResolvedValue(undefined);
   });
@@ -177,6 +183,43 @@ describe('generate route', () => {
       expect(context.datastore).toBe('');
       expect(context.datastoreType).toBe('');
       expect(readProjectDatastores).not.toHaveBeenCalled();
+    });
+
+    it('picks the first property found on the model as the example update target', async () => {
+      vi.mocked(readModelProperty).mockResolvedValue({ name: 'sku', type: 'number' });
+      vi.mocked(formatExamplePropertyValue).mockReturnValue('42');
+      stubPrompts({ model: 'Product', author: 'Author' });
+
+      await GenerateRoute.run(['ProductRoute'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(readModelProperty).toHaveBeenCalledWith(expect.any(String), 'Product');
+      expect(formatExamplePropertyValue).toHaveBeenCalledWith('number');
+      expect(context.examplePropertyName).toBe('sku');
+      expect(context.examplePropertyValue).toBe('42');
+    });
+
+    it('falls back to a "name" string property when the model has no readable properties', async () => {
+      vi.mocked(readModelProperty).mockResolvedValue(undefined);
+      stubPrompts({ model: 'Product', author: 'Author' });
+
+      await GenerateRoute.run(['ProductRoute'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.examplePropertyName).toBe('name');
+      expect(context.examplePropertyValue).toBe('"updated"');
+      expect(formatExamplePropertyValue).not.toHaveBeenCalled();
+    });
+
+    it('does not read model properties when no model is selected', async () => {
+      stubPrompts({ model: '', author: 'Author' });
+
+      await GenerateRoute.run(['ProductRoute'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.examplePropertyName).toBe('name');
+      expect(context.examplePropertyValue).toBe('"updated"');
+      expect(readModelProperty).not.toHaveBeenCalled();
     });
   });
 

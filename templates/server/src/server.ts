@@ -33,15 +33,19 @@ const start = async function (config: any, logger: any) {
         logger.debug(err);
     }
 
-    // Initialize EventUtils to be able to send out telemetry events
-    const auth: any = config.get("auth");
+    // Initialize EventUtils to be able to send out telemetry events. This service token is meant to
+    // never expire, but config.get() returns a live reference into nconf's store, not a copy — deleting
+    // expiresIn directly would strip it from every other token issued afterward (e.g. real user logins)
+    // for the rest of the process. Deep-copy first so only this token is affected.
+    const auth: any = structuredClone(config.get("auth"));
     delete auth.options.expiresIn;
     const token: string = await JWTUtils.createToken(auth,
         {
             uid: `${config.get("service_name")}-${os.hostname()}`,
-            name: `${config.get("service_name")}-${os.hostname()}`,
             roles: config.get("trusted_roles"),
-        });
+            scopes: [],
+        },
+        { name: `${config.get("service_name")}-${os.hostname()}` });
     await EventUtils.init(config, logger, token);
 
     // Create and start the server

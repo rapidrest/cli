@@ -1,6 +1,5 @@
 import globals from "globals";
 import typescriptParser from "@typescript-eslint/parser";
-import pluginImport from "eslint-plugin-import";
 import jsdoc from "eslint-plugin-jsdoc";
 import typescriptEslint from "@typescript-eslint/eslint-plugin";
 export default [
@@ -23,7 +22,6 @@ export default [
 
 
         plugins: {
-            import: pluginImport,
             jsdoc: jsdoc,
             typescript: typescriptEslint
         },
@@ -94,7 +92,6 @@ export default [
                 "undefined",
             ],
             "id-match": "error",
-            // Does not currently support flat config "import/no-deprecated": "error",
             "jsdoc/check-alignment": "error",
             "jsdoc/check-indentation": "error",
             "jsdoc/newline-after-description": 0,

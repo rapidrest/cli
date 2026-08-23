@@ -119,6 +119,11 @@ export default class GenerateServer extends Command {
         electron: allFeatures.includes('electron'),
         k8s: allFeatures.includes('k8s'),
         hasDatabase: allFeatures.includes('mongodb') || allFeatures.includes('postgresql') || allFeatures.includes('sqlite'),
+        // TypeORM (and its `typeorm` dependency) backs both the postgresql and sqlite datastore
+        // types, so package.json gates it on this combined flag rather than duplicating a
+        // "typeorm" entry under two separate {{#if}} blocks — which would produce a duplicate
+        // JSON key if a project selects both (dbFeatures is a multi-select checkbox).
+        hasSqlDatastore: allFeatures.includes('postgresql') || allFeatures.includes('sqlite'),
       },
       pkgMgr: {
         npm: pkgMgr === 'npm',

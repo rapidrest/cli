@@ -39,8 +39,8 @@ describe('detectDatabases', () => {
     expect(result.mongodb).toBe(false);
   });
 
-  it('detects postgresql from type: "postgresql" in datastores', async () => {
-    await writeConfig(`conf.defaults({ datastores: { pg: { type: "postgresql", host: "localhost" } } });`);
+  it('detects postgresql from type: "postgres" in datastores (TypeORM\'s driver literal, not the feature name)', async () => {
+    await writeConfig(`conf.defaults({ datastores: { pg: { type: "postgres", host: "localhost" } } });`);
     const result = await detectDatabases(tmpDir);
     expect(result.postgresql).toBe(true);
     expect(result.mongodb).toBe(false);
@@ -50,7 +50,7 @@ describe('detectDatabases', () => {
     await writeConfig(`conf.defaults({ datastores: {
       acl: { type: "mongodb", host: "localhost" },
       cache: { type: "redis", url: "redis://localhost" },
-      pg: { type: "postgresql", host: "localhost" },
+      pg: { type: "postgres", host: "localhost" },
     } });`);
     const result = await detectDatabases(tmpDir);
     expect(result).toEqual({ mongodb: true, redis: true, postgresql: true });

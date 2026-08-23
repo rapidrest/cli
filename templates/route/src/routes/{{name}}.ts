@@ -75,8 +75,7 @@ const {
                 actions: [ACLAction.READ, ACLAction.LIST, ACLAction.COUNT, ACLAction.EXISTS],
             }
         ]
-    },
-    true
+    }
 )
 {{/if}}
 export default class {{name}}{{#if model}} extends CRUDRoute<{{model}}>{{/if}} {
@@ -94,10 +93,10 @@ export default class {{name}}{{#if model}} extends CRUDRoute<{{model}}>{{/if}} {
      */
     @Summary("hello")
     @Description("Sends a friendly greeting to the user.")
-    @Returns([string])
+    @Returns([String])
     @Get()
     private async hello(@User user?: JWTUser): Promise<string> {
-        return `Hello ${user ? user.name : 'World'}!`;
+        return `Hello ${user ? user.uid : 'World'}!`;
     }
 {{/unless}}
 }

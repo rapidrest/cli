@@ -165,6 +165,30 @@ describe('generate server', () => {
     });
   });
 
+  it('sets hasSqlDatastore true when postgresql or sqlite is selected', async () => {
+    for (const db of ['postgresql', 'sqlite']) {
+      vi.clearAllMocks();
+      vi.mocked(processTemplate).mockResolvedValue(undefined);
+      vi.mocked(inputAuthor).mockResolvedValue('Default Author');
+      (GenerateDocker as any).run.mockResolvedValue(undefined);
+      (GenerateHelm as any).run.mockResolvedValue(undefined);
+      (GenerateReact as any).run.mockResolvedValue(undefined);
+      (GenerateDefaultRoute as any).run.mockResolvedValue(undefined);
+      stubPrompts({ dbFeatures: [db], otherFeatures: [] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context as Record<string, Record<string, boolean>>).features.hasSqlDatastore).toBe(true);
+    }
+  });
+
+  it('sets hasSqlDatastore false when mongodb or redis is selected without a SQL store', async () => {
+    stubPrompts({ dbFeatures: ['mongodb', 'redis'], otherFeatures: [] });
+    await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);
+
+    const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+    expect((context as Record<string, Record<string, boolean>>).features.hasSqlDatastore).toBe(false);
+  });
+
   it('maps the SCM choice to a boolean map on context.scm', async () => {
     stubPrompts({ scm: 'github' });
     await GenerateServer.run(['my-api', '--output-dir', '/tmp/server-out'], ROOT);

@@ -35,7 +35,8 @@ export default class GenerateDocker extends Command {
     ]);
 
     const hasMongoDB = datastores.some((ds) => ds.type === 'mongodb');
-    const hasPostgres = datastores.some((ds) => ds.type === 'postgresql');
+    // config.ts stores TypeORM's own driver literal ("postgres"), not the "postgresql" feature name.
+    const hasPostgres = datastores.some((ds) => ds.type === 'postgres');
     const hasRedis = datastores.some((ds) => ds.type === 'redis');
 
     const context: Record<string, unknown> = {

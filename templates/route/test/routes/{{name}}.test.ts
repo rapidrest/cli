@@ -23,7 +23,7 @@ vi.mock("redis", () => {
     return { createClient: () => client };
 });
 {{/if}}
-import config from "./config";
+import config from "../config.js";
 import { request } from "@rapidrest/service-core/test";
 import {
     {{#if model}}
@@ -67,6 +67,17 @@ describe("Route:{{name}} Tests", () => {
     const server: Server = new Server({ config, basePath: "./src", logger, objectFactory });
     const baseUrl = "{{#if apiRoute}}/api{{#if apiVersion}}/v{{apiVersion}}{{/if}}{{/if}}{{path}}";
     {{#if model}}
+    // HTTP responses JSON-serialize Date fields (e.g. dateCreated/dateModified) to ISO strings, so
+    // a raw in-memory object's `Date` instances never strictly (===/toEqual) match a response body
+    // even when they represent the same moment. Round-tripping through JSON before comparing
+    // normalizes both sides the same way the wire format already does.
+    const toJSON = (value: any): any => JSON.parse(JSON.stringify(value));
+    // The server (or, for `_id`, MongoDB itself) reassigns these on every create/update
+    // (dateCreated/dateModified to its own current time, version by incrementing it, _id — Mongo's
+    // native document id, undefined until persisted — on first insert) rather than preserving
+    // whatever the client last set locally, so a client-side `obj` is never expected to still match
+    // the server's response for them.
+    const SERVER_ASSIGNED_FIELDS = new Set(["dateCreated", "dateModified", "version", "_id"]);
     const admin: any = { uid: uuid.v4(), roles: config.get("trusted_roles") };
     const adminToken = JWTUtils.createTokenSync(config.get("auth"), admin);
     let user: any = undefined;
@@ -189,7 +200,7 @@ describe("Route:{{name}} Tests", () => {
 
     it("Can make create request.", async () => {
         const obj: {{model}} = new {{model}}({
-            // TODO
+            {{examplePropertyName}}: {{examplePropertyValue}},
         });
 
         const result = await request(server.getApplication())
@@ -201,15 +212,18 @@ describe("Route:{{name}} Tests", () => {
         expect(result.status).toBeGreaterThanOrEqual(200);
         expect(result.status).toBeLessThan(300);
         expect(result.body).toBeDefined();
+        const expectedObj = toJSON(obj);
         for (const key in obj) {
-            expect(result.body[key]).toEqual(obj[key]);
+            if (SERVER_ASSIGNED_FIELDS.has(key)) continue;
+            expect(result.body[key]).toEqual(expectedObj[key]);
         }
 
         // Validate the contents were stored correctly
-        const existing: {{model}} | null = await repo.findOne({uid: obj.uid} as any);
+        const existing: {{model}} | null = await repo.findOne({{#if (eq datastoreType "mongodb")}}{uid: obj.uid} as any{{else}}{ where: { uid: obj.uid } }{{/if}});
         expect(existing).toBeDefined();
         if (existing) {
             for (const key in obj) {
+                if (SERVER_ASSIGNED_FIELDS.has(key)) continue;
                 expect(existing[key]).toEqual(obj[key]);
             }
         }
@@ -228,7 +242,7 @@ describe("Route:{{name}} Tests", () => {
         expect(result.status).toBeLessThan(300);
 
         // Validate the contents were removed
-        const count: number = await repo.count({uid: obj.uid});
+        const count: number = await repo.count({{#if (eq datastoreType "mongodb")}}{uid: obj.uid}{{else}}{ where: { uid: obj.uid } }{{/if}});
         expect(count).toBe(0);
     });
 
@@ -246,8 +260,10 @@ describe("Route:{{name}} Tests", () => {
         for (let i = 0; i < objs.length; i++) {
             const obj = objs[i];
             const other = result.body[i];
+            const expectedObj = toJSON(obj);
             for (const key in obj) {
-                expect(other[key]).toEqual(obj[key]);
+                if (SERVER_ASSIGNED_FIELDS.has(key)) continue;
+                expect(other[key]).toEqual(expectedObj[key]);
             }
         }
     });
@@ -263,8 +279,10 @@ describe("Route:{{name}} Tests", () => {
         expect(result.status).toBeGreaterThanOrEqual(200);
         expect(result.status).toBeLessThan(300);
         expect(result.body).toBeDefined();
+        const expectedObj = toJSON(obj);
         for (const key in obj) {
-            expect(result.body[key]).toEqual(obj[key]);
+            if (SERVER_ASSIGNED_FIELDS.has(key)) continue;
+            expect(result.body[key]).toEqual(expectedObj[key]);
         }
     });
 
@@ -288,7 +306,7 @@ describe("Route:{{name}} Tests", () => {
     it("Can make update request.", async () => {
         const obj: {{model}} = await create{{model}}();
         const url = baseUrl + "/" + obj.uid;
-        obj.status = {{model}}Status.ADOPTED;
+        (obj as any).{{examplePropertyName}} = {{examplePropertyValue}};
 
         const result = await request(server.getApplication())
             .put(url)
@@ -299,15 +317,18 @@ describe("Route:{{name}} Tests", () => {
         expect(result.status).toBeGreaterThanOrEqual(200);
         expect(result.status).toBeLessThan(300);
         expect(result.body).toBeDefined();
+        const expectedObj = toJSON(obj);
         for (const key in obj) {
-            expect(result.body[key]).toEqual(obj[key]);
+            if (SERVER_ASSIGNED_FIELDS.has(key)) continue;
+            expect(result.body[key]).toEqual(expectedObj[key]);
         }
 
         // Validate the contents were stored correctly
-        const existing: {{model}} | null = await repo.findOne({uid: obj.uid} as any);
+        const existing: {{model}} | null = await repo.findOne({{#if (eq datastoreType "mongodb")}}{uid: obj.uid} as any{{else}}{ where: { uid: obj.uid } }{{/if}});
         expect(existing).toBeDefined();
         if (existing) {
             for (const key in obj) {
+                if (SERVER_ASSIGNED_FIELDS.has(key)) continue;
                 expect(existing[key]).toEqual(obj[key]);
             }
         }
@@ -315,27 +336,30 @@ describe("Route:{{name}} Tests", () => {
 
     it("Can make update property request.", async () => {
         const obj: {{model}} = await create{{model}}();
-        const url = baseUrl + "/" + obj.uid + "/status";
-        obj.status = {{model}}Status.ADOPTED;
+        const url = baseUrl + "/" + obj.uid + "/{{examplePropertyName}}";
+        (obj as any).{{examplePropertyName}} = {{examplePropertyValue}};
 
         const result = await request(server.getApplication())
             .put(url)
             .set("Authorization", "jwt " + adminToken)
-            .send(obj.status);
+            .send((obj as any).{{examplePropertyName}});
 
         expect(result).toBeDefined();
         expect(result.status).toBeGreaterThanOrEqual(200);
         expect(result.status).toBeLessThan(300);
         expect(result.body).toBeDefined();
+        const expectedObj = toJSON(obj);
         for (const key in obj) {
-            expect(result.body[key]).toEqual(obj[key]);
+            if (SERVER_ASSIGNED_FIELDS.has(key)) continue;
+            expect(result.body[key]).toEqual(expectedObj[key]);
         }
 
         // Validate the contents were stored correctly
-        const existing: {{model}} | null = await repo.findOne({uid: obj.uid} as any);
+        const existing: {{model}} | null = await repo.findOne({{#if (eq datastoreType "mongodb")}}{uid: obj.uid} as any{{else}}{ where: { uid: obj.uid } }{{/if}});
         expect(existing).toBeDefined();
         if (existing) {
             for (const key in obj) {
+                if (SERVER_ASSIGNED_FIELDS.has(key)) continue;
                 expect(existing[key]).toEqual(obj[key]);
             }
         }
@@ -356,9 +380,10 @@ describe("Route:{{name}} Tests", () => {
     it("Can make authenticated hello request.", async () => {
         const user = {
             uid: uuid.v4(),
-            name: "Kermit the Frog"
+            roles: [],
+            scopes: [],
         };
-        const token = JWTUtils.createTokenSync(config.get("auth"), user);
+        const token = JWTUtils.createTokenSync(config.get("auth"), user, { name: "Kermit the Frog" });
         const result = await request(server.getApplication())
             .get(baseUrl)
             .set("Authorization", "jwt " + token);

@@ -249,16 +249,19 @@ describe('generate react', () => {
     path: '/dashboard', project_name: 'my-app', year: 2025,
   };
 
-  it('generates app files, route file, export entry, and vite config with no scaffolding artifacts', async () => {
+  it('generates app and route files with no scaffolding artifacts', async () => {
     await withTmpDir(async (dir) => {
       await processTemplate(reactTemplateDir, dir, baseContext, { projectDir: dir });
       const files = await listFiles(dir);
       expect(files).toContain('/src/routes/DashboardRoute.ts');
-      expect(files).toContain('/src/export.ts');
       expect(files).toContain('/apps/dashboard/index.tsx');
       expect(files).toContain('/apps/dashboard/_layout.tsx');
-      expect(files).toContain('/vite.config.ts');
-      expect(files).toContain('/tsconfig.client.json');
+      // vite.config.ts, tsconfig.client.json and src/export.ts are NOT produced by the template —
+      // their content depends on every app in the project (global state Handlebars can't see), so
+      // GenerateReact.run() generates them directly. See src/commands/generate/react.ts.
+      expect(files).not.toContain('/vite.config.ts');
+      expect(files).not.toContain('/tsconfig.client.json');
+      expect(files).not.toContain('/src/export.ts');
       expect(files).not.toContain('/template.config.json');
       expect(files.every(f => !f.startsWith('/patches/'))).toBe(true);
     });
@@ -271,17 +274,6 @@ describe('generate react', () => {
       // The react patches/package.json adds react dependencies and an "export" script
       expect(pkg).toBeDefined();
       expect(pkg.scripts.export).toBe('rapidrest react export');
-    });
-  });
-
-  it('generates a static export entry wired to the app\'s appDir and route prefix', async () => {
-    await withTmpDir(async (dir) => {
-      await processTemplate(reactTemplateDir, dir, baseContext, { projectDir: dir });
-      const content = await import('fs/promises').then(fs =>
-        fs.readFile(join(dir, 'src', 'export.ts'), 'utf-8'));
-      expect(content).toContain('import { runStaticExport } from "@rapidrest/react";');
-      expect(content).toContain('appDir: "apps/dashboard"');
-      expect(content).toContain('routePrefix: "/dashboard"');
     });
   });
 });

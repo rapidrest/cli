@@ -1,0 +1,103 @@
+# Release Notes
+
+## Unreleased
+
+**Dependencies**
+
+* Upgraded `@rapidrest/core`, `@rapidrest/service-core`, and `@rapidrest/react` to their latest releases
+  (`5.1.0`, `1.3.0`, `1.0.0`) and aligned every other `templates/server` dependency (`eslint`,
+  `@typescript-eslint/*`, `pg`, `better-sqlite3`, `mongodb`, `redis`, `typeorm`, etc.) to match the versions
+  those libraries themselves use, including in the `generate model`-time patches under `templates/model/patches`
+* Removed `eslint-plugin-import` from the generated server template — no version of it supports `eslint@10`
+  (its peer range caps at `^9`), which made `npm install` fail outright for any new project; it enforced no
+  active rules in the template's own config, so it was dropped rather than migrated to a replacement
+
+**Removed built-in auth scaffolding**
+
+* Removed the generated server template's built-in `User` model, `UserRoute`, and `AuthRoute` (HTTP Basic
+  login/logout) — `BasicStrategy` moved out of `@rapidrest/service-core` into the separate, still-prerelease
+  `@rapidrest/auth` package, and pulling in a prerelease dependency for scaffolding wasn't worth it
+
+**Access control**
+
+* Migrated every generated `@Protect(...)` ACL block from `@rapidrest/service-core`'s old boolean-flag
+  `ACLRecord` shape (`create`/`read`/`update`/`delete`/`special`/`full`) to the current `actions: ACLAction[]`
+  array shape
+* Fixed `templates/route`'s route-level `@Protect(acl, true)` call passing a second argument that
+  `RouteDecorators.Protect` (unlike `ModelDecorators.Protect`) doesn't accept
+
+**Redis**
+
+* Replaced `ioredis`/`ioredis-mock` with `redis` (node-redis) throughout the generated server and its tests,
+  matching `@rapidrest/core`/`@rapidrest/service-core`'s v4+ migration off `ioredis`
+
+**SQL datastores (PostgreSQL / SQLite)**
+
+* Fixed `config.ts` declaring datastore types as `"postgresql"`/`"sqlite"` — TypeORM's actual driver literals
+  are `"postgres"`/`"better-sqlite3"`. Every generated postgresql/sqlite project failed to connect outside of
+  `rapidrest dev` (which happened to paper over it via env-var injection); a real deployment or `rapidrest
+  start` hit it directly. Threaded the fix through everywhere the value was read back: `db.ts`'s feature
+  detection, `generate docker`/`generate k8s`'s `hasPostgres` checks, `generate model`'s `isPostgreSql`/
+  `isSqlite` flags, and `docker-compose.yml`
+* Added the `host` placeholder `ConnectionManager.buildConnectionUri()` requires unconditionally for
+  `better-sqlite3` datastores (which don't otherwise use one)
+* Replaced TypeORM's removed `Connection` class with `isSqlDataSource()` in generated route tests
+* Added SQL test support: generated tests now run postgresql/sqlite-backed models against an in-memory
+  `better-sqlite3` database instead of requiring a real Postgres server, since TypeORM's driver abstraction
+  makes the same entities/queries work against either
+* Fixed `repo.findOne({uid})`/`repo.count({uid})` in generated route tests using MongoDB's bare-filter style
+  unconditionally — TypeORM's SQL repositories need `{ where: { uid } }`
+* Fixed a duplicate-`typeorm`-dependency risk when a project selects both the postgresql and sqlite features
+  (`dbFeatures` is a multi-select) by gating it on a new combined `features.hasSqlDatastore` flag instead of
+  two separate conditional blocks
+* `templates/model/patches/package-postgresql.json`/`package-sqlite.json` (the `generate model`-time
+  dependency patches, a separate path from `generate server`) were still pinned to `typeorm@^0.3.20`, were
+  missing `pg` entirely, and had `better-sqlite3` misplaced under `devDependencies` at a stale version — fixed
+  to match the server template
+* `@rapidrest/core`/`@rapidrest/service-core`'s type declarations reference `typeorm` and `redis`
+  unconditionally regardless of which datastore features are selected, so `tsc` failed for any project
+  missing either. Both are now always present — as a real dependency when the matching feature is enabled,
+  otherwise as a devDependency just for type-checking
+
+**React**
+
+* Fixed `templates/react/src/export.ts` only ever configuring one app's `runStaticExport()` call — since it
+  was regenerated unconditionally on every `generate react` call, adding a second app to a multi-app project
+  silently discarded the first app's export config. Moved its generation out of the Handlebars template and
+  into `generate react` itself (mirroring how `vite.config.ts`/`tsconfig.client.json` already handle
+  cross-app state Handlebars can't see), so it now emits the multi-app `apps: [...]` form when more than one
+  app is configured
+
+**Test/build infrastructure**
+
+* Added a missing `vitest.config.ts` to the generated server template — without it, vitest's default
+  transform couldn't handle the decorator syntax every model/route template uses, so every generated
+  project's test suite failed before this fix. Mirrors `@rapidrest/service-core`/`@rapidrest/react`'s own
+  config (SWC decorator plugin, the `service-core/test` subpath alias), with coverage thresholds left at 0
+  since a fresh scaffold shouldn't be held to 100%
+* Fixed `templates/route`'s own `template.config.json` and `patches/` living one directory too deep
+  (`src/routes/` instead of the template root) — `processTemplate` never found them, so `generate route
+  --protect`'s RBAC-enable patch silently never applied, and the raw config/patch files leaked into every
+  generated project as stray output files
+* Fixed `@Returns([string])` in generated routes — `string` is a TypeScript type keyword, not a runtime
+  value; needed `[String]`. Compiled under vitest's SWC transform but failed a real `tsc` build
+* Fixed `JWTUser`-shaped object literals (in `server.ts`'s telemetry token and the generated route test's
+  authenticated-request test) including a `name` field that doesn't exist on `JWTUser` (only `uid`/`roles`/
+  `scopes`) — moved to the token's `data` parameter instead; `HelloRoute.ts`/`templates/route`'s hello handler
+  read `user.name` for the same reason and now use `user.uid`
+* Fixed the generated route test's `config` import using the wrong relative path (`./config` instead of
+  `../config.js`)
+* Fixed the generated "create" test never setting any field on the new object, which failed the model's
+  default non-nullable validation on its identifier — now seeded via the same `examplePropertyName`/
+  `examplePropertyValue` machinery already used for the update tests
+* Fixed generated route tests comparing `dateCreated`/`dateModified`/`version`/`_id` — all reassigned by the
+  server or database on every write — against the client's stale pre-request copy; these are now excluded
+  from the response-body comparison loops
+
+**Correctness**
+
+* Fixed `server.ts` deleting `expiresIn` directly off `config.get("auth")` when minting the long-lived
+  service token used for `EventUtils` telemetry. `nconf.get()` returns a live reference into its own store,
+  not a copy, so the delete removed `expiresIn` from the shared config for the rest of the process — every
+  token issued afterward, including real user logins, came out with no expiration. Now deep-copies via
+  `structuredClone()` before deleting, so only the service token is affected
