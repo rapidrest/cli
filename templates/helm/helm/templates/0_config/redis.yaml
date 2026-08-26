@@ -6,14 +6,22 @@ metadata:
     name: db-redis-info
 type: Opaque
 data:
-    {{- $secret := (lookup "v1" "Secret" .Release.Namespace "db-cache-info") | default dict }}
-    {{- $secretData := (get $secret "data") | default dict }}
+    {{- $redisPassword := "" }}
+    {{- if $.Values.redis.auth.enabled }}
+    {{- $redisSecret := (lookup "v1" "Secret" $.Release.Namespace $.Values.redis.fullnameOverride) | default dict }}
+    {{- $redisSecretData := (get $redisSecret "data") | default dict }}
+    {{- $redisPassword = (get $redisSecretData "redis-password") | default "" | b64dec }}
+    {{- end }}
+    {{- $redisUrl := tpl $.Values.redis.url . }}
+    {{- if $redisPassword }}
+    {{- $redisUrl = $redisUrl | replace "redis://" (printf "redis://:%s@" $redisPassword) }}
+    {{- end }}
     datastores__cache__type: {{ print "redis" | b64enc | quote }}
-    datastores__cache__url: {{ (get $secretData "datastores__cache__url") | default (tpl .Values.redis.url . | b64enc | quote) }}
+    datastores__cache__url: {{ $redisUrl | b64enc | quote }}
     datastores__events__type: {{ print "redis" | b64enc | quote }}
-    datastores__events__url: {{ (get $secretData "datastores__events__url") | default (tpl .Values.redis.url . | b64enc | quote) }}
+    datastores__events__url: {{ $redisUrl | b64enc | quote }}
     datastores__events_publish__type: {{ print "redis" | b64enc | quote }}
-    datastores__events_publish__url: {{ (get $secretData "datastores__events__url") | default (tpl .Values.redis.url . | b64enc | quote) }}
+    datastores__events_publish__url: {{ $redisUrl | b64enc | quote }}
     datastores__logs__type: {{ print "redis" | b64enc | quote }}
-    datastores__logs__url: {{ (get $secretData "datastores__logs__url") | default (tpl .Values.redis.url . | b64enc | quote) }}
+    datastores__logs__url: {{ $redisUrl | b64enc | quote }}
 {{- end }}

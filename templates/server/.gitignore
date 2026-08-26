@@ -19,3 +19,9 @@ loggererror.log
 !.yarn/versions
 **/.idea
 /profiles
+# Written by DefaultAccounts (`auth:password_file`, default "passwords") with plaintext credentials for
+# any freshly-created default account (e.g. the initial admin) - must never be committed.
+/passwords
+# Fetched by `helm dependency update` (see helm/Chart.yaml) - regenerable from helm/Chart.lock (which
+# *should* be committed, unlike these binary archives).
+/helm/charts/*.tgz

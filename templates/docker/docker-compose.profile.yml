@@ -1,6 +1,6 @@
 services:
     server:
-        command: ["/app/scripts/profile-entrypoint.sh", "dist/server.js"]
+        command: ["/app/scripts/profile-entrypoint.sh", "dist/src/server.js"]
         stop_grace_period: 30s
         volumes:
             - ./profiles:/profiles

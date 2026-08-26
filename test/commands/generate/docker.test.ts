@@ -11,12 +11,13 @@ vi.mock('../../../src/lib/template.js', () => ({
 
 vi.mock('../../../src/lib/project.js', () => ({
   detectPackageManager: vi.fn(),
+  detectReact: vi.fn(),
   readProjectDatastores: vi.fn(),
   readProjectName: vi.fn(),
 }));
 
 import { processTemplate } from '../../../src/lib/template.js';
-import { detectPackageManager, readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
+import { detectPackageManager, detectReact, readProjectDatastores, readProjectName } from '../../../src/lib/project.js';
 import GenerateDocker from '../../../src/commands/generate/docker.js';
 
 const ROOT = process.cwd();
@@ -25,6 +26,7 @@ describe('generate docker', () => {
   beforeEach(() => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
     vi.mocked(detectPackageManager).mockResolvedValue('npm');
+    vi.mocked(detectReact).mockResolvedValue(false);
     vi.mocked(readProjectDatastores).mockResolvedValue([]);
     vi.mocked(readProjectName).mockResolvedValue('my-app');
   });
@@ -208,6 +210,44 @@ describe('generate docker', () => {
       await GenerateDocker.run(['--output-dir', '/custom/project'], ROOT);
 
       expect(detectPackageManager).toHaveBeenCalledWith('/custom/project');
+    });
+  });
+
+  describe('react context', () => {
+    it('sets hasReact from detectReact when --has-react is not passed (standalone usage)', async () => {
+      vi.mocked(detectReact).mockResolvedValue(true);
+
+      await GenerateDocker.run([], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.hasReact).toBe(true);
+    });
+
+    it('sets hasReact true when --has-react is passed, overriding detectReact', async () => {
+      vi.mocked(detectReact).mockResolvedValue(false);
+
+      await GenerateDocker.run(['--has-react'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.hasReact).toBe(true);
+    });
+
+    it('sets hasReact false when --no-has-react is passed, overriding detectReact', async () => {
+      // Mirrors why `generate server` always passes this explicitly: it runs docker generation before
+      // react generation, so detectReact(cwd) would still see no vite.config.ts yet even when --react
+      // was requested for the same combined scaffold - the explicit flag is what avoids that race.
+      vi.mocked(detectReact).mockResolvedValue(true);
+
+      await GenerateDocker.run(['--no-has-react'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.hasReact).toBe(false);
+    });
+
+    it('calls detectReact with the project cwd', async () => {
+      await GenerateDocker.run(['--output-dir', '/custom/project'], ROOT);
+
+      expect(detectReact).toHaveBeenCalledWith('/custom/project');
     });
   });
 

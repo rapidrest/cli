@@ -1,6 +1,6 @@
 {
   "conditionalFiles": [],
-  "helmPaths": [],
+  "helmPaths": ["helm"],
   "patches": [
     {
       "template": "patches/package.json",

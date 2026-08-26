@@ -391,7 +391,7 @@ describe('generate server', () => {
 
       expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
       expect((GenerateDocker as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out'],
+        ['--output-dir', '/tmp/out', '--no-has-react'],
         expect.any(String),
       );
     });
@@ -408,7 +408,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateDocker as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--force'],
+        ['--output-dir', '/tmp/out', '--force', '--no-has-react'],
         expect.any(String),
       );
     });
@@ -418,7 +418,17 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateDocker as any).run).toHaveBeenCalledWith(
-        ['--output-dir', join(process.cwd(), 'my-project')],
+        ['--output-dir', join(process.cwd(), 'my-project'), '--no-has-react'],
+        expect.any(String),
+      );
+    });
+
+    it('passes --has-react to GenerateDocker when react is also selected', async () => {
+      stubPrompts({ otherFeatures: ['docker', 'react'] });
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
+
+      expect((GenerateDocker as any).run).toHaveBeenCalledWith(
+        ['--output-dir', '/tmp/out', '--has-react'],
         expect.any(String),
       );
     });

@@ -7,7 +7,8 @@ data:
   cookie_secret: {{ tpl $.Values.cookies.secret . | quote }}
   session__secret: {{ tpl $.Values.sessions.secret . | quote }}
   NODE_ENV: "{{ $.Values.environment }}"
-  {{- $corsHosts := list "http://localhost:3000" $.Values.host }}
+  {{- $publicScheme := ternary "https" "http" $.Values.gateway.tls }}
+  {{- $corsHosts := list "http://localhost:3000" (printf "%s://%s" $publicScheme $.Values.host) }}
   cors__origins: {{ $corsHosts | toJson | quote }}
   {{- range $k, $v := $.Values.service.config }}
   {{- if kindIs "string" $v }}
@@ -27,6 +28,14 @@ metadata:
   name: service-db-info
 type: Opaque
 data:
+  {{- $mongoRootUser := "" }}
+  {{- $mongoRootPassword := "" }}
+  {{- if and $.Values.mongodb.create $.Values.mongodb.auth.enabled }}
+  {{- $mongoSecret := (lookup "v1" "Secret" $.Release.Namespace $.Values.mongodb.fullnameOverride) | default dict }}
+  {{- $mongoSecretData := (get $mongoSecret "data") | default dict }}
+  {{- $mongoRootUser = "root" }}
+  {{- $mongoRootPassword = (get $mongoSecretData "mongodb-root-password") | default "" | b64dec }}
+  {{- end }}
   datastores__acl__database: {{ include "rrst.render" (dict "value" $.Values.service.mongodb.acl.name "context" $) | b64enc | quote }}
   {{- if $.Values.mongodb.create }}
   datastores__acl__host: {{ include "rrst.render" (dict "value" $.Values.service.mongodb.acl.host "context" $) | default (printf "%s" $.Values.mongodb.fullnameOverride) | b64enc | quote }}
@@ -36,6 +45,10 @@ data:
   datastores__acl__url: {{ (include "rrst.render" (dict "value" $.Values.mongodb.url "context" $) | b64enc | quote) }}
   {{- else if $.Values.service.mongodb.acl.url }}
   datastores__acl__url: {{ (include "rrst.render" (dict "value" $.Values.service.mongodb.acl.url "context" $) | b64enc | quote) }}
+  {{- else if $mongoRootPassword }}
+  datastores__acl__username: {{ $mongoRootUser | b64enc | quote }}
+  datastores__acl__password: {{ $mongoRootPassword | b64enc | quote }}
+  datastores__acl__options: {{ print "authSource=admin" | b64enc | quote }}
   {{- end }}
   datastores__mongo__database: {{ include "rrst.render" (dict "value" $.Values.service.mongodb.mongo.name "context" $) | b64enc | quote }}
   {{- if $.Values.mongodb.create }}
@@ -46,4 +59,8 @@ data:
   datastores__mongo__url: {{ include "rrst.render" (dict "value" $.Values.mongodb.url "context" $) | b64enc | quote }}
   {{- else if $.Values.service.mongodb.mongo.url }}
   datastores__mongo__url: {{ include "rrst.render" (dict "value" $.Values.service.mongodb.mongo.url "context" $) | b64enc | quote }}
+  {{- else if $mongoRootPassword }}
+  datastores__mongo__username: {{ $mongoRootUser | b64enc | quote }}
+  datastores__mongo__password: {{ $mongoRootPassword | b64enc | quote }}
+  datastores__mongo__options: {{ print "authSource=admin" | b64enc | quote }}
   {{- end }}

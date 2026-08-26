@@ -599,3 +599,81 @@ export default conf;
     });
   });
 });
+
+// ─── helm ─────────────────────────────────────────────────────────────────────
+//
+// Regression coverage for a real bug: templates/helm/template.config.json shipped with
+// `"helmPaths": []`, which silently made every file under templates/helm/helm/ go through plain
+// Handlebars instead of the `[[ ]]`-safe substitution its own `[[project_name]]`/`{{ .Values.x }}`
+// mix requires - Handlebars either left `[[project_name]]` completely unsubstituted (for files with
+// no Go-template syntax) or threw a hard parse error (for every file that also has Helm's own `{{ }}`
+// syntax, which is the majority of this chart). This exercises the *real* templates/helm directory end
+// to end (mirroring what `generate k8s` actually does), not a synthetic fixture, specifically so a
+// regression here (e.g. someone clearing helmPaths again) fails a test instead of only surfacing the
+// next time someone actually runs `rapidrest generate k8s` against a real project.
+
+describe('generate k8s — helm template (regression: helmPaths must stay non-empty)', () => {
+  const helmTemplateDir = join(TEMPLATES, 'helm');
+  const baseContext = {
+    year: 2026,
+    project_name: 'my-test-project',
+    datastores: [{ name: 'mongo', type: 'mongodb' }, { name: 'cache', type: 'redis' }],
+    hasMongoDB: true,
+    hasPostgres: false,
+    hasRedis: true,
+  };
+
+  // templates/helm/template.config.json patches package.json (json-merge) - needs a real target file.
+  async function withPackageJson(fn: (dir: string) => Promise<void>): Promise<void> {
+    await withTmpDir(async (dir) => {
+      await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'my-test-project', scripts: {} }, null, 2));
+      await fn(dir);
+    });
+  }
+
+  it('renders without throwing', async () => {
+    await withPackageJson(async (dir) => {
+      await expect(processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir })).resolves.not.toThrow();
+    });
+  });
+
+  it('substitutes [[ ]] placeholders - no file is left containing literal [[project_name]] or [[name]]', async () => {
+    await withPackageJson(async (dir) => {
+      await processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir });
+      const files = (await listFiles(dir)).filter(f => f.startsWith('/helm/'));
+      expect(files.length).toBeGreaterThan(0);
+      for (const f of files) {
+        const content = await import('fs/promises').then(fs => fs.readFile(join(dir, f), 'utf-8'));
+        expect(content, `${f} still contains an unsubstituted [[ ]] placeholder`).not.toMatch(/\[\[\s*[\w.]+\s*\]\]/);
+      }
+    });
+  });
+
+  it('resolves Chart.yaml\'s name to the real project name, not blank', async () => {
+    await withPackageJson(async (dir) => {
+      await processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'helm', 'Chart.yaml'), 'utf-8'));
+      expect(content).toContain('name: my-test-project');
+    });
+  });
+
+  it('resolves the Deployment/Service names to <project_name>-services, not a bare "-services"', async () => {
+    await withPackageJson(async (dir) => {
+      await processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir });
+      const deployment = await import('fs/promises').then(fs =>
+        fs.readFile(join(dir, 'helm', 'templates', '1_deployments', 'service.yaml'), 'utf-8'));
+      expect(deployment).toContain('name: my-test-project-services');
+      expect(deployment).not.toMatch(/name: -services/);
+    });
+  });
+
+  it('leaves Helm\'s own {{ }} Go-template syntax untouched for Helm to render later', async () => {
+    await withPackageJson(async (dir) => {
+      await processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir });
+      const deployment = await import('fs/promises').then(fs =>
+        fs.readFile(join(dir, 'helm', 'templates', '1_deployments', 'service.yaml'), 'utf-8'));
+      expect(deployment).toContain('{{ $.Values.environment }}');
+      expect(deployment).toContain('{{- if $.Values.redis.create }}');
+    });
+  });
+});

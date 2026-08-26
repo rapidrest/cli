@@ -22,19 +22,21 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/port: "3000"
     spec:
+      {{- if $.Values.service.imagePullSecret }}
       imagePullSecrets:
         - name: {{ $.Values.service.imagePullSecret }}
+      {{- end }}
       containers:
-        - name: [[project_name]]-services
-          image: {{ $.Values.service.image.registry }}/{{ $.Values.service.image.repository }}:{{ $.Values.service.image.tag }}
-          {{- if (eq $.Values.service.version "latest") }}
+        - name: [[project_name]]
+          image: {{ $.Values.service.image.registry }}/{{ $.Values.service.image.repository }}:{{ $.Values.service.image.tag | default $.Chart.AppVersion }}
+          {{- if eq ($.Values.service.image.tag | default $.Chart.AppVersion) "latest" }}
           imagePullPolicy: Always
           {{- else }}
           imagePullPolicy: IfNotPresent
           {{- end }}
           {{- if ne $.Values.environment "production" }}
           command: ["node"]
-          args: ["--inspect=0.0.0.0:9229", "dist/server.js"]
+          args: ["--inspect=127.0.0.1:9229", "dist/src/server.js"]
           {{- end }}
           envFrom:
             - configMapRef:
@@ -49,18 +51,17 @@ spec:
                 name: service-db-info
           ports:
             - containerPort: 3000
-          resources: {{ $.Values.service.resources }}
+          resources:
+            {{- toYaml $.Values.service.resources | nindent 12 }}
       initContainers:
         {{- if $.Values.redis.create }}
-        {{- $secret := (lookup "v1" "Secret" $.Release.Namespace "db-redis-info") | default dict }}
-        {{- $secretData := (get $secret "data") | default dict }}
-        {{- $redisHost := (get $secretData "datastores__cache__url" | b64dec) | default (tpl $.Values.redis.url . | quote) }}
+        {{- $redisHost := tpl $.Values.redis.url . | replace "redis://" "" }}
         - name: redis-probe
-          image: redis
+          image: busybox
           env:
             - name: REDIS_HOST
-              value: {{ $redisHost | replace "redis://" "" }}
-          command: ['sh', '-c', "until redis-cli -h $REDIS_HOST ping; do echo waiting for cache; sleep $(expr 2 + $RANDOM % 13); done;"]
+              value: {{ $redisHost }}
+          command: ['sh', '-c', "until nc -z $REDIS_HOST 6379; do echo waiting for cache; sleep $(expr 2 + $RANDOM % 13); done"]
         {{- end }}
         {{- if $.Values.mongodb.create }}
         - name: mongo-probe

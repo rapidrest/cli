@@ -1,7 +1,8 @@
 apiVersion: v2
 description: Installs [[project_name]] into a Kubernetes cluster
-name: [[name]]
+name: [[project_name]]
 version: 1.0.0
+appVersion: "0.1.0"
 dependencies:
 [[#if hasMongoDB]]
 - name: mongodb

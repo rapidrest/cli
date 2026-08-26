@@ -302,6 +302,10 @@ export default class GenerateServer extends Command {
         await GenerateDocker.run([
           '--output-dir', outputDir,
           ...(flags.force ? ['--force'] : []),
+          // Explicit, not left to GenerateDocker's own filesystem detection: this runs before React
+          // generation below, so detectReact(cwd) would see no vite.config.ts yet even when --react
+          // was requested for this same scaffold.
+          hasReact ? '--has-react' : '--no-has-react',
         ], this.config.root);
       }
 

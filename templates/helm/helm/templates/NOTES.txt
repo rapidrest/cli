@@ -2,12 +2,21 @@
 # !!!IMPORTANT!!! WRITE DOWN THE FOLLOWING INFORMATION                        #
 ###############################################################################
 
+{{- if and .Values.mongodb.create .Values.mongodb.auth.enabled }}
+{{- $mdbSecret := (lookup "v1" "Secret" .Release.Namespace .Values.mongodb.fullnameOverride) | default dict }}
+{{- $mdbSecretData := (get $mdbSecret "data") | default dict }}
+{{- $mdbPassword := (get $mdbSecretData "mongodb-root-password") | default "" }}
+
 Databases:
   MongoDB:
-    {{- $mdbSecret := (lookup "v1" "Secret" .Release.Namespace "mongodb-secrets") | default dict }}
-    {{- $mdbSecretData := (get $mdbSecret "data") | default dict }}
-    Username: {{ (get $mdbSecretData "MONGODB_DATABASE_ADMIN_USER") | b64dec }}
-    Password: {{ (get $mdbSecretData "MONGODB_DATABASE_ADMIN_PASSWORD") | b64dec }}
+    Username: root
+    {{- if $mdbPassword }}
+    Password: {{ $mdbPassword | b64dec }}
+    {{- else }}
+    Password: (not yet available - run `helm upgrade` once the mongodb pod is up, then re-run
+      `helm get notes` to see it here; see the caveat in templates/0_config/service-config.yaml)
+    {{- end }}
+{{- end }}
 
 JWT Auth:
   {{- $jwtSecret := (lookup "v1" "Secret" .Release.Namespace "jwt-auth") | default dict }}
@@ -16,3 +25,11 @@ JWT Auth:
   Issuer: {{ tpl .Values.auth.issuer . }}
   ExpiresIn: {{ tpl .Values.auth.expiresIn . }}
   Password: {{ (get $jwtSecretData "auth__password") | b64dec }}
+
+{{- if and .Values.mongodb.create .Values.mongodb.auth.enabled }}
+
+NOTE: on a brand new install, the app's own datastore credentials aren't wired in until a
+follow-up `helm upgrade` (no values need to change) - see the caveat comment in
+templates/0_config/service-config.yaml for why. Until then the [[project_name]]-services
+pods will crash-loop on datastore auth failures.
+{{- end }}
