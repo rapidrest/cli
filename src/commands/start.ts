@@ -4,12 +4,12 @@
 ///////////////////////////////////////////////////////////////////////////////
 import { Command, Flags } from '@oclif/core';
 import { existsSync } from 'fs';
-import { join, delimiter } from 'path';
+import { join } from 'path';
 import { spawn } from 'child_process';
 import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
-import { detectPackageManager, detectReact } from '../lib/project.js';
 import { findAvailablePort } from '../lib/port.js';
 import { MIN_BUN_VERSION, resolveBunExecutable } from '../lib/bun.js';
+import Build from './build.js';
 
 function detectServerPath(cwd: string): string {
   if (existsSync(join(cwd, "dist", "server", "server.js"))) {
@@ -18,17 +18,6 @@ function detectServerPath(cwd: string): string {
     return join("dist", "src", "server.js");
   }
   return join("dist", "server.js");
-}
-
-function runCommand(cmd: string, args: string[], cwd: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { cwd, stdio: 'inherit', shell: true });
-    child.once('exit', (code) => {
-      if (code === 0) resolve();
-      else reject(new Error(`\`${cmd} ${args.join(' ')}\` exited with code ${code}`));
-    });
-    child.once('error', reject);
-  });
 }
 
 export default class Start extends Command {
@@ -49,8 +38,6 @@ export default class Start extends Command {
   async run(): Promise<void> {
     const { flags } = await this.parse(Start);
     const cwd = process.cwd();
-    const projectBin = join(cwd, 'node_modules', '.bin');
-    const ext = process.platform === 'win32' ? '.cmd' : '';
 
     // 1. Resolve a compatible Bun executable, downloading one if necessary
     let runtimePath = process.execPath;
@@ -62,26 +49,9 @@ export default class Start extends Command {
       }
     }
 
-    // 2. Build
+    // 2. Build (also builds the React frontend, if configured)
     if (!flags['no-build']) {
-      const pkgMgr = await detectPackageManager(cwd);
-      this.log('Building project...');
-      try {
-        const args = pkgMgr === 'yarn' ? ['build'] : ['run', 'build'];
-        await runCommand(pkgMgr, args, cwd);
-      } catch (e) {
-        this.error(e instanceof Error ? e.message : String(e));
-      }
-
-      // 2b. Build React frontend (vite build) if configured
-      if (await detectReact(cwd)) {
-        this.log('Building React frontend...');
-        try {
-          await runCommand(join(projectBin, `vite${ext}`), ['build'], cwd);
-        } catch (e) {
-          this.error(e instanceof Error ? e.message : String(e));
-        }
-      }
+      await Build.run([], this.config.root);
     }
 
     this.log('\nStarting RapidREST server...');

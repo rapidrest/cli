@@ -18,11 +18,6 @@ vi.mock('../../src/lib/db.js', () => ({
   startDatabases: vi.fn(),
 }));
 
-vi.mock('../../src/lib/project.js', () => ({
-  detectPackageManager: vi.fn(),
-  detectReact: vi.fn(),
-}));
-
 vi.mock('../../src/lib/port.js', () => ({
   findAvailablePort: vi.fn(),
 }));
@@ -32,12 +27,16 @@ vi.mock('../../src/lib/bun.js', () => ({
   resolveBunExecutable: vi.fn(),
 }));
 
+vi.mock('../../src/commands/build.js', () => ({
+  default: { run: vi.fn() },
+}));
+
 import { spawn } from 'child_process';
 import { existsSync } from 'fs';
 import { detectDatabases, startDatabases } from '../../src/lib/db.js';
-import { detectPackageManager, detectReact } from '../../src/lib/project.js';
 import { findAvailablePort } from '../../src/lib/port.js';
 import { resolveBunExecutable } from '../../src/lib/bun.js';
+import Build from '../../src/commands/build.js';
 import Start from '../../src/commands/start.js';
 
 const ROOT = process.cwd();
@@ -53,22 +52,6 @@ function makeFakeProcess(exitCode = 0): FakeProcess {
   return p;
 }
 
-function makeErroringFakeProcess(err: unknown): FakeProcess {
-  const p = new FakeProcess();
-  setImmediate(() => p.emit('error', err));
-  return p;
-}
-
-async function withPlatform<T>(platform: string, fn: () => Promise<T>): Promise<T> {
-  const original = Object.getOwnPropertyDescriptor(process, 'platform')!;
-  Object.defineProperty(process, 'platform', { value: platform });
-  try {
-    return await fn();
-  } finally {
-    Object.defineProperty(process, 'platform', original);
-  }
-}
-
 function fakeDb(type: string) {
   return {
     type,
@@ -82,18 +65,13 @@ function serverSpawnCall() {
   return vi.mocked(spawn).mock.calls.find(([, , opts]) => !(opts as any)?.shell);
 }
 
-function shellSpawnCalls() {
-  return vi.mocked(spawn).mock.calls.filter(([, , opts]) => (opts as any)?.shell === true);
-}
-
 describe('start', () => {
   beforeEach(() => {
     vi.mocked(spawn).mockImplementation(() => makeFakeProcess() as any);
-    vi.mocked(detectPackageManager).mockResolvedValue('npm');
+    vi.mocked(Build.run).mockResolvedValue(undefined);
     vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(detectDatabases).mockResolvedValue({ mongodb: false, redis: false, postgresql: false });
     vi.mocked(startDatabases).mockResolvedValue({ databases: [], env: {} });
-    vi.mocked(detectReact).mockResolvedValue(false);
     vi.mocked(findAvailablePort).mockImplementation(async (port) => port);
     vi.mocked(resolveBunExecutable).mockResolvedValue('bun');
   });
@@ -106,44 +84,26 @@ describe('start', () => {
     it('skips the build step entirely and goes straight to starting the server', async () => {
       await Start.run(['--no-build'], ROOT);
 
-      expect(shellSpawnCalls()).toHaveLength(0);
+      expect(Build.run).not.toHaveBeenCalled();
       expect(serverSpawnCall()).toBeDefined();
-    });
-
-    it('does not call detectReact when --no-build is set', async () => {
-      await Start.run(['--no-build'], ROOT);
-      expect(detectReact).not.toHaveBeenCalled();
     });
   });
 
   describe('build step (without --no-build)', () => {
-    it('runs npm run build when no yarn.lock or packageManager field exists', async () => {
+    it('delegates the full build (including any React frontend) to the build command', async () => {
       await Start.run([], ROOT);
 
-      const builds = shellSpawnCalls();
-      expect(builds.length).toBeGreaterThanOrEqual(1);
-      const [cmd, args] = builds[0];
-      expect(cmd).toBe('npm');
-      expect(args).toEqual(['run', 'build']);
+      expect(Build.run).toHaveBeenCalledWith([], expect.any(String));
     });
 
-    it('runs yarn build when yarn.lock is present', async () => {
-      vi.mocked(detectPackageManager).mockResolvedValue('yarn');
+    it('runs the build before starting the server', async () => {
+      const order: string[] = [];
+      vi.mocked(Build.run).mockImplementation(async () => { order.push('build'); });
+      vi.mocked(spawn).mockImplementation(() => { order.push('server'); return makeFakeProcess() as any; });
 
       await Start.run([], ROOT);
 
-      const [cmd, args] = shellSpawnCalls()[0];
-      expect(cmd).toBe('yarn');
-      expect(args).toEqual(['build']);
-    });
-
-    it('runs yarn build when packageManager field starts with "yarn"', async () => {
-      vi.mocked(detectPackageManager).mockResolvedValue('yarn');
-
-      await Start.run([], ROOT);
-
-      const [cmd] = shellSpawnCalls()[0];
-      expect(cmd).toBe('yarn');
+      expect(order).toEqual(['build', 'server']);
     });
   });
 
@@ -266,10 +226,7 @@ describe('start', () => {
 
     it('still runs the build step when --docker is set without --no-build', async () => {
       await Start.run(['--docker'], ROOT);
-
-      const builds = shellSpawnCalls();
-      expect(builds.length).toBeGreaterThanOrEqual(1);
-      expect(builds[0][0]).toBe('npm');
+      expect(Build.run).toHaveBeenCalledOnce();
     });
 
     it('does not stop any database servers on exit when --docker is set', async () => {
@@ -323,18 +280,6 @@ describe('start', () => {
       }
     });
 
-    it('build commands inherit the shell environment implicitly (no explicit env stripping)', async () => {
-      const testKey = '__RAPIDREST_TEST_VAR__';
-      process.env[testKey] = 'build-value';
-      try {
-        await Start.run([], ROOT);
-        // runCommand spawns with no explicit env option — child inherits process.env automatically
-        const [, , buildOpts] = shellSpawnCalls()[0];
-        expect((buildOpts as any).env).toBeUndefined();
-      } finally {
-        delete process.env[testKey];
-      }
-    });
   });
 
   describe('port detection', () => {
@@ -414,62 +359,19 @@ describe('start', () => {
     });
   });
 
-  describe('React / Vite integration', () => {
-    it('does not run vite build when detectReact returns false', async () => {
-      await Start.run([], ROOT);
-
-      const builds = shellSpawnCalls();
-      expect(builds.every(([cmd]) => !String(cmd).includes('vite'))).toBe(true);
-    });
-
-    it('runs vite build between the main build and server startup when detectReact is true', async () => {
-      vi.mocked(detectReact).mockResolvedValue(true);
-
-      await Start.run([], ROOT);
-
-      const builds = shellSpawnCalls();
-      // builds: [npm run build, vite build]
-      expect(builds).toHaveLength(2);
-      const [viteCmd, viteArgs] = builds[1];
-      expect(viteCmd).toContain('vite');
-      expect(viteArgs).toEqual(['build']);
-    });
-
-    it('skips vite build when --no-build is set even if detectReact would return true', async () => {
-      vi.mocked(detectReact).mockResolvedValue(true);
-
-      await Start.run(['--no-build'], ROOT);
-
-      expect(shellSpawnCalls()).toHaveLength(0);
-      expect(detectReact).not.toHaveBeenCalled();
-    });
-  });
-
   describe('error handling', () => {
-    it('throws when the build command exits with a non-zero code', async () => {
-      vi.mocked(spawn).mockImplementationOnce(() => makeFakeProcess(1) as any);
+    it('throws when the build command (Build.run) rejects', async () => {
+      vi.mocked(Build.run).mockRejectedValue(new Error('exited with code 1'));
 
       await expect(Start.run([], ROOT)).rejects.toThrow(/exited with code 1/);
     });
 
     it('does not start databases when the build command fails', async () => {
-      vi.mocked(spawn).mockImplementationOnce(() => makeFakeProcess(1) as any);
+      vi.mocked(Build.run).mockRejectedValue(new Error('exited with code 1'));
 
       await expect(Start.run([], ROOT)).rejects.toThrow();
 
       expect(detectDatabases).not.toHaveBeenCalled();
-    });
-
-    it('throws when the vite build command exits with a non-zero code', async () => {
-      vi.mocked(detectReact).mockResolvedValue(true);
-      let callCount = 0;
-      vi.mocked(spawn).mockImplementation(() => {
-        callCount++;
-        // 1st call: npm/yarn build (succeeds); 2nd call: vite build (fails)
-        return makeFakeProcess(callCount === 2 ? 1 : 0) as any;
-      });
-
-      await expect(Start.run([], ROOT)).rejects.toThrow(/exited with code 1/);
     });
 
     it('throws when startDatabases rejects', async () => {
@@ -486,39 +388,10 @@ describe('start', () => {
       expect(serverSpawnCall()).toBeUndefined();
     });
 
-    it('falls back to String(e) when the build process errors with a non-Error value', async () => {
-      vi.mocked(spawn).mockImplementationOnce(() => makeErroringFakeProcess('non-error-boom') as any);
-
-      await expect(Start.run([], ROOT)).rejects.toThrow('non-error-boom');
-    });
-
-    it('falls back to String(e) when the vite build process errors with a non-Error value', async () => {
-      vi.mocked(detectReact).mockResolvedValue(true);
-      let callCount = 0;
-      vi.mocked(spawn).mockImplementation(() => {
-        callCount++;
-        return callCount === 2 ? (makeErroringFakeProcess('vite-non-error') as any) : (makeFakeProcess(0) as any);
-      });
-
-      await expect(Start.run([], ROOT)).rejects.toThrow('vite-non-error');
-    });
-
     it('falls back to String(e) when startDatabases rejects with a non-Error value', async () => {
       vi.mocked(startDatabases).mockRejectedValue('db-non-error');
 
       await expect(Start.run(['--no-build'], ROOT)).rejects.toThrow('db-non-error');
-    });
-  });
-
-  describe('platform-specific behavior', () => {
-    it('does not append .cmd to the vite binary name on non-Windows platforms', async () => {
-      vi.mocked(detectReact).mockResolvedValue(true);
-
-      await withPlatform('linux', () => Start.run([], ROOT));
-
-      const builds = shellSpawnCalls();
-      const viteCall = builds.find(([cmd]) => String(cmd).includes('vite'));
-      expect(viteCall?.[0]).not.toContain('.cmd');
     });
   });
 

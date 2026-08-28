@@ -15,6 +15,7 @@ vi.mock('child_process', async (importOriginal) => {
 import { EventEmitter } from 'events';
 import { execFile, spawn } from 'child_process';
 import {
+  addPackages,
   detectApiRoute,
   detectPackageManager,
   detectReact,
@@ -33,6 +34,10 @@ import {
   readProjectDatastores,
   readProjectModels,
   readProjectName,
+  removePackages,
+  resolveProjectBin,
+  runInstall,
+  runProjectBin,
 } from '../../src/lib/project.js';
 
 // Fakes spawn()'s ChildProcess just enough for runInstall(): an EventEmitter that emits 'exit'
@@ -322,6 +327,114 @@ describe('installIfPackageJsonChanged', () => {
     await expect(installIfPackageJsonChanged(tmpDir, '{ "name": "my-app" }', log, warn)).resolves.toBeUndefined();
 
     expect(warnings.some((m) => m.includes('Failed to install dependencies'))).toBe(true);
+  });
+});
+
+describe('runInstall', () => {
+  beforeEach(() => {
+    vi.mocked(spawn).mockReset();
+  });
+
+  it('spawns `<pkgMgr> install` via a shell, streaming output', async () => {
+    vi.mocked(spawn).mockReturnValue(fakeSpawn(0) as any);
+    await runInstall('/fake/project', 'npm');
+    expect(spawn).toHaveBeenCalledWith('npm', ['install'], { cwd: '/fake/project', stdio: 'inherit', shell: true });
+  });
+
+  it('rejects when the install command exits non-zero', async () => {
+    vi.mocked(spawn).mockReturnValue(fakeSpawn(1) as any);
+    await expect(runInstall('/fake/project', 'yarn')).rejects.toThrow(/exited with code 1/);
+  });
+});
+
+describe('addPackages', () => {
+  beforeEach(() => {
+    vi.mocked(spawn).mockReset();
+    vi.mocked(spawn).mockReturnValue(fakeSpawn(0) as any);
+  });
+
+  it('runs `yarn add <packages>`', async () => {
+    await addPackages('/fake/project', 'yarn', ['lodash-es']);
+    expect(spawn).toHaveBeenCalledWith('yarn', ['add', 'lodash-es'], { cwd: '/fake/project', stdio: 'inherit', shell: true });
+  });
+
+  it('runs `yarn add --dev <packages>` when dev is set', async () => {
+    await addPackages('/fake/project', 'yarn', ['vitest'], { dev: true });
+    expect(spawn).toHaveBeenCalledWith('yarn', ['add', '--dev', 'vitest'], expect.objectContaining({ cwd: '/fake/project' }));
+  });
+
+  it('runs `npm install <packages>`', async () => {
+    await addPackages('/fake/project', 'npm', ['axios@1.19.0']);
+    expect(spawn).toHaveBeenCalledWith('npm', ['install', 'axios@1.19.0'], expect.objectContaining({ cwd: '/fake/project' }));
+  });
+
+  it('runs `npm install --save-dev <packages>` when dev is set', async () => {
+    await addPackages('/fake/project', 'npm', ['vitest'], { dev: true });
+    expect(spawn).toHaveBeenCalledWith('npm', ['install', '--save-dev', 'vitest'], expect.objectContaining({ cwd: '/fake/project' }));
+  });
+
+  it('supports multiple packages in one call', async () => {
+    await addPackages('/fake/project', 'npm', ['axios', 'lodash-es']);
+    expect(spawn).toHaveBeenCalledWith('npm', ['install', 'axios', 'lodash-es'], expect.anything());
+  });
+
+  it('rejects when the add command exits non-zero', async () => {
+    vi.mocked(spawn).mockReturnValue(fakeSpawn(1) as any);
+    await expect(addPackages('/fake/project', 'npm', ['axios'])).rejects.toThrow(/exited with code 1/);
+  });
+});
+
+describe('removePackages', () => {
+  beforeEach(() => {
+    vi.mocked(spawn).mockReset();
+    vi.mocked(spawn).mockReturnValue(fakeSpawn(0) as any);
+  });
+
+  it('runs `yarn remove <packages>`', async () => {
+    await removePackages('/fake/project', 'yarn', ['lodash-es']);
+    expect(spawn).toHaveBeenCalledWith('yarn', ['remove', 'lodash-es'], { cwd: '/fake/project', stdio: 'inherit', shell: true });
+  });
+
+  it('runs `npm uninstall <packages>`', async () => {
+    await removePackages('/fake/project', 'npm', ['axios']);
+    expect(spawn).toHaveBeenCalledWith('npm', ['uninstall', 'axios'], expect.objectContaining({ cwd: '/fake/project' }));
+  });
+
+  it('supports multiple packages in one call', async () => {
+    await removePackages('/fake/project', 'npm', ['axios', 'lodash-es']);
+    expect(spawn).toHaveBeenCalledWith('npm', ['uninstall', 'axios', 'lodash-es'], expect.anything());
+  });
+
+  it('rejects when the remove command exits non-zero', async () => {
+    vi.mocked(spawn).mockReturnValue(fakeSpawn(1) as any);
+    await expect(removePackages('/fake/project', 'npm', ['axios'])).rejects.toThrow(/exited with code 1/);
+  });
+});
+
+describe('resolveProjectBin / runProjectBin', () => {
+  beforeEach(() => {
+    vi.mocked(spawn).mockReset();
+  });
+
+  const ext = process.platform === 'win32' ? '.cmd' : '';
+
+  it('resolves to node_modules/.bin/<name>, with a .cmd extension on Windows only', () => {
+    expect(resolveProjectBin('/fake/project', 'tsc')).toBe(join('/fake/project', 'node_modules', '.bin', `tsc${ext}`));
+  });
+
+  it('runs the resolved binary with the given args, streaming output', async () => {
+    vi.mocked(spawn).mockReturnValue(fakeSpawn(0) as any);
+    await runProjectBin('/fake/project', 'vitest', ['run', '--coverage']);
+    expect(spawn).toHaveBeenCalledWith(
+      join('/fake/project', 'node_modules', '.bin', `vitest${ext}`),
+      ['run', '--coverage'],
+      expect.objectContaining({ cwd: '/fake/project', stdio: 'inherit' }),
+    );
+  });
+
+  it('rejects when the binary exits non-zero', async () => {
+    vi.mocked(spawn).mockReturnValue(fakeSpawn(1) as any);
+    await expect(runProjectBin('/fake/project', 'tsc', [])).rejects.toThrow(/exited with code 1/);
   });
 });
 

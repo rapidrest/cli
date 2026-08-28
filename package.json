@@ -79,6 +79,9 @@
     ],
     "topicSeparator": " ",
     "topics": {
+      "dep": {
+        "description": "Manage a RapidREST project's dependencies"
+      },
       "generate": {
         "description": "Generate RapidREST projects, models, and routes"
       },

@@ -249,17 +249,53 @@ export async function detectPackageManager(cwd: string): Promise<'npm' | 'yarn'>
   return 'npm';
 }
 
-// Runs the project's package manager install step, streaming output straight to the terminal so
-// the user sees real install progress rather than the CLI appearing to hang.
-export function runInstall(cwd: string, pkgMgr: 'npm' | 'yarn'): Promise<void> {
+// Spawns `cmd` with output streamed straight to the terminal (so the user sees real progress
+// rather than the CLI appearing to hang) and resolves once it exits cleanly, or rejects otherwise.
+function spawnAndWait(cmd: string, args: string[], cwd: string, opts: { shell?: boolean } = {}): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(pkgMgr, ['install'], { cwd, stdio: 'inherit', shell: true });
+    const child = spawn(cmd, args, { cwd, stdio: 'inherit', shell: opts.shell ?? false });
     child.once('exit', (code) => {
       if (code === 0) resolve();
-      else reject(new Error(`\`${pkgMgr} install\` exited with code ${code}`));
+      else reject(new Error(`\`${cmd} ${args.join(' ')}\` exited with code ${code}`));
     });
     child.once('error', reject);
   });
+}
+
+// Runs the project's package manager install step (`yarn install` / `npm install`).
+export function runInstall(cwd: string, pkgMgr: 'npm' | 'yarn'): Promise<void> {
+  return spawnAndWait(pkgMgr, ['install'], cwd, { shell: true });
+}
+
+// Adds one or more packages to the project via its package manager (`yarn add` / `npm install
+// <pkg>`). `dev` maps to yarn's `--dev` / npm's `--save-dev` so the dependency lands in
+// devDependencies instead of dependencies.
+export function addPackages(cwd: string, pkgMgr: 'npm' | 'yarn', packages: string[], opts: { dev?: boolean } = {}): Promise<void> {
+  const args = pkgMgr === 'yarn'
+    ? ['add', ...(opts.dev ? ['--dev'] : []), ...packages]
+    : ['install', ...(opts.dev ? ['--save-dev'] : []), ...packages];
+  return spawnAndWait(pkgMgr, args, cwd, { shell: true });
+}
+
+// Removes one or more packages from the project via its package manager (`yarn remove` / `npm
+// uninstall`) — package managers infer whether a package was a dependency or devDependency
+// themselves, so unlike addPackages there's no dev/prod distinction to pass through.
+export function removePackages(cwd: string, pkgMgr: 'npm' | 'yarn', packages: string[]): Promise<void> {
+  const args = pkgMgr === 'yarn' ? ['remove', ...packages] : ['uninstall', ...packages];
+  return spawnAndWait(pkgMgr, args, cwd, { shell: true });
+}
+
+// Resolves a binary the project installed into its own node_modules/.bin (e.g. tsc, vite,
+// vitest) — the same one `dev`/`start` already use to run tsx, so build/test tooling always
+// matches the version the project actually depends on rather than whatever the CLI bundles.
+export function resolveProjectBin(cwd: string, name: string): string {
+  const ext = process.platform === 'win32' ? '.cmd' : '';
+  return join(cwd, 'node_modules', '.bin', `${name}${ext}`);
+}
+
+// Runs a project-local binary (tsc, vite, vitest, ...), streaming output live.
+export function runProjectBin(cwd: string, name: string, args: string[]): Promise<void> {
+  return spawnAndWait(resolveProjectBin(cwd, name), args, cwd, { shell: process.platform === 'win32' });
 }
 
 // Reads package.json's raw text (not parsed — used only for byte-for-byte before/after

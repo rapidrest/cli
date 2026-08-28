@@ -2,57 +2,95 @@
 // Copyright (C) 2026 Jean-Philippe Steinmetz
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Config } from '@oclif/core';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+vi.mock('fs/promises', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('fs/promises')>();
+  return { ...actual, access: vi.fn(), rm: vi.fn() };
+});
 
 vi.mock('../../src/lib/project.js', () => ({
-  detectPackageManager: vi.fn(),
+  detectReact: vi.fn(),
+  runProjectBin: vi.fn(),
 }));
 
-import { detectPackageManager } from '../../src/lib/project.js';
+import { access, rm } from 'fs/promises';
+import { join } from 'path';
+import { detectReact, runProjectBin } from '../../src/lib/project.js';
 import Build from '../../src/commands/build.js';
 
 const ROOT = process.cwd();
 
 describe('build', () => {
-  let runCommandSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
-    runCommandSpy = vi.spyOn(Config.prototype, 'runCommand').mockResolvedValue(undefined);
+    vi.clearAllMocks();
+    vi.mocked(rm).mockResolvedValue(undefined);
+    vi.mocked(runProjectBin).mockResolvedValue(undefined);
+    vi.mocked(detectReact).mockResolvedValue(false);
   });
 
-  afterEach(() => {
-    runCommandSpy.mockRestore();
-  });
-
-  it('runs "npm run build" when detectPackageManager resolves "npm"', async () => {
-    vi.mocked(detectPackageManager).mockResolvedValue('npm');
-
+  it('cleans dist/ before compiling', async () => {
     await Build.run([], ROOT);
-
-    expect(runCommandSpy).toHaveBeenCalledWith('npm', ['run', 'build']);
+    expect(rm).toHaveBeenCalledWith(join(process.cwd(), 'dist'), { recursive: true, force: true });
   });
 
-  it('runs "yarn build" when detectPackageManager resolves "yarn"', async () => {
-    vi.mocked(detectPackageManager).mockResolvedValue('yarn');
-
+  it('compiles TypeScript via the project\'s own tsc', async () => {
     await Build.run([], ROOT);
-
-    expect(runCommandSpy).toHaveBeenCalledWith('yarn', ['build']);
+    expect(runProjectBin).toHaveBeenCalledWith(process.cwd(), 'tsc', []);
   });
 
-  it('calls detectPackageManager with the current working directory', async () => {
-    vi.mocked(detectPackageManager).mockResolvedValue('npm');
-
+  it('does not build a React frontend when detectReact returns false', async () => {
+    vi.mocked(detectReact).mockResolvedValue(false);
     await Build.run([], ROOT);
-
-    expect(detectPackageManager).toHaveBeenCalledWith(process.cwd());
+    expect(runProjectBin).not.toHaveBeenCalledWith(process.cwd(), 'vite', ['build']);
+    expect(access).not.toHaveBeenCalled();
   });
 
-  it('propagates an error thrown by config.runCommand', async () => {
-    vi.mocked(detectPackageManager).mockResolvedValue('npm');
-    runCommandSpy.mockRejectedValue(new Error('build failed'));
+  describe('when React is configured', () => {
+    beforeEach(() => {
+      vi.mocked(detectReact).mockResolvedValue(true);
+    });
 
-    await expect(Build.run([], ROOT)).rejects.toThrow('build failed');
+    it('runs vite build after the main tsc pass', async () => {
+      vi.mocked(access).mockRejectedValue(new Error('ENOENT'));
+      await Build.run([], ROOT);
+
+      const tscCall = vi.mocked(runProjectBin).mock.calls.findIndex((c) => c[1] === 'tsc' && c[2].length === 0);
+      const viteCall = vi.mocked(runProjectBin).mock.calls.findIndex((c) => c[1] === 'vite');
+      expect(tscCall).toBeGreaterThanOrEqual(0);
+      expect(viteCall).toBeGreaterThan(tscCall);
+      expect(runProjectBin).toHaveBeenCalledWith(process.cwd(), 'vite', ['build']);
+    });
+
+    it('also compiles tsconfig.client.json when it exists', async () => {
+      vi.mocked(access).mockResolvedValue(undefined);
+      await Build.run([], ROOT);
+      expect(runProjectBin).toHaveBeenCalledWith(process.cwd(), 'tsc', ['-p', 'tsconfig.client.json']);
+    });
+
+    it('skips the client tsc pass when tsconfig.client.json does not exist', async () => {
+      vi.mocked(access).mockRejectedValue(new Error('ENOENT'));
+      await Build.run([], ROOT);
+      expect(runProjectBin).not.toHaveBeenCalledWith(process.cwd(), 'tsc', ['-p', 'tsconfig.client.json']);
+    });
+  });
+
+  it('propagates an error thrown by the tsc build step', async () => {
+    vi.mocked(runProjectBin).mockRejectedValue(new Error('tsc failed'));
+    await expect(Build.run([], ROOT)).rejects.toThrow('tsc failed');
+  });
+
+  it('propagates an error thrown by the vite build step', async () => {
+    vi.mocked(detectReact).mockResolvedValue(true);
+    vi.mocked(access).mockRejectedValue(new Error('ENOENT'));
+    vi.mocked(runProjectBin).mockImplementation(async (_cwd, name) => {
+      if (name === 'vite') throw new Error('vite failed');
+    });
+    await expect(Build.run([], ROOT)).rejects.toThrow('vite failed');
+  });
+
+  it('falls back to String(e) when a build step errors with a non-Error value', async () => {
+    vi.mocked(runProjectBin).mockRejectedValue('non-error-boom');
+    await expect(Build.run([], ROOT)).rejects.toThrow('non-error-boom');
   });
 });
