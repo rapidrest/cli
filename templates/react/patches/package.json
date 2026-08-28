@@ -1,6 +1,5 @@
 {
   "scripts": {
-    "build": "rimraf dist && tsc && tsc -p tsconfig.client.json && vite build",
     "export": "rapidrest react export",
     "lint": "eslint ./apps ./src ./test"
   },
