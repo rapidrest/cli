@@ -20,6 +20,8 @@ vi.mock('../../../src/lib/project.js', () => ({
   detectApiRoute: vi.fn(),
   readProjectDatastores: vi.fn(),
   readProjectName: vi.fn(),
+  installIfPackageJsonChanged: vi.fn(),
+  readPackageJsonRaw: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/prompts.js', () => ({

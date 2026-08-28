@@ -18,9 +18,10 @@ gateway:
   namespace: '{{ .Release.Namespace }}'
   hsts: true
   tls: true
-[[#if hasRedis]]
 redis:
+[[#if hasRedis]]
   create: true
+[[/if]]
   url: 'redis://db-redis-master'
   architecture: standalone
   auth:
@@ -35,15 +36,27 @@ redis:
   networkPolicy:
     enabled: true
     allowExternal: false
-[[/if]]
-[[#if hasMongoDB]]
 mongodb:
+[[#if hasMongoDB]]
   create: true
+[[/if]]
   architecture: standalone
   fullnameOverride: mongodb
   auth:
     enabled: true
+postgresql:
+[[#if hasPostgres]]
+  create: true
 [[/if]]
+  architecture: standalone
+  fullnameOverride: postgresql
+  auth:
+    enablePostgresUser: true
+    # PostgreSQL (unlike MongoDB) won't create databases on first connection, so only one
+    # extra database is auto-provisioned here. The acl datastore below defaults to the
+    # built-in "postgres" database; override service.postgresql.acl.name if you provision a
+    # dedicated database for it out-of-band.
+    database: '[[project_name]]'
 service:
   image:
     registry: ghcr.io
@@ -64,6 +77,13 @@ service:
       name: access_control_lists
       host: ''
     mongo:
+      name: [[project_name]]
+      host: ''
+  postgresql:
+    acl:
+      name: postgres
+      host: ''
+    sql:
       name: [[project_name]]
       host: ''
   config:

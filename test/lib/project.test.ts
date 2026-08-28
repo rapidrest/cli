@@ -9,10 +9,11 @@ import os from 'os';
 
 vi.mock('child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('child_process')>();
-  return { ...actual, execFile: vi.fn() };
+  return { ...actual, execFile: vi.fn(), spawn: vi.fn() };
 });
 
-import { execFile } from 'child_process';
+import { EventEmitter } from 'events';
+import { execFile, spawn } from 'child_process';
 import {
   detectApiRoute,
   detectPackageManager,
@@ -23,14 +24,27 @@ import {
   findExistingReactApps,
   formatDefaultPropertyValue,
   formatExamplePropertyValue,
+  installIfPackageJsonChanged,
   readGitAuthor,
   readModelDatastore,
   readModelProperty,
+  readPackageJsonRaw,
   readProjectAuthor,
   readProjectDatastores,
   readProjectModels,
   readProjectName,
 } from '../../src/lib/project.js';
+
+// Fakes spawn()'s ChildProcess just enough for runInstall(): an EventEmitter that emits 'exit'
+// (or 'error') on the next tick, the same way a real child process would asynchronously.
+function fakeSpawn(exitCode: number | null, error?: Error): EventEmitter {
+  const child = new EventEmitter();
+  setImmediate(() => {
+    if (error) child.emit('error', error);
+    else child.emit('exit', exitCode);
+  });
+  return child;
+}
 
 describe('detectApiRoute', () => {
   let tmpDir: string;
@@ -215,6 +229,99 @@ describe('detectPackageManager', () => {
   it('returns "npm" when packageManager field does not start with "yarn"', async () => {
     await writeFile(join(tmpDir, 'package.json'), JSON.stringify({ packageManager: 'npm@10.0.0' }));
     expect(await detectPackageManager(tmpDir)).toBe('npm');
+  });
+});
+
+describe('readPackageJsonRaw', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(os.tmpdir(), 'rrpkg-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  it('returns the raw file content when package.json exists', async () => {
+    await writeFile(join(tmpDir, 'package.json'), '{ "name": "my-app" }');
+    expect(await readPackageJsonRaw(tmpDir)).toBe('{ "name": "my-app" }');
+  });
+
+  it('returns undefined when package.json does not exist', async () => {
+    expect(await readPackageJsonRaw(tmpDir)).toBeUndefined();
+  });
+});
+
+describe('installIfPackageJsonChanged', () => {
+  let tmpDir: string;
+  let logs: string[];
+  let warnings: string[];
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(os.tmpdir(), 'rrinstall-'));
+    logs = [];
+    warnings = [];
+    vi.mocked(spawn).mockReset();
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  const log = (m: string) => { logs.push(m); };
+  const warn = (m: string) => { warnings.push(m); };
+
+  it('does nothing when package.json does not exist', async () => {
+    await installIfPackageJsonChanged(tmpDir, undefined, log, warn);
+    expect(spawn).not.toHaveBeenCalled();
+  });
+
+  it('skips the install when package.json is unchanged from before', async () => {
+    const content = '{ "name": "my-app", "dependencies": {} }';
+    await writeFile(join(tmpDir, 'package.json'), content);
+    await installIfPackageJsonChanged(tmpDir, content, log, warn);
+    expect(spawn).not.toHaveBeenCalled();
+    expect(logs).toEqual([]);
+  });
+
+  it('runs npm install when package.json changed and no packageManager/yarn.lock hints exist', async () => {
+    await writeFile(join(tmpDir, 'package.json'), '{ "name": "my-app", "dependencies": { "lodash": "^4.0.0" } }');
+    vi.mocked(spawn).mockImplementation(() => fakeSpawn(0) as any);
+
+    await installIfPackageJsonChanged(tmpDir, '{ "name": "my-app" }', log, warn);
+
+    expect(spawn).toHaveBeenCalledWith('npm', ['install'], expect.objectContaining({ cwd: tmpDir }));
+    expect(logs.some((m) => m.includes('Installing dependencies'))).toBe(true);
+    expect(warnings).toEqual([]);
+  });
+
+  it('runs yarn install when the project has a yarn.lock', async () => {
+    await writeFile(join(tmpDir, 'package.json'), '{ "name": "my-app", "dependencies": { "lodash": "^4.0.0" } }');
+    await writeFile(join(tmpDir, 'yarn.lock'), '');
+    vi.mocked(spawn).mockImplementation(() => fakeSpawn(0) as any);
+
+    await installIfPackageJsonChanged(tmpDir, '{ "name": "my-app" }', log, warn);
+
+    expect(spawn).toHaveBeenCalledWith('yarn', ['install'], expect.objectContaining({ cwd: tmpDir }));
+  });
+
+  it('also installs when there was no package.json before (brand new project)', async () => {
+    await writeFile(join(tmpDir, 'package.json'), '{ "name": "my-app" }');
+    vi.mocked(spawn).mockImplementation(() => fakeSpawn(0) as any);
+
+    await installIfPackageJsonChanged(tmpDir, undefined, log, warn);
+
+    expect(spawn).toHaveBeenCalledOnce();
+  });
+
+  it('warns instead of throwing when the install command exits non-zero', async () => {
+    await writeFile(join(tmpDir, 'package.json'), '{ "name": "my-app", "dependencies": { "lodash": "^4.0.0" } }');
+    vi.mocked(spawn).mockImplementation(() => fakeSpawn(1) as any);
+
+    await expect(installIfPackageJsonChanged(tmpDir, '{ "name": "my-app" }', log, warn)).resolves.toBeUndefined();
+
+    expect(warnings.some((m) => m.includes('Failed to install dependencies'))).toBe(true);
   });
 });
 

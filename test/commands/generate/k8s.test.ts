@@ -12,6 +12,8 @@ vi.mock('../../../src/lib/template.js', () => ({
 vi.mock('../../../src/lib/project.js', () => ({
   readProjectDatastores: vi.fn(),
   readProjectName: vi.fn(),
+  installIfPackageJsonChanged: vi.fn(),
+  readPackageJsonRaw: vi.fn(),
 }));
 
 import { processTemplate } from '../../../src/lib/template.js';

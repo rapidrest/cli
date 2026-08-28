@@ -18,6 +18,7 @@ const conf = nconf
 conf.defaults({
     service_name: packageInfo.name,
     version: packageInfo.version,
+    base_path: ".",
     // Settings pertaining to the signing and verification of authentication tokens
     auth: {
         // The default PassportJS authentication strategy to use

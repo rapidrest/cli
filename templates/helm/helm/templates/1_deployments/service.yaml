@@ -71,6 +71,14 @@ spec:
               value: {{ $.Values.mongodb.fullnameOverride }}
           command: ['sh', '-c', "until nc -z $MONGO_HOST 27017; do echo waiting for mongodb; sleep $(expr 2 + $RANDOM % 13); done"]
         {{- end }}
+        {{- if $.Values.postgresql.create }}
+        - name: postgres-probe
+          image: busybox
+          env:
+            - name: POSTGRES_HOST
+              value: {{ $.Values.postgresql.fullnameOverride }}
+          command: ['sh', '-c', "until nc -z $POSTGRES_HOST 5432; do echo waiting for postgresql; sleep $(expr 2 + $RANDOM % 13); done"]
+        {{- end }}
       {{- if $.Values.service.spec }}
       {{- range $k, $v := $.Values.service.spec }}
       {{- if kindIs "string" $v }}

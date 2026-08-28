@@ -7,7 +7,7 @@ import { Args, Command, Flags } from '@oclif/core';
 import { existsSync } from "fs";
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { formatDefaultPropertyValue, readProjectDatastores, readProjectName } from '../../lib/project.js';
+import { formatDefaultPropertyValue, installIfPackageJsonChanged, readPackageJsonRaw, readProjectDatastores, readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
 import GenerateHelm from './k8s.js';
@@ -125,11 +125,16 @@ export default class GenerateModel extends Command {
     'output-dir': Flags.string({ alias: 'o', description: 'Directory to write the generated model into. Defaults to ./src/models.' }),
     protect: Flags.boolean({ char: 'p', description: "Enable RBAC-based protection of this model."}),
     property: Flags.string({ description: 'Add a typed property to the model, as name:type (e.g. quantity:number). Append ? to the type to make it optional (e.g. bio:string?). Repeatable.', multiple: true }),
+    'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
   };
 
   async run(): Promise<void> {
     const { args, flags } = await this.parse(GenerateModel, resolveCacheArgv(this.argv));
     const outputDir = flags['output-dir'] ?? process.cwd();
+    // package.json patches always target process.cwd() (see processTemplate's projectDir option
+    // below), regardless of --output-dir — captured before any of this command's own writes, or
+    // the nested Docker/Helm regeneration below, so the single install check at the end covers both.
+    const packageJsonBefore = await readPackageJsonRaw(process.cwd());
 
     this.log(`Generating data model: "${args.name}"...\n`);
 
@@ -302,10 +307,14 @@ export default class GenerateModel extends Command {
           if (answer) {
             this.log('\nUpdating Kubernetes (Helm) support...');
             await GenerateHelm.run([
-              '--output-dir', outputDir, '--force'
+              '--output-dir', outputDir, '--force', '--no-install'
             ], this.config.root);
           }
         }
+      }
+
+      if (!flags['no-install']) {
+        await installIfPackageJsonChanged(process.cwd(), packageJsonBefore, (m) => this.log(m), (m) => this.warn(m));
       }
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));

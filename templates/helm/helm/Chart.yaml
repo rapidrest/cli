@@ -4,7 +4,6 @@ name: [[project_name]]
 version: 1.0.0
 appVersion: "0.1.0"
 dependencies:
-[[#if hasMongoDB]]
 - name: mongodb
   repository: "@bitnami"
   version: ~18.4.4
@@ -13,7 +12,14 @@ dependencies:
     - dbs
     - mongodb
   alias: mongodb
-[[/if]]
+- name: postgresql
+  repository: "@bitnami"
+  version: ~18.8.13
+  condition: postgresql.create
+  tags:
+    - dbs
+    - postgresql
+  alias: postgresql
 [[#if hasRedis]]
 - name: redis
   version: ~24.1.3

@@ -6,7 +6,7 @@ import { checkbox, input, password, select } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { detectApiRoute, readProjectDatastores, readProjectName } from '../../lib/project.js';
+import { detectApiRoute, installIfPackageJsonChanged, readPackageJsonRaw, readProjectDatastores, readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 
 const DATASTORE_TYPES = ['sql', 'mongo'];
@@ -193,12 +193,14 @@ export default class GenerateAuth extends Command {
     'default-accounts': Flags.boolean({ description: 'Also provision a default admin account the first time the server boots against an empty user table.' }),
     method: Flags.string({ multiple: true, description: `Which authentication method(s) to enable. One of: ${AUTH_METHODS.join(', ')}. Repeatable.` }),
     'oidc-provider': Flags.string({ multiple: true, description: `When "oidc" is among --method, which third-party OIDC/OAuth provider(s) to configure. One of: ${OIDC_PROVIDERS.join(', ')}. Repeatable.` }),
+    'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
   };
 
   async run(): Promise<void> {
     const { flags } = await this.parse(GenerateAuth);
     const cwd = process.cwd();
     const outputDir = flags['output-dir'] ?? cwd;
+    const packageJsonBefore = await readPackageJsonRaw(cwd);
 
     this.log('Generating authentication scaffolding...\n');
 
@@ -349,7 +351,12 @@ export default class GenerateAuth extends Command {
       }
 
       this.log(`\nAuthentication scaffolding generated at: ${outputDir}`);
-      this.log(`\n@rapidrest/auth and argon2 were added to package.json — install dependencies before building.`);
+
+      if (!flags['no-install']) {
+        await installIfPackageJsonChanged(cwd, packageJsonBefore, (m) => this.log(m), (m) => this.warn(m));
+      } else {
+        this.log(`\n@rapidrest/auth and argon2 were added to package.json — install dependencies before building.`);
+      }
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

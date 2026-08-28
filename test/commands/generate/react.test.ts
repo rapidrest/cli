@@ -20,6 +20,8 @@ vi.mock('../../../src/lib/project.js', () => ({
   readProjectAuthor: vi.fn(),
   readProjectName: vi.fn(),
   findExistingReactApps: vi.fn(),
+  installIfPackageJsonChanged: vi.fn(),
+  readPackageJsonRaw: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/prompts.js', () => ({

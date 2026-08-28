@@ -7,7 +7,7 @@ import { Args, Command, Flags } from '@oclif/core';
 import { mkdir, readFile, rename, writeFile } from 'fs/promises';
 import { basename, join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { findExistingReactApps, readProjectName, type ExistingReactApp } from '../../lib/project.js';
+import { findExistingReactApps, installIfPackageJsonChanged, readPackageJsonRaw, readProjectName, type ExistingReactApp } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 
 /**
@@ -140,6 +140,7 @@ export default class GenerateReact extends Command {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
     author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
     hydrate: Flags.boolean({ description: 'Enable client-side hydration. Required for interactive apps.' }),
+    'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
     'output-dir': Flags.string({ description: 'Project directory to add React support to. Defaults to the current working directory.' }),
     path: Flags.string({ alias: 'p', description: 'The base path the React application will route to' }),
   };
@@ -148,6 +149,7 @@ export default class GenerateReact extends Command {
     const { args, flags } = await this.parse(GenerateReact);
     const cwd = flags['output-dir'] ?? process.cwd();
     const outputDir = cwd;
+    const packageJsonBefore = await readPackageJsonRaw(cwd);
 
     this.log(`Generating react app: "${args.name}"...\n`);
 
@@ -203,6 +205,10 @@ export default class GenerateReact extends Command {
       await writeFile(join(outputDir, 'src', 'export.ts'), renderExportEntry(allApps, author, year), 'utf-8');
 
       this.log(`\nReact app "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
+
+      if (!flags['no-install']) {
+        await installIfPackageJsonChanged(cwd, packageJsonBefore, (m) => this.log(m), (m) => this.warn(m));
+      }
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

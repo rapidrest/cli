@@ -564,7 +564,7 @@ describe('generate model', () => {
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       expect((GenerateHelm as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/m', '--force'],
+        ['--output-dir', '/tmp/m', '--force', '--no-install'],
         expect.any(String),
       );
     });

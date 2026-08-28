@@ -2,18 +2,21 @@
 ///////////////////////////////////////////////////////////////////////////////
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
+import config from "./config.js";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import config from "./config.js";
 import { JWTUtils, EventUtils, Logger } from "@rapidrest/core";
 import { ObjectFactory, Server } from "@rapidrest/service-core";
 
 import * as fs from "fs";
 import { readFile } from "fs/promises";
 import * as os from "os";
+import { assertProductionSecretsAreSet } from "./config.defaults.js";
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
+
+assertProductionSecretsAreSet(config, process.env.environment);
 
 const logLevel: string = config.get("logger:level") || (process.env.environment === "production" ? "info" : "debug");
 const logger = Logger(logLevel, config.get("logger:file"));
@@ -33,23 +36,24 @@ const start = async function (config: any, logger: any) {
         logger.debug(err);
     }
 
-    // Initialize EventUtils to be able to send out telemetry events. This service token is meant to
-    // never expire, but config.get() returns a live reference into nconf's store, not a copy — deleting
-    // expiresIn directly would strip it from every other token issued afterward (e.g. real user logins)
-    // for the rest of the process. Deep-copy first so only this token is affected.
-    const auth: any = structuredClone(config.get("auth"));
+    // Initialize EventUtils to be able to send out telemetry events. Build a standalone copy of the
+    // auth config rather than mutating the object `config.get()` returns: nconf does not clone nested
+    // values, so `config.get("auth")` returns the exact live object shared by every other consumer of
+    // this config (e.g. `TokenUtils`) — deleting `expiresIn` off of it in place previously stripped
+    // expiry from every access token the server issues, not just this one telemetry token.
+    const configuredAuth: any = config.get("auth");
+    const auth: any = { ...configuredAuth, options: { ...configuredAuth.options } };
     delete auth.options.expiresIn;
     const token: string = await JWTUtils.createToken(auth,
         {
             uid: `${config.get("service_name")}-${os.hostname()}`,
             roles: config.get("trusted_roles"),
             scopes: [],
-        },
-        { name: `${config.get("service_name")}-${os.hostname()}` });
+        });
     await EventUtils.init(config, logger, token);
 
     // Create and start the server
-    server = new Server({ config, basePath: _dirname, logger, objectFactory });
+    server = new Server({ config, basePath: config.get("base_path"), logger, objectFactory });
     await server.start();
 };
 

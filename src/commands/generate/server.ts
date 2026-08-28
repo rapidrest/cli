@@ -7,6 +7,7 @@ import { Args, Command, Flags } from '@oclif/core';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
+import { installIfPackageJsonChanged } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
 import GenerateHelm from './k8s.js';
@@ -122,6 +123,7 @@ export default class GenerateServer extends Command {
     'api-route': Flags.boolean({ allowNo: true, description: 'Prefix all non-React routes with `/api`.' }),
     'api-version': Flags.string({ description: 'API version to prefix routes with when --api-route is set (e.g. "1" for /api/v1). Leave unset for no version segment.' }),
     scm: Flags.string({ description: `Source control manager. One of: ${SCM_CHOICES.join(', ')} ("none" for no SCM).` }),
+    'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
   };
 
   async run(): Promise<void> {
@@ -314,6 +316,7 @@ export default class GenerateServer extends Command {
         await GenerateHelm.run([
           '--output-dir', outputDir,
           ...(flags.force ? ['--force'] : []),
+          '--no-install',
         ], this.config.root);
       }
 
@@ -323,13 +326,22 @@ export default class GenerateServer extends Command {
           'app',
           '--output-dir', outputDir,
           ...(flags.force ? ['--force'] : []),
+          '--no-install',
         ], this.config.root);
+      }
+
+      // Covers dependencies added by this scaffold plus every nested step above (k8s/react were
+      // told --no-install so this is the only install for the whole `generate server` run).
+      if (!flags['no-install']) {
+        await installIfPackageJsonChanged(outputDir, undefined, (m) => this.log(m), (m) => this.warn(m));
       }
 
       this.log(`\nProject "${args.name}" generated at: ${outputDir}`);
       this.log(`\nNext steps:`);
       this.log(`  cd ${args.name}`);
-      this.log(`  ${pkgMgr} install`);
+      if (flags['no-install']) {
+        this.log(`  ${pkgMgr} install`);
+      }
       this.log(`  ${pkgMgr} run build`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));

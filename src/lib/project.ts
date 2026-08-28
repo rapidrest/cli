@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Jean-Philippe Steinmetz
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
-import { execFile } from 'child_process';
+import { execFile, spawn } from 'child_process';
 import { access, readFile, readdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { promisify } from 'util';
@@ -247,6 +247,53 @@ export async function detectPackageManager(cwd: string): Promise<'npm' | 'yarn'>
     return 'yarn';
   } catch { /* ignore */ }
   return 'npm';
+}
+
+// Runs the project's package manager install step, streaming output straight to the terminal so
+// the user sees real install progress rather than the CLI appearing to hang.
+export function runInstall(cwd: string, pkgMgr: 'npm' | 'yarn'): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(pkgMgr, ['install'], { cwd, stdio: 'inherit', shell: true });
+    child.once('exit', (code) => {
+      if (code === 0) resolve();
+      else reject(new Error(`\`${pkgMgr} install\` exited with code ${code}`));
+    });
+    child.once('error', reject);
+  });
+}
+
+// Reads package.json's raw text (not parsed — used only for byte-for-byte before/after
+// comparison), or undefined if it doesn't exist yet.
+export async function readPackageJsonRaw(cwd: string): Promise<string | undefined> {
+  try {
+    return await readFile(join(cwd, 'package.json'), 'utf-8');
+  } catch {
+    return undefined;
+  }
+}
+
+// Re-runs the package manager install only if this scaffold step actually changed package.json —
+// patch application is idempotent (e.g. re-running `generate model` against the same datastore
+// type is a no-op merge), so this avoids paying for an install on every invocation regardless of
+// whether there's anything new to fetch. `before` is the raw package.json content captured prior
+// to the command's own file writes; pass undefined for a project that doesn't exist yet (e.g.
+// `generate server`), which always installs since nothing can equal a freshly-written file.
+export async function installIfPackageJsonChanged(
+  cwd: string,
+  before: string | undefined,
+  log: (msg: string) => void,
+  warn: (msg: string) => void,
+): Promise<void> {
+  const after = await readPackageJsonRaw(cwd);
+  if (after === undefined || after === before) return;
+
+  const pkgMgr = await detectPackageManager(cwd);
+  log(`\nInstalling dependencies (${pkgMgr} install)...`);
+  try {
+    await runInstall(cwd, pkgMgr);
+  } catch (e) {
+    warn(`Failed to install dependencies automatically: ${e instanceof Error ? e.message : String(e)}\nRun \`${pkgMgr} install\` manually.`);
+  }
 }
 
 export async function readGitAuthor(): Promise<string | undefined> {

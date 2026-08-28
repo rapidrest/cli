@@ -3,75 +3,102 @@
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdtemp, rm, writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { mkdtemp, rm, writeFile, mkdir, chmod } from 'fs/promises';
+import { createRequire } from 'module';
+import { join, dirname } from 'path';
 import os from 'os';
 import { detectDatabases, startDatabases } from '../../src/lib/db.js';
+
+// detectDatabases now actually imports src/config.ts (via tsx) instead of text-scanning it, so it
+// can follow re-exports like `export { default } from './config.base.js'`. That requires a real
+// `node_modules/.bin/tsx` under the fixture project — resolved here from this repo's own installed
+// tsx rather than duplicating node_modules/tsx into every temp dir.
+const tsxCliPath = createRequire(import.meta.url).resolve('tsx/cli');
+
+async function installTsxShim(tmpDir: string): Promise<void> {
+  const binDir = join(tmpDir, 'node_modules', '.bin');
+  await mkdir(binDir, { recursive: true });
+  if (process.platform === 'win32') {
+    await writeFile(join(binDir, 'tsx.cmd'), `@echo off\r\nnode "${tsxCliPath}" %*\r\n`);
+  } else {
+    const shimPath = join(binDir, 'tsx');
+    await writeFile(shimPath, `#!/bin/sh\nexec node "${tsxCliPath}" "$@"\n`);
+    await chmod(shimPath, 0o755);
+  }
+}
 
 describe('detectDatabases', () => {
   let tmpDir: string;
 
   beforeEach(async () => {
     tmpDir = await mkdtemp(join(os.tmpdir(), 'rrdb-'));
-    await mkdir(join(tmpDir, 'src'));
+    await mkdir(join(tmpDir, 'src'), { recursive: true });
+    await installTsxShim(tmpDir);
   });
 
   afterEach(async () => {
     await rm(tmpDir, { recursive: true, force: true });
   });
 
-  async function writeConfig(content: string): Promise<void> {
-    await writeFile(join(tmpDir, 'src', 'config.ts'), content);
+  async function writeConfig(datastores: string, relPath = join('src', 'config.ts')): Promise<void> {
+    const dir = join(tmpDir, dirname(relPath));
+    await mkdir(dir, { recursive: true });
+    await writeFile(
+      join(tmpDir, relPath),
+      `const store = { datastores: ${datastores} };\n`
+      + `export default { get: (key) => store[key] };\n`,
+    );
   }
 
   it('detects mongodb from type: "mongodb" in datastores', async () => {
-    await writeConfig(`conf.defaults({ datastores: { acl: { type: "mongodb", host: "localhost" } } });`);
+    await writeConfig(`{ acl: { type: "mongodb", host: "localhost" } }`);
     const result = await detectDatabases(tmpDir);
     expect(result.mongodb).toBe(true);
     expect(result.redis).toBe(false);
     expect(result.postgresql).toBe(false);
-  });
+  }, 15_000);
 
   it('detects redis from type: "redis" in datastores', async () => {
-    await writeConfig(`conf.defaults({ datastores: { cache: { type: "redis", url: "redis://localhost" } } });`);
+    await writeConfig(`{ cache: { type: "redis", url: "redis://localhost" } }`);
     const result = await detectDatabases(tmpDir);
     expect(result.redis).toBe(true);
     expect(result.mongodb).toBe(false);
-  });
+  }, 15_000);
 
   it('detects postgresql from type: "postgres" in datastores (TypeORM\'s driver literal, not the feature name)', async () => {
-    await writeConfig(`conf.defaults({ datastores: { pg: { type: "postgres", host: "localhost" } } });`);
+    await writeConfig(`{ pg: { type: "postgres", host: "localhost" } }`);
     const result = await detectDatabases(tmpDir);
     expect(result.postgresql).toBe(true);
     expect(result.mongodb).toBe(false);
-  });
+  }, 15_000);
 
   it('detects multiple database types from a single config', async () => {
-    await writeConfig(`conf.defaults({ datastores: {
+    await writeConfig(`{
       acl: { type: "mongodb", host: "localhost" },
       cache: { type: "redis", url: "redis://localhost" },
       pg: { type: "postgres", host: "localhost" },
-    } });`);
+    }`);
     const result = await detectDatabases(tmpDir);
     expect(result).toEqual({ mongodb: true, redis: true, postgresql: true });
-  });
+  }, 15_000);
 
-  it('handles single-quoted type values', async () => {
-    await writeConfig(`conf.defaults({ datastores: { acl: { type: 'mongodb', host: 'localhost' } } });`);
-    const result = await detectDatabases(tmpDir);
-    expect(result.mongodb).toBe(true);
-  });
-
-  it('returns all false when config has no datastore type strings', async () => {
-    await writeConfig(`conf.defaults({ service_name: "my-app", logger: { level: "info" } });`);
+  it('returns all false when config has no datastore types', async () => {
+    await writeConfig(`{}`);
     const result = await detectDatabases(tmpDir);
     expect(result).toEqual({ mongodb: false, redis: false, postgresql: false });
-  });
+  }, 15_000);
 
   it('returns all false when src/config.ts does not exist', async () => {
     const result = await detectDatabases(tmpDir);
     expect(result).toEqual({ mongodb: false, redis: false, postgresql: false });
   });
+
+  it('follows a config.ts that only re-exports another module (split config)', async () => {
+    await writeConfig(`{ pg: { type: "postgres", host: "localhost" } }`, join('src', 'config.base.ts'));
+    await writeFile(join(tmpDir, 'src', 'config.ts'), `export { default } from './config.base.js';\n`);
+    const result = await detectDatabases(tmpDir);
+    expect(result).toEqual({ mongodb: false, redis: false, postgresql: true });
+  }, 15_000);
 });
 
 describe('startDatabases', () => {

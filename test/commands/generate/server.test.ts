@@ -26,6 +26,7 @@ vi.mock('../../../src/lib/template.js', () => ({
 
 vi.mock('../../../src/lib/project.js', () => ({
   readGitAuthor: vi.fn(),
+  installIfPackageJsonChanged: vi.fn(),
 }));
 
 vi.mock('../../../src/lib/prompts.js', () => ({
@@ -441,7 +442,7 @@ describe('generate server', () => {
 
       expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
       expect((GenerateHelm as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out'],
+        ['--output-dir', '/tmp/out', '--no-install'],
         expect.any(String),
       );
     });
@@ -458,7 +459,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateHelm as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--force'],
+        ['--output-dir', '/tmp/out', '--force', '--no-install'],
         expect.any(String),
       );
     });
@@ -468,7 +469,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateHelm as any).run).toHaveBeenCalledWith(
-        ['--output-dir', join(process.cwd(), 'my-project')],
+        ['--output-dir', join(process.cwd(), 'my-project'), '--no-install'],
         expect.any(String),
       );
     });
@@ -489,7 +490,7 @@ describe('generate server', () => {
 
       expect((GenerateReact as any).run).toHaveBeenCalledOnce();
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['app', '--output-dir', '/tmp/out'],
+        ['app', '--output-dir', '/tmp/out', '--no-install'],
         expect.any(String),
       );
     });
@@ -506,7 +507,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['app', '--output-dir', '/tmp/out', '--force'],
+        ['app', '--output-dir', '/tmp/out', '--force', '--no-install'],
         expect.any(String),
       );
     });
@@ -516,7 +517,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['app', '--output-dir', join(process.cwd(), 'my-project')],
+        ['app', '--output-dir', join(process.cwd(), 'my-project'), '--no-install'],
         expect.any(String),
       );
     });

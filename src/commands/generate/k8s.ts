@@ -5,7 +5,7 @@
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectDatastores, readProjectName } from '../../lib/project.js';
+import { installIfPackageJsonChanged, readPackageJsonRaw, readProjectDatastores, readProjectName } from '../../lib/project.js';
 
 export default class GenerateHelm extends Command {
   static override args = {};
@@ -18,6 +18,7 @@ export default class GenerateHelm extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
     'output-dir': Flags.string({ description: 'Project directory to add Kubernetes (Helm) support to. Defaults to the current working directory.' }),
   };
 
@@ -25,6 +26,7 @@ export default class GenerateHelm extends Command {
     const { flags } = await this.parse(GenerateHelm);
     const cwd = flags['output-dir'] ?? process.cwd();
     const outputDir = cwd;
+    const packageJsonBefore = await readPackageJsonRaw(cwd);
 
     this.log(`Generating Kubernetes (Helm) files...\n`);
 
@@ -50,6 +52,10 @@ export default class GenerateHelm extends Command {
     try {
       await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
       this.log(`\nKubernetes (Helm) files generated at: ${outputDir}`);
+
+      if (!flags['no-install']) {
+        await installIfPackageJsonChanged(cwd, packageJsonBefore, (m) => this.log(m), (m) => this.warn(m));
+      }
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

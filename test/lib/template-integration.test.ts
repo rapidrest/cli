@@ -677,3 +677,89 @@ describe('generate k8s — helm template (regression: helmPaths must stay non-em
     });
   });
 });
+
+// The chart lets an operator toggle between the mongodb and postgresql subcharts at install time
+// (`--set mongodb.create=`/`--set postgresql.create=`), since the app itself picks its datastore
+// backend from env vars at runtime (see server.ts's `datastores__sql__url` check). Both dependencies
+// and both values.yaml blocks are always scaffolded together so the swap works regardless of which
+// backend was chosen at `generate k8s` time - this exercises the postgres-only side of that (the
+// mongo-only side is covered by the describe block above).
+describe('generate k8s — helm template (PostgreSQL support)', () => {
+  const helmTemplateDir = join(TEMPLATES, 'helm');
+  const baseContext = {
+    year: 2026,
+    project_name: 'my-test-project',
+    datastores: [{ name: 'sql', type: 'postgres' }],
+    hasMongoDB: false,
+    hasPostgres: true,
+    hasRedis: false,
+  };
+
+  async function withPackageJson(fn: (dir: string) => Promise<void>): Promise<void> {
+    await withTmpDir(async (dir) => {
+      await writeFile(join(dir, 'package.json'), JSON.stringify({ name: 'my-test-project', scripts: {} }, null, 2));
+      await fn(dir);
+    });
+  }
+
+  it('renders without throwing and leaves no unsubstituted [[ ]] placeholder', async () => {
+    await withPackageJson(async (dir) => {
+      await expect(processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir })).resolves.not.toThrow();
+      const files = (await listFiles(dir)).filter(f => f.startsWith('/helm/'));
+      expect(files.length).toBeGreaterThan(0);
+      for (const f of files) {
+        const content = await import('fs/promises').then(fs => fs.readFile(join(dir, f), 'utf-8'));
+        expect(content, `${f} still contains an unsubstituted [[ ]] placeholder`).not.toMatch(/\[\[\s*[\w.]+\s*\]\]/);
+      }
+    });
+  });
+
+  it('lists both mongodb and postgresql as chart dependencies regardless of which was scaffolded', async () => {
+    await withPackageJson(async (dir) => {
+      await processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'helm', 'Chart.yaml'), 'utf-8'));
+      expect(content).toContain('- name: mongodb');
+      expect(content).toContain('- name: postgresql');
+      expect(content).toContain('condition: postgresql.create');
+    });
+  });
+
+  it('defaults postgresql.create to true and omits mongodb.create when postgres was scaffolded', async () => {
+    await withPackageJson(async (dir) => {
+      await processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'helm', 'values.yaml'), 'utf-8'));
+      const postgresBlock = content.slice(content.indexOf('postgresql:'));
+      expect(postgresBlock).toMatch(/postgresql:\s*\n\s*create: true/);
+      const mongoBlock = content.slice(content.indexOf('mongodb:'), content.indexOf('postgresql:'));
+      expect(mongoBlock).not.toContain('create: true');
+    });
+  });
+
+  it('wires a postgres-probe init container guarded by $.Values.postgresql.create', async () => {
+    // service.yaml is under helmPaths too, so both the mongo-probe and postgres-probe blocks
+    // (each guarded by its own Helm {{- if }}) are expected in the emitted source untouched -
+    // which one actually runs is a chart *install*-time decision, not a CLI scaffold-time one.
+    await withPackageJson(async (dir) => {
+      await processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir });
+      const deployment = await import('fs/promises').then(fs =>
+        fs.readFile(join(dir, 'helm', 'templates', '1_deployments', 'service.yaml'), 'utf-8'));
+      expect(deployment).toContain('{{- if $.Values.postgresql.create }}');
+      expect(deployment).toContain('name: postgres-probe');
+      expect(deployment).toContain('nc -z $POSTGRES_HOST 5432');
+    });
+  });
+
+  it('wires the acl and sql datastores from the postgresql subchart in service-config.yaml', async () => {
+    // service-config.yaml is under helmPaths, so its own Helm {{ }} if/else-if (which chooses
+    // mongo vs. postgres for the acl datastore at chart *install* time, not CLI *scaffold* time)
+    // passes through untouched - both branches are expected to be present in the emitted source.
+    await withPackageJson(async (dir) => {
+      await processTemplate(helmTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs =>
+        fs.readFile(join(dir, 'helm', 'templates', '0_config', 'service-config.yaml'), 'utf-8'));
+      expect(content).toContain('{{- else if $.Values.postgresql.create }}');
+      expect(content).toContain('datastores__acl__type: {{ print "postgres" | b64enc | quote }}');
+      expect(content).toContain('datastores__sql__type: {{ print "postgres" | b64enc | quote }}');
+    });
+  });
+});
