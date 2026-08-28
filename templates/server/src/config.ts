@@ -2,9 +2,13 @@
 // Copyright (C) {{year}} {{author}}
 ///////////////////////////////////////////////////////////////////////////////
 import { createRequire } from "module";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
 import nconf from "nconf";
 import { join } from "path";
 
+const _filename = fileURLToPath(import.meta.url);
+const _dirname = dirname(_filename);
 const _require = createRequire(import.meta.url);
 const packageInfo = _require(join(process.cwd(), "package.json"));
 
@@ -18,7 +22,7 @@ const conf = nconf
 conf.defaults({
     service_name: packageInfo.name,
     version: packageInfo.version,
-    base_path: ".",
+    base_path: _dirname,
     // Settings pertaining to the signing and verification of authentication tokens
     auth: {
         // The default PassportJS authentication strategy to use
