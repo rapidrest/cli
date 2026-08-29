@@ -141,8 +141,8 @@ do
           echo "\kubectl - Provide api interaction with k3s"
 
           echo "Usage:"
-          echo -e "\t--domain <domain>\t\tThe domain name to use for the deployment of petstore"
-          echo -e "\t--version <version>\t\tThe version of petstore to deploy"
+          echo -e "\t--domain <domain>\t\tThe domain name to use for the deployment of {{project_name}}"
+          echo -e "\t--version <version>\t\tThe version of {{project_name}} to deploy"
           echo -e "\t--tls <true|false>\t\tInstalls cert manager and enables TLS ingress support (uses Let's Encrypt)"
           echo -e "\t--skip-k3s\t\tSkips installation of k3s"
           echo -e "\t--uninstall\t\tUninstalls all installed items"
@@ -462,12 +462,12 @@ spec:
 EOF
 fi
 
-run_step "Installing petstore"
+run_step "Installing {{project_name}}"
 # Add Bitnami helm repo
 addHelmRepo bitnami https://charts.bitnami.com/bitnami
 helm repo up
 
-helm upgrade --install --create-namespace --namespace $NAMESPACE $NAMESPACE oci://ghcr.io/rapidrest/charts/petstore \
+helm upgrade --install --create-namespace --namespace $NAMESPACE $NAMESPACE ../helm \
   --version $VERSION --set host=$DOMAIN --set gateway.tls=$TLS --set gateway.hsts=$TLS \
   --set gateway.name=shared-gateway --set gateway.namespace=nginx-gateway
 
