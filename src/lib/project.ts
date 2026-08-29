@@ -2,10 +2,11 @@
 // Copyright (C) 2026 Jean-Philippe Steinmetz
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
-import { execFile, spawn } from 'child_process';
+import { execFile } from 'child_process';
 import { access, readFile, readdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { promisify } from 'util';
+import spawn from 'cross-spawn';
 
 const execFileAsync = promisify(execFile);
 
@@ -251,9 +252,13 @@ export async function detectPackageManager(cwd: string): Promise<'npm' | 'yarn'>
 
 // Spawns `cmd` with output streamed straight to the terminal (so the user sees real progress
 // rather than the CLI appearing to hang) and resolves once it exits cleanly, or rejects otherwise.
-function spawnAndWait(cmd: string, args: string[], cwd: string, opts: { shell?: boolean } = {}): Promise<void> {
+// Uses cross-spawn so Windows .cmd shims (npm, yarn, project-local bins) resolve correctly without
+// the caller needing to opt into the shell option — shell:true alongside a separate args array
+// would otherwise trigger Node's DEP0190 warning, since the args aren't escaped before being
+// concatenated into the shell command line.
+function spawnAndWait(cmd: string, args: string[], cwd: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { cwd, stdio: 'inherit', shell: opts.shell ?? false });
+    const child = spawn(cmd, args, { cwd, stdio: 'inherit' });
     child.once('exit', (code) => {
       if (code === 0) resolve();
       else reject(new Error(`\`${cmd} ${args.join(' ')}\` exited with code ${code}`));
@@ -264,7 +269,7 @@ function spawnAndWait(cmd: string, args: string[], cwd: string, opts: { shell?: 
 
 // Runs the project's package manager install step (`yarn install` / `npm install`).
 export function runInstall(cwd: string, pkgMgr: 'npm' | 'yarn'): Promise<void> {
-  return spawnAndWait(pkgMgr, ['install'], cwd, { shell: true });
+  return spawnAndWait(pkgMgr, ['install'], cwd);
 }
 
 // Adds one or more packages to the project via its package manager (`yarn add` / `npm install
@@ -274,7 +279,7 @@ export function addPackages(cwd: string, pkgMgr: 'npm' | 'yarn', packages: strin
   const args = pkgMgr === 'yarn'
     ? ['add', ...(opts.dev ? ['--dev'] : []), ...packages]
     : ['install', ...(opts.dev ? ['--save-dev'] : []), ...packages];
-  return spawnAndWait(pkgMgr, args, cwd, { shell: true });
+  return spawnAndWait(pkgMgr, args, cwd);
 }
 
 // Removes one or more packages from the project via its package manager (`yarn remove` / `npm
@@ -282,7 +287,7 @@ export function addPackages(cwd: string, pkgMgr: 'npm' | 'yarn', packages: strin
 // themselves, so unlike addPackages there's no dev/prod distinction to pass through.
 export function removePackages(cwd: string, pkgMgr: 'npm' | 'yarn', packages: string[]): Promise<void> {
   const args = pkgMgr === 'yarn' ? ['remove', ...packages] : ['uninstall', ...packages];
-  return spawnAndWait(pkgMgr, args, cwd, { shell: true });
+  return spawnAndWait(pkgMgr, args, cwd);
 }
 
 // Resolves a binary the project installed into its own node_modules/.bin (e.g. tsc, vite,
@@ -295,7 +300,7 @@ export function resolveProjectBin(cwd: string, name: string): string {
 
 // Runs a project-local binary (tsc, vite, vitest, ...), streaming output live.
 export function runProjectBin(cwd: string, name: string, args: string[]): Promise<void> {
-  return spawnAndWait(resolveProjectBin(cwd, name), args, cwd, { shell: process.platform === 'win32' });
+  return spawnAndWait(resolveProjectBin(cwd, name), args, cwd);
 }
 
 // Reads package.json's raw text (not parsed — used only for byte-for-byte before/after

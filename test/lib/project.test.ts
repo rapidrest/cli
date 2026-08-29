@@ -9,11 +9,13 @@ import os from 'os';
 
 vi.mock('child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('child_process')>();
-  return { ...actual, execFile: vi.fn(), spawn: vi.fn() };
+  return { ...actual, execFile: vi.fn() };
 });
+vi.mock('cross-spawn', () => ({ default: vi.fn() }));
 
 import { EventEmitter } from 'events';
-import { execFile, spawn } from 'child_process';
+import { execFile } from 'child_process';
+import spawn from 'cross-spawn';
 import {
   addPackages,
   detectApiRoute,
@@ -335,10 +337,10 @@ describe('runInstall', () => {
     vi.mocked(spawn).mockReset();
   });
 
-  it('spawns `<pkgMgr> install` via a shell, streaming output', async () => {
+  it('spawns `<pkgMgr> install`, streaming output', async () => {
     vi.mocked(spawn).mockReturnValue(fakeSpawn(0) as any);
     await runInstall('/fake/project', 'npm');
-    expect(spawn).toHaveBeenCalledWith('npm', ['install'], { cwd: '/fake/project', stdio: 'inherit', shell: true });
+    expect(spawn).toHaveBeenCalledWith('npm', ['install'], { cwd: '/fake/project', stdio: 'inherit' });
   });
 
   it('rejects when the install command exits non-zero', async () => {
@@ -355,7 +357,7 @@ describe('addPackages', () => {
 
   it('runs `yarn add <packages>`', async () => {
     await addPackages('/fake/project', 'yarn', ['lodash-es']);
-    expect(spawn).toHaveBeenCalledWith('yarn', ['add', 'lodash-es'], { cwd: '/fake/project', stdio: 'inherit', shell: true });
+    expect(spawn).toHaveBeenCalledWith('yarn', ['add', 'lodash-es'], { cwd: '/fake/project', stdio: 'inherit' });
   });
 
   it('runs `yarn add --dev <packages>` when dev is set', async () => {
@@ -392,7 +394,7 @@ describe('removePackages', () => {
 
   it('runs `yarn remove <packages>`', async () => {
     await removePackages('/fake/project', 'yarn', ['lodash-es']);
-    expect(spawn).toHaveBeenCalledWith('yarn', ['remove', 'lodash-es'], { cwd: '/fake/project', stdio: 'inherit', shell: true });
+    expect(spawn).toHaveBeenCalledWith('yarn', ['remove', 'lodash-es'], { cwd: '/fake/project', stdio: 'inherit' });
   });
 
   it('runs `npm uninstall <packages>`', async () => {

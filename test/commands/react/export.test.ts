@@ -6,7 +6,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'events';
 import { join, delimiter } from 'path';
 
-vi.mock('child_process', () => ({ spawn: vi.fn() }));
+vi.mock('cross-spawn', () => ({ default: vi.fn() }));
 
 vi.mock('../../../src/lib/db.js', () => ({
   detectDatabases: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('../../../src/lib/port.js', () => ({
   findAvailablePort: vi.fn(),
 }));
 
-import { spawn } from 'child_process';
+import spawn from 'cross-spawn';
 import { detectDatabases, startDatabases } from '../../../src/lib/db.js';
 import { detectReact } from '../../../src/lib/project.js';
 import { findAvailablePort } from '../../../src/lib/port.js';
@@ -314,11 +314,11 @@ describe('react export', () => {
       expect(cmd).not.toContain('.cmd');
     });
 
-    it('does not use a shell on non-Windows platforms', async () => {
+    it('does not pass a shell option (cross-spawn resolves the executable itself)', async () => {
       await withPlatform('linux', () => ReactExport.run([], ROOT));
 
       const [, , opts] = vi.mocked(spawn).mock.calls[0];
-      expect((opts as any).shell).toBe(false);
+      expect((opts as any).shell).toBeUndefined();
     });
 
     it('falls back to an empty string when process.env.PATH is unset', async () => {

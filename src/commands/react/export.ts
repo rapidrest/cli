@@ -4,7 +4,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 import { Command, Flags } from '@oclif/core';
 import { join, delimiter } from 'path';
-import { spawn } from 'child_process';
+import spawn from 'cross-spawn';
 import { detectDatabases, startDatabases, StartedDatabase } from '../../lib/db.js';
 import { detectReact } from '../../lib/project.js';
 import { findAvailablePort } from '../../lib/port.js';
@@ -80,7 +80,6 @@ export default class ReactExport extends Command {
           cwd,
           stdio: 'inherit',
           env: exportEnv,
-          shell: process.platform === 'win32',
         });
         child.once('exit', (code) => {
           if (code === 0) resolve();

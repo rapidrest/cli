@@ -2,14 +2,11 @@
 // Copyright (C) 2026 Jean-Philippe Steinmetz
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
-import { execFile } from 'child_process';
 import { access, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { promisify } from 'util';
+import crossSpawn from 'cross-spawn';
 import { dump as dumpYaml, load as loadYaml } from 'js-yaml';
 import semver, { type ReleaseType } from 'semver';
-
-const execFileAsync = promisify(execFile);
 
 export const RELEASE_TYPES: ReleaseType[] = ['major', 'minor', 'patch', 'premajor', 'preminor', 'prepatch', 'prerelease'];
 
@@ -75,16 +72,25 @@ async function fileExists(path: string): Promise<boolean> {
   }
 }
 
-// Runs a command and returns its trimmed stdout, or throws with stderr attached. `shell` is only
-// needed on Windows to resolve .cmd shims (e.g. npm) — git resolves as a real executable everywhere.
-async function run(cmd: string, args: string[], cwd: string, opts: { shell?: boolean } = {}): Promise<string> {
-  try {
-    const { stdout } = await execFileAsync(cmd, args, { cwd, shell: opts.shell });
-    return stdout.trim();
-  } catch (e) {
-    const err = e as NodeJS.ErrnoException & { stderr?: string };
-    throw new Error(`Command failed: ${cmd} ${args.join(' ')}\n${err.stderr ?? err.message}`);
-  }
+// Runs a command and returns its trimmed stdout, or throws with stderr attached. Uses cross-spawn
+// so Windows .cmd shims (e.g. npm) resolve correctly without needing the shell option — passing
+// shell:true alongside a separate args array would otherwise trigger Node's DEP0190 warning, since
+// the args aren't escaped before being concatenated into the shell command line.
+function run(cmd: string, args: string[], cwd: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = crossSpawn(cmd, args, { cwd });
+    let stdout = '';
+    let stderr = '';
+    child.stdout?.on('data', (chunk) => { stdout += chunk; });
+    child.stderr?.on('data', (chunk) => { stderr += chunk; });
+    child.once('error', (err) => {
+      reject(new Error(`Command failed: ${cmd} ${args.join(' ')}\n${err.message}`));
+    });
+    child.once('exit', (code) => {
+      if (code === 0) resolve(stdout.trim());
+      else reject(new Error(`Command failed: ${cmd} ${args.join(' ')}\n${stderr || `exited with code ${code}`}`));
+    });
+  });
 }
 
 export async function assertCleanWorkingTree(cwd: string): Promise<void> {
@@ -360,13 +366,7 @@ export async function updateHelmVersion(cwd: string, version: string): Promise<s
 // --ignore-scripts: skips the project's own pre/postversion hooks so this command fully owns the
 // release flow regardless of what hooks a project's package.json happens to define.
 export async function bumpPackageVersion(cwd: string, version: string): Promise<void> {
-  if (process.platform === 'win32') {
-    // execFile's shell:true concatenates an args array unescaped (Node's DEP0190 warning), so
-    // build one command string instead.
-    await run(`npm version ${version} --no-git-tag-version --ignore-scripts`, [], cwd, { shell: true });
-  } else {
-    await run('npm', ['version', version, '--no-git-tag-version', '--ignore-scripts'], cwd);
-  }
+  await run('npm', ['version', version, '--no-git-tag-version', '--ignore-scripts'], cwd);
 }
 
 export async function stageAndCommit(cwd: string, version: string, extraFiles: string[]): Promise<void> {

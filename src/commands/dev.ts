@@ -4,7 +4,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 import { Command, Flags } from '@oclif/core';
 import { join, delimiter } from 'path';
-import { spawn } from 'child_process';
+import spawn from 'cross-spawn';
 import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
 import { detectReact } from '../lib/project.js';
 import { findAvailablePort } from '../lib/port.js';
@@ -78,7 +78,7 @@ export default class Dev extends Command {
     const server = spawn(
       tsxExec,
       tsxArgs,
-      { cwd, stdio: 'inherit', env: serverEnv, shell: process.platform === 'win32' },
+      { cwd, stdio: 'inherit', env: serverEnv },
     );
     childProcesses.push(server);
 
@@ -86,7 +86,7 @@ export default class Dev extends Command {
     if (await detectReact(cwd)) {
       this.log('Starting Vite in watch mode...');
       const viteBin = join(projectBin, `vite${ext}`);
-      const viteProc = spawn(viteBin, ['build', '--watch'], { cwd, stdio: 'inherit', env: serverEnv, shell: process.platform === 'win32' });
+      const viteProc = spawn(viteBin, ['build', '--watch'], { cwd, stdio: 'inherit', env: serverEnv });
       childProcesses.push(viteProc);
     }
 

@@ -3,16 +3,34 @@
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
 import { access, mkdtemp, rm, writeFile } from 'fs/promises';
-import { execFile } from 'child_process';
 import os from 'os';
 import { join } from 'path';
 import { pathToFileURL } from 'url';
-import { promisify } from 'util';
+import crossSpawn from 'cross-spawn';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { PostgresMemoryServer } from 'postgres-memory-server';
 import { RedisMemoryServer } from 'redis-memory-server';
 
-const execFileAsync = promisify(execFile);
+// Runs `cmd` and resolves with its stdout, or rejects with stderr attached. Uses cross-spawn so
+// Windows .cmd shims (e.g. tsx) resolve correctly without the shell option — shell:true alongside
+// a separate args array would otherwise trigger Node's DEP0190 warning, since the args aren't
+// escaped before being concatenated into the shell command line.
+function execCapture(cmd: string, args: string[], cwd: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = crossSpawn(cmd, args, { cwd });
+    let stdout = '';
+    let stderr = '';
+    child.stdout?.on('data', (chunk) => { stdout += chunk; });
+    child.stderr?.on('data', (chunk) => { stderr += chunk; });
+    child.once('error', (err) => {
+      reject(new Error(`Command failed: ${cmd} ${args.join(' ')}\n${err.message}`));
+    });
+    child.once('exit', (code) => {
+      if (code === 0) resolve(stdout);
+      else reject(new Error(`Command failed: ${cmd} ${args.join(' ')}\n${stderr || `exited with code ${code}`}`));
+    });
+  });
+}
 
 export interface DatabaseConfig {
   mongodb: boolean;
@@ -60,11 +78,7 @@ async function loadDatastoreTypes(cwd: string): Promise<string[]> {
       + `process.stdout.write(JSON.stringify(Object.values(datastores).map((d) => d && d.type)));\n`,
       'utf-8',
     );
-    const { stdout } = await execFileAsync(
-      resolveTsxBin(cwd),
-      [probeScript],
-      { cwd, shell: process.platform === 'win32' },
-    );
+    const stdout = await execCapture(resolveTsxBin(cwd), [probeScript], cwd);
     return JSON.parse(stdout.trim() || '[]');
   } finally {
     await rm(probeDir, { recursive: true, force: true });

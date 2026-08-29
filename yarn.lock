@@ -1929,6 +1929,7 @@ __metadata:
     "@oclif/prettier-config": "npm:^0.2.1"
     "@oclif/test": "npm:^4"
     "@types/chai": "npm:^5"
+    "@types/cross-spawn": "npm:^6.0.6"
     "@types/debug": "npm:^4"
     "@types/fs-extra": "npm:^11.0.4"
     "@types/mocha": "npm:^10"
@@ -1938,6 +1939,7 @@ __metadata:
     "@types/tmp": "npm:^0"
     "@vitest/coverage-v8": "npm:4.1.11"
     ansis: "npm:^4.3.1"
+    cross-spawn: "npm:^7.0.6"
     debug: "npm:^4.4.3"
     eslint: "npm:^10"
     eslint-config-oclif: "npm:^6"
@@ -2324,6 +2326,15 @@ __metadata:
     "@types/deep-eql": "npm:*"
     assertion-error: "npm:^2.0.1"
   checksum: 10c0/e0ef1de3b6f8045a5e473e867c8565788c444271409d155588504840ad1a53611011f85072188c2833941189400228c1745d78323dac13fcede9c2b28bacfb2f
+  languageName: node
+  linkType: hard
+
+"@types/cross-spawn@npm:^6.0.6":
+  version: 6.0.6
+  resolution: "@types/cross-spawn@npm:6.0.6"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/e3d476bb6b3a54a8934a97fe6ee4bd13e2e5eb29073929a4be76a52466602ffaea420b20774ffe8503f9fa24f3ae34817e95e7f625689fb0d1c10404f5b2889c
   languageName: node
   linkType: hard
 
