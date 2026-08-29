@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-08-29
+
+### Fixed
+- Fixed badges in readme
+- Fixed react template to add missing manifestPath to config.ts
+
 ## [1.0.0] - 2026-08-29
 
 ### Added
@@ -280,7 +286,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: rapidrest/cli/compare/v1.0.0...HEAD
+[Unreleased]: rapidrest/cli/compare/v1.0.1...HEAD
+[1.0.1]: rapidrest/cli/compare/v1.0.0...v1.0.1
 [1.0.0]: rapidrest/cli/compare/v0.19.0...v1.0.0
 [0.19.0]: https://github.com/rapidrest/cli/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/rapidrest/cli/compare/v0.17.0...v0.18.0

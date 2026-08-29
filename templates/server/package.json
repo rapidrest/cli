@@ -50,7 +50,7 @@
 		"winston-transport": "^4.9.0"
 	},
 	"devDependencies": {
-		"@rapidrest/cli": "^1.0.0",
+		"@rapidrest/cli": "^1.0.1",
 		"@swc/core": "^1.16.1",
 		"@types/nconf": "^0.10.7",
 		{{#if features.hasSqlDatastore}}"@types/better-sqlite3": "^9.6.0",{{/if}}

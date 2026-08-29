@@ -1,6 +1,6 @@
 # Release Notes
 
-## Unreleased
+## v1.0.1
 
 * Fixed react template to add missing manifestPath to config.ts
 

@@ -2,7 +2,7 @@
   "name": "@rapidrest/cli",
   "description": "The official CLI tool for RapidREST projects",
   "repository": "rapidrest/cli",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "RapidREST <rapidrests@gmail.com>",
   "homepage": "https://github.com/rapidrest/cli",
   "license": "MPL-2.0",
