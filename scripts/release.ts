@@ -299,8 +299,7 @@ function main(): void {
     updateChangelog(newVersion);
     updateTemplates(newVersion);
 
-    const lockFiles = ["package-lock.json", "yarn.lock"].filter((file) => existsSync(path.join(ROOT, file)));
-    run("git", ["add", "package.json", ...lockFiles, "RELEASE_NOTES.md", "CHANGELOG.md"]);
+    run("git", ["add", "*"]);
     run("git", ["commit", "-m", newVersion]);
     run("git", ["tag", `v${newVersion}`]);
 
