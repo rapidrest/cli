@@ -105,6 +105,16 @@ describe('start', () => {
 
       expect(order).toEqual(['build', 'server']);
     });
+
+    it('passes --no-lint through to the build command when set', async () => {
+      await Start.run(['--no-lint'], ROOT);
+      expect(Build.run).toHaveBeenCalledWith(['--no-lint'], expect.any(String));
+    });
+
+    it('does not pass --no-lint to the build command by default', async () => {
+      await Start.run([], ROOT);
+      expect(Build.run).toHaveBeenCalledWith([], expect.any(String));
+    });
   });
 
   describe('server process', () => {

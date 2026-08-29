@@ -21,12 +21,21 @@ import Build from '../../src/commands/build.js';
 
 const ROOT = process.cwd();
 
+// By default, only src/ and test/ "exist" — apps/ and tsconfig.client.json do not.
+function mockDirs(existing: string[]): void {
+  vi.mocked(access).mockImplementation(async (path) => {
+    const matches = existing.some((dir) => String(path).endsWith(dir));
+    if (!matches) throw new Error('ENOENT');
+  });
+}
+
 describe('build', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(rm).mockResolvedValue(undefined);
     vi.mocked(runProjectBin).mockResolvedValue(undefined);
     vi.mocked(detectReact).mockResolvedValue(false);
+    mockDirs(['src', 'test']);
   });
 
   it('cleans dist/ before compiling', async () => {
@@ -43,7 +52,6 @@ describe('build', () => {
     vi.mocked(detectReact).mockResolvedValue(false);
     await Build.run([], ROOT);
     expect(runProjectBin).not.toHaveBeenCalledWith(process.cwd(), 'vite', ['build']);
-    expect(access).not.toHaveBeenCalled();
   });
 
   describe('when React is configured', () => {
@@ -52,7 +60,7 @@ describe('build', () => {
     });
 
     it('runs vite build after the main tsc pass', async () => {
-      vi.mocked(access).mockRejectedValue(new Error('ENOENT'));
+      mockDirs(['src', 'test']); // no tsconfig.client.json
       await Build.run([], ROOT);
 
       const tscCall = vi.mocked(runProjectBin).mock.calls.findIndex((c) => c[1] === 'tsc' && c[2].length === 0);
@@ -63,26 +71,66 @@ describe('build', () => {
     });
 
     it('also compiles tsconfig.client.json when it exists', async () => {
-      vi.mocked(access).mockResolvedValue(undefined);
+      mockDirs(['src', 'test', 'tsconfig.client.json']);
       await Build.run([], ROOT);
       expect(runProjectBin).toHaveBeenCalledWith(process.cwd(), 'tsc', ['-p', 'tsconfig.client.json']);
     });
 
     it('skips the client tsc pass when tsconfig.client.json does not exist', async () => {
-      vi.mocked(access).mockRejectedValue(new Error('ENOENT'));
+      mockDirs(['src', 'test']);
       await Build.run([], ROOT);
       expect(runProjectBin).not.toHaveBeenCalledWith(process.cwd(), 'tsc', ['-p', 'tsconfig.client.json']);
     });
   });
 
+  describe('linting', () => {
+    it('lints before cleaning/compiling, targeting whichever of src/test/apps exist', async () => {
+      mockDirs(['src', 'test']);
+      await Build.run([], ROOT);
+
+      const lintCall = vi.mocked(runProjectBin).mock.calls.findIndex((c) => c[1] === 'eslint');
+      const rmCallOrder = vi.mocked(rm).mock.invocationCallOrder[0];
+      expect(runProjectBin).toHaveBeenCalledWith(process.cwd(), 'eslint', ['src', 'test']);
+      expect(vi.mocked(runProjectBin).mock.invocationCallOrder[lintCall]).toBeLessThan(rmCallOrder);
+    });
+
+    it('includes apps when it exists (React-configured projects)', async () => {
+      mockDirs(['src', 'test', 'apps']);
+      await Build.run([], ROOT);
+      expect(runProjectBin).toHaveBeenCalledWith(process.cwd(), 'eslint', ['src', 'test', 'apps']);
+    });
+
+    it('omits a lint target directory that does not exist', async () => {
+      mockDirs(['src']); // no test/
+      await Build.run([], ROOT);
+      expect(runProjectBin).toHaveBeenCalledWith(process.cwd(), 'eslint', ['src']);
+    });
+
+    it('skips linting entirely when --no-lint is set', async () => {
+      await Build.run(['--no-lint'], ROOT);
+      expect(runProjectBin).not.toHaveBeenCalledWith(process.cwd(), 'eslint', expect.anything());
+    });
+
+    it('propagates an error thrown by the lint step, without cleaning or compiling', async () => {
+      vi.mocked(runProjectBin).mockImplementation(async (_cwd, name) => {
+        if (name === 'eslint') throw new Error('lint failed');
+      });
+
+      await expect(Build.run([], ROOT)).rejects.toThrow('lint failed');
+      expect(rm).not.toHaveBeenCalled();
+    });
+  });
+
   it('propagates an error thrown by the tsc build step', async () => {
-    vi.mocked(runProjectBin).mockRejectedValue(new Error('tsc failed'));
+    vi.mocked(runProjectBin).mockImplementation(async (_cwd, name) => {
+      if (name === 'tsc') throw new Error('tsc failed');
+    });
     await expect(Build.run([], ROOT)).rejects.toThrow('tsc failed');
   });
 
   it('propagates an error thrown by the vite build step', async () => {
     vi.mocked(detectReact).mockResolvedValue(true);
-    vi.mocked(access).mockRejectedValue(new Error('ENOENT'));
+    mockDirs(['src', 'test']);
     vi.mocked(runProjectBin).mockImplementation(async (_cwd, name) => {
       if (name === 'vite') throw new Error('vite failed');
     });

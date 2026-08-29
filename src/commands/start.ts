@@ -32,6 +32,7 @@ export default class Start extends Command {
     bun: Flags.boolean({ description: `Use the Bun engine instead of Node.js. Requires Bun v${MIN_BUN_VERSION}+; downloads a compatible version automatically if none is installed.` }),
     docker: Flags.boolean({ char: 'd', description: 'Run in Docker mode (skips embedded databases).' }),
     'no-build': Flags.boolean({ description: 'Skip the build step.' }),
+    'no-lint': Flags.boolean({ description: 'Skip linting during the build step.' }),
     port: Flags.integer({ char: 'p', description: 'Preferred port to bind to. If already in use, the next available port is used instead.' }),
   };
 
@@ -51,7 +52,7 @@ export default class Start extends Command {
 
     // 2. Build (also builds the React frontend, if configured)
     if (!flags['no-build']) {
-      await Build.run([], this.config.root);
+      await Build.run(flags['no-lint'] ? ['--no-lint'] : [], this.config.root);
     }
 
     this.log('\nStarting RapidREST server...');

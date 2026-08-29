@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Jean-Philippe Steinmetz
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
-import { Command } from '@oclif/core';
+import { Command, Flags } from '@oclif/core';
 import { access, rm } from 'fs/promises';
 import { join } from 'path';
 import { detectReact, runProjectBin } from '../lib/project.js';
@@ -16,16 +16,38 @@ async function fileExists(path: string): Promise<boolean> {
   }
 }
 
+// Directories this project's eslint config conventionally covers — mirrors the "lint" script
+// generated projects ship with (eslint ./src ./test, plus ./apps when React is configured).
+// Passed explicitly rather than relying on eslint's own default discovery, since not every
+// directory necessarily exists (e.g. a project with no test/ yet).
+const LINT_TARGET_DIRS = ['src', 'test', 'app', 'apps'];
+
 export default class Build extends Command {
   static override description = 'Builds the RapidREST server project in the current directory (and its React frontend, if configured).';
 
-  static override examples = ['<%= config.bin %> <%= command.id %>'];
+  static override examples = [
+    '<%= config.bin %> <%= command.id %>',
+    '<%= config.bin %> <%= command.id %> --no-lint',
+  ];
+
+  static override flags = {
+    'no-lint': Flags.boolean({ description: 'Skip linting before building.' }),
+  };
 
   async run(): Promise<void> {
-    await this.parse(Build);
+    const { flags } = await this.parse(Build);
     const cwd = process.cwd();
 
     try {
+      if (!flags['no-lint']) {
+        const lintTargets = (
+          await Promise.all(LINT_TARGET_DIRS.map(async (dir) => ((await fileExists(join(cwd, dir))) ? dir : undefined)))
+        ).filter((dir): dir is string => dir !== undefined);
+
+        this.log('Linting...');
+        await runProjectBin(cwd, 'eslint', lintTargets);
+      }
+
       this.log('Cleaning dist/...');
       await rm(join(cwd, 'dist'), { recursive: true, force: true });
 

@@ -63,7 +63,11 @@ export default class DepUpgrade extends Command {
     const plan = await buildUpgradePlan(pkgInfo.data, requested, { sections, exclude: flags.exclude });
 
     for (const skip of plan.skipped) {
-      this.warn(`${skip.name}: ${skip.reason}`);
+      if (skip.reason.startsWith("already up to date")) {
+        this.log(`${skip.name}: ${skip.reason}`);
+      } else {
+        this.warn(`${skip.name}: ${skip.reason}`);
+      }
     }
 
     if (plan.upgrades.length === 0) {

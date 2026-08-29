@@ -3,9 +3,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 import { createRequire } from "module";
 import { fileURLToPath } from "url";
-import { dirname } from "path";
+import { dirname, join } from "path";
 import nconf from "nconf";
-import { join } from "path";
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
