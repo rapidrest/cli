@@ -316,6 +316,23 @@ export default conf;
       expect(testConfig).toContain('/export\\..*/');
     });
   });
+
+  it('adds a react.manifestPath config block to src/config.ts when hydrate is enabled', async () => {
+    await withConfigFiles(async (dir) => {
+      await processTemplate(reactTemplateDir, dir, { ...baseContext, hydrate: true }, { projectDir: dir });
+      const srcConfig = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'config.ts'), 'utf-8'));
+      expect(srcConfig).toContain('react:');
+      expect(srcConfig).toContain('manifestPath: "dist/public/.vite/manifest.json"');
+    });
+  });
+
+  it('does not add a react.manifestPath config block when hydrate is disabled', async () => {
+    await withConfigFiles(async (dir) => {
+      await processTemplate(reactTemplateDir, dir, baseContext, { projectDir: dir });
+      const srcConfig = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'config.ts'), 'utf-8'));
+      expect(srcConfig).not.toContain('manifestPath');
+    });
+  });
 });
 
 // ─── react-page ───────────────────────────────────────────────────────────────

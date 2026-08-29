@@ -25,6 +25,14 @@
       "strategy": "ts-property-set",
       "insertInto": "class_loader",
       "property": "ignore"
+    },
+    {
+      "template": "patches/config-react-manifest.txt",
+      "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "",
+      "idempotencyKey": "react",
+      "condition": "hydrate"
     }
   ]
 }

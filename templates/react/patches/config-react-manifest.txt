@@ -1,0 +1,5 @@
+    react: {
+        // Path to the Vite manifest produced by `rapidrest build`, used to resolve hashed
+        // client bundle URLs for hydrated pages.
+        manifestPath: "dist/public/.vite/manifest.json",
+    },
