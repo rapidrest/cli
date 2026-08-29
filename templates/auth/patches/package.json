@@ -1,6 +1,6 @@
 {
   "dependencies": {
-    "@rapidrest/auth": "^1.1.0",
+    "@rapidrest/auth": "^1.3.0",
     "argon2": "^0.45.1"
   }
 }
