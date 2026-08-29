@@ -11,6 +11,20 @@
       "template": "patches/tsconfig.json",
       "target": "tsconfig.json",
       "strategy": "json-merge"
+    },
+    {
+      "template": "patches/config-class-loader-ignore.txt",
+      "target": "src/config.ts",
+      "strategy": "ts-property-set",
+      "insertInto": "class_loader",
+      "property": "ignore"
+    },
+    {
+      "template": "patches/config-class-loader-ignore.txt",
+      "target": "test/config.ts",
+      "strategy": "ts-property-set",
+      "insertInto": "class_loader",
+      "property": "ignore"
     }
   ]
 }

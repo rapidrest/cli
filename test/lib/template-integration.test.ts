@@ -249,8 +249,38 @@ describe('generate react', () => {
     path: '/dashboard', project_name: 'my-app', year: 2025,
   };
 
-  it('generates app and route files with no scaffolding artifacts', async () => {
+  // React also patches src/config.ts and test/config.ts (adding an /export\..*/ class_loader
+  // ignore entry, so ClassLoader doesn't dynamically import and re-execute src/export.ts's
+  // top-level runStaticExport() call during ordinary server startup), so both patch targets must
+  // exist — a trimmed-down but structurally faithful stand-in for the real templates.
+  const baseConfigSource = `import nconf from "nconf";
+
+const conf = nconf.argv();
+
+conf.defaults({
+    class_loader: {
+        ignore: [
+            /server\\..*/,
+            /config\\..*/
+        ],
+    },
+});
+
+export default conf;
+`;
+
+  async function withConfigFiles(fn: (dir: string) => Promise<void>): Promise<void> {
     await withTmpDir(async (dir) => {
+      await mkdir(join(dir, 'src'), { recursive: true });
+      await mkdir(join(dir, 'test'), { recursive: true });
+      await writeFile(join(dir, 'src', 'config.ts'), baseConfigSource, 'utf-8');
+      await writeFile(join(dir, 'test', 'config.ts'), baseConfigSource, 'utf-8');
+      await fn(dir);
+    });
+  }
+
+  it('generates app and route files with no scaffolding artifacts', async () => {
+    await withConfigFiles(async (dir) => {
       await processTemplate(reactTemplateDir, dir, baseContext, { projectDir: dir });
       const files = await listFiles(dir);
       expect(files).toContain('/src/routes/DashboardRoute.ts');
@@ -268,12 +298,22 @@ describe('generate react', () => {
   });
 
   it('merges react dependencies into package.json via patch', async () => {
-    await withTmpDir(async (dir) => {
+    await withConfigFiles(async (dir) => {
       await processTemplate(reactTemplateDir, dir, baseContext, { projectDir: dir });
       const pkg = JSON.parse(await import('fs/promises').then(fs => fs.readFile(join(dir, 'package.json'), 'utf-8')));
       // The react patches/package.json adds react dependencies and an "export" script
       expect(pkg).toBeDefined();
       expect(pkg.scripts.export).toBe('rapidrest react export');
+    });
+  });
+
+  it('adds an /export\\..*/ class_loader ignore entry to both src/config.ts and test/config.ts', async () => {
+    await withConfigFiles(async (dir) => {
+      await processTemplate(reactTemplateDir, dir, baseContext, { projectDir: dir });
+      const srcConfig = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'config.ts'), 'utf-8'));
+      const testConfig = await import('fs/promises').then(fs => fs.readFile(join(dir, 'test', 'config.ts'), 'utf-8'));
+      expect(srcConfig).toContain('/export\\..*/');
+      expect(testConfig).toContain('/export\\..*/');
     });
   });
 });

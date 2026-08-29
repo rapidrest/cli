@@ -394,6 +394,65 @@ const jwtUserExtraName: Check = {
   },
 };
 
+// Finds the `ignore: [ ... ]` array nested inside a `class_loader: { ... }` block. Returns the
+// array's inner text plus its absolute start/end offsets in `source` (end points at the closing
+// `]`), or undefined if either block can't be found. Assumes `ignore` is a simple list of regex
+// literals (the shape every generated project ships with) rather than fully parsing nested
+// brackets — consistent with the rest of this file's pragmatic, template-shape-specific scanning.
+function extractClassLoaderIgnoreArray(source: string): { body: string; start: number; end: number } | undefined {
+  const classLoaderMatch = source.match(/\bclass_loader\s*:\s*\{/);
+  if (!classLoaderMatch || classLoaderMatch.index === undefined) return undefined;
+
+  const searchFrom = classLoaderMatch.index + classLoaderMatch[0].length;
+  const ignoreMatch = source.slice(searchFrom).match(/\bignore\s*:\s*\[([\s\S]*?)\]/);
+  if (!ignoreMatch || ignoreMatch.index === undefined) return undefined;
+
+  const start = searchFrom + ignoreMatch.index + ignoreMatch[0].indexOf('[') + 1;
+  return { body: ignoreMatch[1], start, end: start + ignoreMatch[1].length };
+}
+
+// Check 8: React support adds src/export.ts, whose top-level code boots a second Server (via
+// runStaticExport()) to crawl for static export. ClassLoader dynamically imports every file under
+// base_path indiscriminately — without an /export\..*/ entry in class_loader.ignore, ordinary
+// server startup re-imports export.ts, running its top-level runStaticExport() call and
+// constructing that second Server, which re-registers Prometheus metrics on the shared global
+// default registry and crashes with "A metric with the name request_path has already been
+// registered." (see .claude/NOTES.md).
+const missingExportClassLoaderIgnore: Check = {
+  id: 'missing-export-class-loader-ignore',
+  description: 'class_loader.ignore must exclude export.ts/export.js when React support is enabled',
+  async run({ cwd }) {
+    if (!(await fileExists(join(cwd, 'src', 'export.ts')))) return [];
+
+    const findings: Finding[] = [];
+    const files = await readConfigFiles(cwd);
+    for (const file of files) {
+      const ignoreArray = extractClassLoaderIgnoreArray(file.content);
+      if (!ignoreArray || /export/.test(ignoreArray.body)) continue;
+
+      findings.push({
+        id: 'missing-export-class-loader-ignore',
+        severity: 'error',
+        file: file.rel,
+        message: `React support is enabled (src/export.ts exists) but ${file.rel}'s class_loader.ignore doesn't exclude it — ClassLoader dynamically imports every file under base_path, so ordinary server startup re-executes export.ts's runStaticExport() call, booting a second Server and crashing with "A metric with the name request_path has already been registered." Run with --fix to add /export\\..*/ to class_loader.ignore.`,
+        fix: async () => {
+          const content = await readFile(file.path, 'utf-8');
+          const current = extractClassLoaderIgnoreArray(content);
+          if (!current || /export/.test(current.body)) return; // file changed since scanning; don't guess, skip
+
+          const trimmed = current.body.replace(/\s+$/, '');
+          const needsComma = trimmed.length > 0 && !trimmed.endsWith(',');
+          const insertAt = current.start + trimmed.length;
+          const insertion = `${needsComma ? ',' : ''}\n            /export\\..*/`;
+          const updated = content.slice(0, insertAt) + insertion + content.slice(insertAt);
+          await writeFile(file.path, updated, 'utf-8');
+        },
+      });
+    }
+    return findings;
+  },
+};
+
 export const checks: Check[] = [
   wrongSqlTypeLiteral,
   missingSqliteHost,
@@ -403,6 +462,7 @@ export const checks: Check[] = [
   eslintPluginImportConflict,
   oldAclFormat,
   jwtUserExtraName,
+  missingExportClassLoaderIgnore,
 ];
 
 export async function runDoctor(ctx: CheckContext, selected: Check[] = checks): Promise<Finding[]> {

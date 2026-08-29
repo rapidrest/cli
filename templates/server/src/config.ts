@@ -39,7 +39,7 @@ conf.defaults({
         ignore: [
             /server\..*/,
             /config\..*/
-        ]
+        ],
     },
     cookie_secret: "COOKIE_SECRET",
     cors: {

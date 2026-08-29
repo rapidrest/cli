@@ -99,7 +99,7 @@ conf.defaults({
         ignore: [
             /server\..*/,
             /config\..*/
-        ]
+        ],
     },
     session: {
         secret: "SESSION_SECRET",

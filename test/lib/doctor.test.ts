@@ -466,6 +466,123 @@ describe('doctor', () => {
     });
   });
 
+  describe('missing-export-class-loader-ignore', () => {
+    const check = checkById('missing-export-class-loader-ignore');
+
+    const baseConfig = `conf.defaults({
+    class_loader: {
+        ignore: [
+            /server\\..*/,
+            /config\\..*/
+        ],
+    },
+});
+`;
+
+    it('does not flag a project without React support (no src/export.ts)', async () => {
+      await mkdir(join(cwd, 'src'), { recursive: true });
+      await writeFile(join(cwd, 'src', 'config.ts'), baseConfig);
+
+      expect(await check.run(ctx)).toHaveLength(0);
+    });
+
+    it('flags src/config.ts missing an /export\\..*/ ignore entry when React support is enabled', async () => {
+      await mkdir(join(cwd, 'src'), { recursive: true });
+      await writeFile(join(cwd, 'src', 'export.ts'), 'await runStaticExport({});');
+      await writeFile(join(cwd, 'src', 'config.ts'), baseConfig);
+
+      const findings = await check.run(ctx);
+
+      expect(findings).toHaveLength(1);
+      expect(findings[0].severity).toBe('error');
+      expect(findings[0].file).toBe('src/config.ts');
+    });
+
+    it('checks both src/config.ts and test/config.ts', async () => {
+      await mkdir(join(cwd, 'src'), { recursive: true });
+      await mkdir(join(cwd, 'test'), { recursive: true });
+      await writeFile(join(cwd, 'src', 'export.ts'), 'await runStaticExport({});');
+      await writeFile(join(cwd, 'src', 'config.ts'), baseConfig.replace('/config\\..*/', '/config\\..*/,\n            /export\\..*/'));
+      await writeFile(join(cwd, 'test', 'config.ts'), baseConfig);
+
+      const findings = await check.run(ctx);
+
+      expect(findings).toHaveLength(1);
+      expect(findings[0].file).toBe('test/config.ts');
+    });
+
+    it('does not flag a config that already excludes export.ts/export.js', async () => {
+      await mkdir(join(cwd, 'src'), { recursive: true });
+      await writeFile(join(cwd, 'src', 'export.ts'), 'await runStaticExport({});');
+      await writeFile(
+        join(cwd, 'src', 'config.ts'),
+        baseConfig.replace('/config\\..*/', '/config\\..*/,\n            /export\\..*/'),
+      );
+
+      expect(await check.run(ctx)).toHaveLength(0);
+    });
+
+    it('adds /export\\..*/ to the ignore array when fixed, preserving the existing entries', async () => {
+      await mkdir(join(cwd, 'src'), { recursive: true });
+      await writeFile(join(cwd, 'src', 'export.ts'), 'await runStaticExport({});');
+      const configPath = join(cwd, 'src', 'config.ts');
+      await writeFile(configPath, baseConfig);
+
+      const findings = await check.run(ctx);
+      for (const f of findings) await f.fix?.();
+
+      const updated = await readFile(configPath, 'utf-8');
+      expect(updated).toContain('/server\\..*/,\n            /config\\..*/,\n            /export\\..*/\n        ],');
+      expect(await check.run(ctx)).toHaveLength(0);
+    });
+
+    it('adds a leading comma when fixing a config whose last ignore entry has none', async () => {
+      await mkdir(join(cwd, 'src'), { recursive: true });
+      await writeFile(join(cwd, 'src', 'export.ts'), 'await runStaticExport({});');
+      const configPath = join(cwd, 'src', 'config.ts');
+      // No trailing comma after the last entry — the shape this CLI's own templates shipped
+      // before the trailing-comma fix (and what already-scaffolded projects still have).
+      await writeFile(
+        configPath,
+        `conf.defaults({
+    class_loader: {
+        ignore: [
+            /server\\..*/,
+            /config\\..*/
+        ]
+    },
+});
+`,
+      );
+
+      const findings = await check.run(ctx);
+      for (const f of findings) await f.fix?.();
+
+      const updated = await readFile(configPath, 'utf-8');
+      expect(updated).toContain('/config\\..*/,\n            /export\\..*/');
+      expect(await check.run(ctx)).toHaveLength(0);
+    });
+
+    it('fix is a no-op when the file content changed since scanning (block no longer found)', async () => {
+      await mkdir(join(cwd, 'src'), { recursive: true });
+      await writeFile(join(cwd, 'src', 'export.ts'), 'await runStaticExport({});');
+      const configPath = join(cwd, 'src', 'config.ts');
+      await writeFile(configPath, baseConfig);
+
+      const findings = await check.run(ctx);
+      await writeFile(configPath, 'export default {};');
+      await expect(findings[0].fix?.()).resolves.toBeUndefined();
+      expect(await readFile(configPath, 'utf-8')).toBe('export default {};');
+    });
+
+    it('returns no findings when no config file exists', async () => {
+      await mkdir(join(cwd, 'src'), { recursive: true });
+      await writeFile(join(cwd, 'src', 'export.ts'), 'await runStaticExport({});');
+
+      expect(await check.run(ctx)).toHaveLength(0);
+    });
+  });
+
   describe('runDoctor', () => {
     it('aggregates findings from every check by default', async () => {
       const findings = await runDoctor(ctx);
