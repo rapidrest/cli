@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-29
+
+### Added
+- Added linter step to `build` command
+- Added missing classloader configuration for react template
+- Added react case to doctor command
+
+### Changed
+- `dep upgrade` no longer displays 'already up to date' as warnings
+- Updated k3s_install.sh script in helm template
+- Replacing postversion.js script with new release.ts script
+- Updated readme and release notes
+- Replacing all uses of child_process with cross-spawn. This fixes multiple issues with running commands in a Windows environment
+- Upgraded all template dependencies to latest
+- Release script now stages any changed file
+
+### Fixed
+- Fixed base_path resolution in server template
+- Fixed duplicate import in server template
+- Fixed broken flag shortcuts
+
+
 ## [0.19.0] - 2026-08-28
 
 ### Added
@@ -258,7 +280,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: https://github.com/rapidrest/cli/compare/v0.19.0...HEAD
+[Unreleased]: rapidrest/cli/compare/v1.0.0...HEAD
+[1.0.0]: rapidrest/cli/compare/v0.19.0...v1.0.0
 [0.19.0]: https://github.com/rapidrest/cli/compare/v0.18.0...v0.19.0
 [0.18.0]: https://github.com/rapidrest/cli/compare/v0.17.0...v0.18.0
 [0.17.0]: https://github.com/rapidrest/cli/compare/v0.16.1...v0.17.0

@@ -1,6 +1,6 @@
 # Release Notes
 
-## Unreleased
+## v1.0.0
 
 The official CLI for scaffolding, developing, and maintaining RapidREST projects. Available as both `rapidrest` and the shorter `rr` alias.
 
