@@ -110,7 +110,7 @@ export default class GenerateServer extends Command {
 
   static override flags = {
     force: Flags.boolean({ description: 'Overwrite existing files.' }),
-    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
+    author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated project into. Defaults to ./<name>.' }),
     answers: Flags.string({ description: 'Path to a JSON file supplying answers for any of the flags below, for reuse across projects. Flags always take precedence over the file; either takes precedence over the interactive prompts.' }),
     description: Flags.string({ description: 'Short description of the project.' }),

@@ -37,7 +37,7 @@ export default class GenerateReactPage extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
-    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
+    author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Project directory to add React support to. Defaults to the current working directory.' }),
     service: Flags.boolean({ char: 's', description: 'Creates a service class for performing server-side data retrieval for the page.' }),
   };

@@ -138,11 +138,11 @@ export default class GenerateReact extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
-    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
+    author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     hydrate: Flags.boolean({ description: 'Enable client-side hydration. Required for interactive apps.' }),
     'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
     'output-dir': Flags.string({ description: 'Project directory to add React support to. Defaults to the current working directory.' }),
-    path: Flags.string({ alias: 'p', description: 'The base path the React application will route to' }),
+    path: Flags.string({ char: 'p', description: 'The base path the React application will route to' }),
   };
 
   async run(): Promise<void> {

@@ -118,11 +118,11 @@ export default class GenerateModel extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
-    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
-    cache: Flags.string({ alias: 'c', description: "Set the cache TTL of this model. If passed with no value, defaults to 60." }),
-    datastore: Flags.string({ alias: 'ds', description: "The name of the datastore that the model will be bound to."}),
-    description: Flags.string({ alias: 'd', description: "The short description of the model."}),
-    'output-dir': Flags.string({ alias: 'o', description: 'Directory to write the generated model into. Defaults to ./src/models.' }),
+    author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
+    cache: Flags.string({ char: 'c', description: "Set the cache TTL of this model. If passed with no value, defaults to 60." }),
+    datastore: Flags.string({ aliases: ['ds'], description: "The name of the datastore that the model will be bound to."}),
+    description: Flags.string({ char: 'd', description: "The short description of the model."}),
+    'output-dir': Flags.string({ char: 'o', description: 'Directory to write the generated model into. Defaults to ./src/models.' }),
     protect: Flags.boolean({ char: 'p', description: "Enable RBAC-based protection of this model."}),
     property: Flags.string({ description: 'Add a typed property to the model, as name:type (e.g. quantity:number). Append ? to the type to make it optional (e.g. bio:string?). Repeatable.', multiple: true }),
     'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),

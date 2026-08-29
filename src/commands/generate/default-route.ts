@@ -27,9 +27,9 @@ export default class GenerateDefaultRoute extends Command {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
     'api-route': Flags.boolean({ allowNo: true, description: 'Use @ApiRoute instead of @Route for the generated route(s). Use --api to also set a version; omit both --api-route and --api to be prompted.' }),
     api: Flags.string({ description: "The api version to use with --api-route (e.g. \"1\" for /api/v1). Passing --api alone (without --api-route) also implies --api-route." }),
-    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
+    author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated route into. Defaults to ./src/routes.' }),
-    type: Flags.string({ alias: 't', multiple: true, description: 'The type of default route to generate: acl, admin, metrics, openapi, push, static, status. Pass more than once to generate multiple route types.'}),
+    type: Flags.string({ char: 't', multiple: true, description: 'The type of default route to generate: acl, admin, metrics, openapi, push, static, status. Pass more than once to generate multiple route types.'}),
     'static-path': Flags.string({ description: "If `--type static` is set. Sets the path containing the static files to serve. Default is `public`." }),
   };
 

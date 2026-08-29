@@ -23,10 +23,10 @@ export default class GenerateJob extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
-    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
-    description: Flags.string({ alias: 'd', description: "The short description of the job."}),
-    schedule: Flags.string({alias: 's', description: "The crontab-style schedule that the job will execute with (e.g. `* * * * *` runs every second)."}),
-    'output-dir': Flags.string({ alias: 'o', description: 'Directory to write the generated job into. Defaults to ./src/jobs.' }),
+    author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
+    description: Flags.string({ char: 'd', description: "The short description of the job."}),
+    schedule: Flags.string({char: 's', description: "The crontab-style schedule that the job will execute with (e.g. `* * * * *` runs every second)."}),
+    'output-dir': Flags.string({ char: 'o', description: 'Directory to write the generated job into. Defaults to ./src/jobs.' }),
   };
 
   async run(): Promise<void> {

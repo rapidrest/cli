@@ -186,7 +186,7 @@ export default class GenerateAuth extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
-    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
+    author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated files into. Defaults to the current working directory.' }),
     'datastore-type': Flags.string({ description: `Which datastore backs authentication data. One of: ${DATASTORE_TYPES.join(', ')}` }),
     'sql-type': Flags.string({ description: `When --datastore-type sql and no "sql" datastore exists yet, which SQL database to create it as. One of: ${SQL_TYPES.join(', ')}` }),

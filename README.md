@@ -1,21 +1,82 @@
-# rapidrest
-
-The official CLI tool for [RapidREST](https://github.com/rapidrest) projects.
+# RapidREST: CLI
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/rapidrest.svg)](https://npmjs.com/package/@rapidrest/cli)
 [![License](https://img.shields.io/npm/l/rapidrest.svg)](https://github.com/rapidrest/cli/blob/main/package.json)
 
+The official CLI tool for [RapidREST](https://github.com/rapidrest) projects.
+
+For complete documentation please visit [RapidREST.dev](https://rapidrest.dev).
+
 ---
 
-## Overview
+## Features
 
-`rapidrest` scaffolds and manages RapidREST server projects. It handles the full project lifecycle:
+**Project Scaffolding**
 
-- **Scaffold** a new server project with your choice of databases, frontend, and deployment targets
-- **Generate** models, routes, background jobs and add-on support (Docker, Kubernetes, React) inside an existing project
-- **Develop** with hot-reload and automatic in-memory database startup
-- **Build and start** the compiled server in one command
+- `generate server` scaffolds a complete REST server project in one command: MongoDB, PostgreSQL,
+  SQLite, and/or Redis, an optional `/api` route prefix with a version segment, npm or yarn, source
+  control initialization, and any combination of default routes, React, Docker, and Kubernetes
+  support
+- Every prompt has a matching flag, plus an `--answers` JSON file for reusing the same answers
+  across projects, so a project can be scaffolded fully non-interactively for CI or repeated use
+- Dependencies are installed automatically once scaffolding finishes (skip with `--no-install`)
+
+**Code Generation**
+
+- `generate model` adds a data model with typed properties (`string`, `number`, `boolean`, arrays,
+  `Date`, or a custom type), optional Redis caching with a configurable TTL, and RBAC protection. If
+  the project doesn't have a datastore yet, it creates one
+- `generate route` adds a route handler, optionally bound to a model for full CRUD (list, get,
+  create, update, delete, per-property update), with a matching test file generated alongside it
+- `generate default-route` scaffolds any of RapidREST's built-in routes (Access Control Lists,
+  Admin, Metrics, OpenAPI, Push, Static, Status), individually or as a batch
+- `generate job` adds a cron-scheduled background job with its own test file
+- `generate react` adds a managed React frontend with optional client-side hydration; running it
+  again with a different name adds another app to the same project, migrating an older single-app
+  layout automatically if needed
+- `generate react-page` adds a page to an existing React app, with an optional companion service
+  class for server-side data fetching
+
+**Authentication**
+
+- `generate auth` wires [`@rapidrest/auth`](https://github.com/rapidrest/auth) into a project as
+  thin subclasses of the library's own model and route base classes rather than hand-written code:
+  self-service registration, admin user management, and any combination of HTTP Basic, OTP, TOTP,
+  Passkey, FIDO2, MFA, and OAuth 2.0/OpenID Connect login, with provider presets for Google, Apple,
+  Facebook, and Microsoft, or a custom provider
+
+**Deployment & Add-ons**
+
+- `generate docker` adds a Dockerfile and Docker Compose setup, pre-configured for the project's
+  datastores
+- `generate k8s` adds a Helm chart under `helm/`, tailored the same way
+- `react export` crawls a React app and writes a static HTML/CSS/JS build to disk, ready to deploy
+  to any static host without a server
+
+**Development Workflow**
+
+- `dev` runs the server with hot reload, starting an in-memory database for each configured
+  datastore automatically so no local database install is required, plus a watching frontend build
+  when React support is configured
+- `start` builds and runs the production server the same way, with automatic fallback to the next
+  free port and an optional `--bun` flag that downloads and caches a compatible Bun runtime if one
+  isn't already installed
+- `build` compiles the project through its own package manager script, linting first unless skipped
+  with `--no-lint`
+
+**Project Maintenance**
+
+- `doctor` checks an existing project against a set of known problem patterns and can fix the
+  mechanically-safe ones automatically with `--fix`
+- `upgrade` re-syncs a project's generator-owned boilerplate and dependency versions against the
+  currently installed templates, touching only the files the project already has
+- `dep add`/`install`/`remove` wrap the project's package manager; `dep upgrade` moves every
+  dependency to its latest published version, not just within the existing semver range
+- `test` runs the project's test suite through Vitest, with coverage and watch mode support
+- `release` cuts a new version of a RapidREST project: bumps the version, promotes its release
+  notes, summarizes commit history into the changelog, updates Helm chart versions if present, then
+  commits, tags, and pushes
 
 ---
 
@@ -29,23 +90,23 @@ yarn global add @rapidrest/cli
 
 RapidREST requires Node.js LTS (24) or later.
 
-Once installed, the CLI is available as both `rapidrest` and the shorter alias `rr`. Every example below works with either name.
+Once installed, the CLI is available as both `rapidrest` and the shorter alias `rr`. Every example
+below works with either name.
 
 ---
 
 ## Quick Start
 
 ```sh
-# 1. Scaffold a new project (interactive prompts guide you through the options)
+# 1. Scaffold a new project (interactive prompts guide you through the options;
+#    dependencies are installed automatically)
 rapidrest generate server my-api
+cd my-api
 
-# 2. Install dependencies
-cd my-api && yarn install
-
-# 3. Create a new route
+# 2. Create a new route
 rapidrest generate route MyRoute
 
-# 4. Start the development server
+# 3. Start the development server
 rapidrest dev
 ```
 
@@ -68,6 +129,12 @@ rapidrest dev
 - [`rapidrest build`](#rapidrest-build)
 - [`rapidrest doctor`](#rapidrest-doctor)
 - [`rapidrest upgrade`](#rapidrest-upgrade)
+- [`rapidrest dep add`](#rapidrest-dep-add)
+- [`rapidrest dep install`](#rapidrest-dep-install)
+- [`rapidrest dep remove`](#rapidrest-dep-remove)
+- [`rapidrest dep upgrade`](#rapidrest-dep-upgrade)
+- [`rapidrest test`](#rapidrest-test)
+- [`rapidrest release BUMP`](#rapidrest-release-bump)
 - [`rapidrest react export`](#rapidrest-react-export)
 
 ---
@@ -78,17 +145,17 @@ Scaffold a new RapidREST server project.
 
 ```
 USAGE
-  $ rapidrest generate server NAME [--output-dir <path>] [--author <name>] [--force]
+  $ rapidrest generate server NAME [--output-dir <path>] [-a <name>] [--force]
       [--answers <path>] [--description <text>] [--pkg-manager npm|yarn]
       [--db <feature>...] [--route <type>...] [--react] [--docker] [--k8s]
-      [--api-route] [--api-version <value>] [--scm <choice>]
+      [--api-route] [--api-version <value>] [--scm <choice>] [--no-install]
 
 ARGUMENTS
   NAME  Name of the new project (also used as the output directory name)
 
 FLAGS
   --output-dir <path>     Directory to write the generated project into. Defaults to ./<NAME>
-  -a, --author <name>     Author to attribute the generated code to
+  -a, --author <name>     Author to attribute the generated code to (falls back to your Git config, then prompts)
   --force                 Overwrite existing files
   --answers <path>        Path to a JSON file supplying any of the flags below, for reuse across projects
   --description <text>    Short description of the project
@@ -101,6 +168,7 @@ FLAGS
   --api-route / --no-api-route  Prefix all non-React routes with `/api`
   --api-version <value>   API version segment when --api-route is set (e.g. "1" for /api/v1)
   --scm <choice>          Source control manager: github | gitlab | git | p4 | svn | none
+  --no-install            Skip running the package manager install after generating
 ```
 
 Every flag above stands in for one interactive prompt — pass it (or supply it via `--answers`) to
@@ -123,6 +191,9 @@ that checkbox's own default (`--route` → none, `--react` → off, `--docker` �
 off) rather than prompting for just the rest.
 
 Any default routes selected above are generated via [`generate default-route`](#rapidrest-generate-default-route) immediately after the project is scaffolded, using the same author and API prefix you chose here.
+
+Once the project is written, its dependencies are installed automatically via the package manager
+you chose (or detected). Pass `--no-install` to skip this and run it yourself later.
 
 **`--answers <file>`** — a JSON file with any of the flags above as camelCase keys, every key
 optional:
@@ -170,25 +241,27 @@ Generate a new data model class inside the current project.
 
 ```
 USAGE
-  $ rapidrest generate model NAME [--output-dir <path>] [--author <name>] [--description <text>]
-      [--datastore <name>] [--cache [ttl]] [--protect] [--property <name:type>...] [--force]
+  $ rapidrest generate model NAME [--output-dir <path>] [-a <name>] [-d <text>]
+      [--datastore <name>] [-c [ttl]] [-p] [--property <name:type>...] [-f] [--no-install]
 
 ARGUMENTS
   NAME  Name of the data model class (e.g. Product, UserProfile)
 
 FLAGS
-  -o, --output-dir <path>    Directory to write the generated model into. Defaults to ./src/models
-  -a, --author <name>        Author to attribute the generated code to
-  -d, --description <text>   Short description of the model
-  -ds, --datastore <name>    Name of the datastore the model will be bound to
-  -c, --cache [ttl]          Cache TTL (in seconds) for this model
-  -p, --protect              Enable RBAC-based protection for this model
-  --property <name:type>     Add a typed property to the model (e.g. quantity:number). Append ? to the type
-                              for an optional property (e.g. bio:string?). Repeatable
-  -f, --force                Overwrite existing files
+  -f, --force              Overwrite existing files
+  -p, --protect            Enable RBAC-based protection for this model
+  -o, --output-dir <path>  Directory to write the generated model into. Defaults to ./src/models
+  -a, --author <name>      Author to attribute the generated code to
+  -c, --cache [ttl]        Cache TTL (in seconds) for this model
+  -d, --description <text> Short description of the model
+  --datastore <name>       Name of the datastore the model will be bound to (also usable as --ds)
+  --property <name:type>   Add a typed property to the model (e.g. quantity:number). Append ? to the type
+                            for an optional property (e.g. bio:string?). Repeatable
+  --no-install             Skip running the package manager install after generating
 ```
 
-If the project does not contain an existing datastore, or you simply want to want to set up a different datastore than previously configured, this command will help you create a new one.
+If the project does not contain an existing datastore, or you simply want to set up a different
+datastore than previously configured, this command will help you create a new one.
 
 `--cache` has three forms:
 
@@ -226,24 +299,23 @@ Generate a new route handler inside the current project.
 
 ```
 USAGE
-  $ rapidrest generate route NAME [--output-dir <path>] [--author <name>] [--description <text>]
-      [--path <route-path>] [--api <version>] [--model <name>] [--no-model] [--protect] [--no-test] [--force]
+  $ rapidrest generate route NAME [--output-dir <path>] [-a <name>] [-d <text>]
+      [--path <route-path>] [--api <version>] [-m <name>] [--no-model] [-p] [-f]
 
 ARGUMENTS
   NAME  Name of the route class (e.g. ProductRoute, OrderRoute)
 
 FLAGS
-  --output-dir <path>       Directory to write the generated route into. Defaults to ./src/routes
+  -f, --force               Overwrite existing files
+  -p, --protect             Enable RBAC-based protection for this route
   -a, --author <name>       Author to attribute the generated code to
   -d, --description <text>  Short description of the route
+  -m, --model <name>        Name of the model class this route will serve (extends ModelRoute)
+  --output-dir <path>       Directory to write the generated route into. Defaults to ./src/routes
   --path <route-path>       Base path of the route (e.g. /api/v1/products)
   --api <version>           Use @ApiRoute instead of @Route for the generated route. Pass a version to prefix the
                              path with /api/v<version>; pass an empty value for /api with no version
-  -m, --model <name>        Name of the model class this route will serve (extends ModelRoute)
   --no-model                Skip all prompts about associating a model class
-  -p, --protect             Enable RBAC-based protection for this route
-  --no-test                 Skip generating the matching test file
-  -f, --force                Overwrite existing files
 ```
 
 If `--api` is omitted, you're asked whether this is an API route; confirming then prompts for a version (blank for no version prefix). Passing `--api <version>` skips both prompts and generates the route with `@ApiRoute(path, version)` instead of `@Route(path)`.
@@ -258,6 +330,8 @@ When selecting or creating a data model for the route handler, the resulting cla
 * `PUT /<path>/:id` - Updates a single document for the given `id`
 * `PUT /<path>/:id/:property` - Updates a single property of the document with the given `id`
 * `DELETE /<path>/:id` - Deletes a single document for the given `id`
+
+A matching test file is always generated alongside the route, at `test/<NAME>.test.ts`.
 
 **Example:**
 
@@ -276,21 +350,21 @@ Generate one or more of RapidREST's built-in default route handlers (Access Cont
 
 ```
 USAGE
-  $ rapidrest generate default-route [--output-dir <path>] [--author <name>]
-      [--api-route] [--api <version>] [--type <type>]... [--static-path <path>] [--force]
+  $ rapidrest generate default-route [--output-dir <path>] [-a <name>]
+      [--api-route] [--api <version>] [-t <type>]... [--static-path <path>] [-f]
 
 FLAGS
-  --output-dir <path>    Directory to write the generated route(s) into. Defaults to the current working directory
-  -a, --author <name>    Author to attribute the generated code to
+  -f, --force              Overwrite existing files
+  -a, --author <name>      Author to attribute the generated code to
+  -t, --type <type>        The type of default route to generate: acl, admin, metrics, openapi, push, static, status.
+                           Pass more than once to generate multiple route types
+  --output-dir <path>      Directory to write the generated route(s) into. Defaults to ./src/routes
   --api-route / --no-api-route  Use @ApiRoute instead of @Route for the generated route(s). Omit both
-                          --api-route and --api to be prompted
-  --api <version>        API version to prefix paths with (e.g. "1" for /api/v1) when --api-route is set. Passing
-                          --api with a value on its own also implies --api-route
-  -t, --type <type>      The type of default route to generate: acl, admin, metrics, openapi, push, static, status.
-                          Pass more than once to generate multiple route types
-  --static-path <path>   Path containing the static files to serve, when the static route is included. Defaults to
-                          `public`
-  -f, --force             Overwrite existing files
+                           --api-route and --api to be prompted
+  --api <version>          API version to prefix paths with (e.g. "1" for /api/v1) when --api-route is set. Passing
+                           --api with a value on its own also implies --api-route
+  --static-path <path>     Path containing the static files to serve, when the static route is included. Defaults to
+                           `public`
 ```
 
 A bare `--api` with no value can't reliably be told apart from `--api` followed by another flag,
@@ -330,19 +404,21 @@ Generate a new background job inside the current project.
 
 ```
 USAGE
-  $ rapidrest generate job NAME [--output-dir <path>] [--author <name>] [--description <text>]
-      [--schedule <cron>] [--force]
+  $ rapidrest generate job NAME [--output-dir <path>] [-a <name>] [-d <text>]
+      [-s <cron>] [-f]
 
 ARGUMENTS
   NAME  Name of the background job class (e.g. MetricsCollector, Notificatier)
 
 FLAGS
-  -o, --output-dir <path>   Directory to write the generated job into. Defaults to ./src/jobs
+  -f, --force               Overwrite existing files
   -a, --author <name>       Author to attribute the generated code to
   -d, --description <text>  Short description of the job
+  -o, --output-dir <path>   Directory to write the generated job into. Defaults to ./src/jobs
   -s, --schedule <cron>     Crontab-style schedule the job runs on (e.g. `* * * * *` runs every minute)
-  -f, --force               Overwrite existing files
 ```
+
+A matching test file is always generated alongside the job, at `test/jobs/<NAME>.test.ts`.
 
 **Example:**
 
@@ -361,11 +437,13 @@ Add Docker support to the current project.
 
 ```
 USAGE
-  $ rapidrest generate docker [--output-dir <path>] [--force]
+  $ rapidrest generate docker [--output-dir <path>] [--has-react] [-f]
 
 FLAGS
-  --output-dir <path>  Project directory to add Docker support to. Defaults to the current working directory
-  -f, --force          Overwrite existing files
+  -f, --force              Overwrite existing files
+  --output-dir <path>      Project directory to add Docker support to. Defaults to the current working directory
+  --has-react / --no-has-react  Whether the project includes a React app (affects which directories the
+                           Dockerfile copies). Defaults to auto-detecting an existing project
 ```
 
 Generates a set of Docker and Docker Compose files with pre-configured databases based on the existing project configuration.
@@ -386,11 +464,12 @@ Add Kubernetes (Helm) support to the current project.
 
 ```
 USAGE
-  $ rapidrest generate k8s [--output-dir <path>] [--force]
+  $ rapidrest generate k8s [--output-dir <path>] [--no-install] [-f]
 
 FLAGS
-  --output-dir <path>  Project directory to add Kubernetes (Helm) support to. Defaults to the current working directory
-  -f, --force          Overwrite existing files
+  -f, --force              Overwrite existing files
+  --output-dir <path>      Project directory to add Kubernetes (Helm) support to. Defaults to the current working directory
+  --no-install             Skip running the package manager install after generating
 ```
 
 Generates a Helm chart under `helm/`, tailored to the project's configured datastores.
@@ -410,18 +489,19 @@ Add a RapidREST-managed React frontend application to the current project.
 
 ```
 USAGE
-  $ rapidrest generate react NAME [--output-dir <path>] [--author <name>] [--path <base-path>]
-      [--hydrate] [--force]
+  $ rapidrest generate react NAME [--output-dir <path>] [-a <name>] [-p <base-path>]
+      [--hydrate] [--no-install] [-f]
 
 ARGUMENTS
   NAME  Name of the React app (e.g. app)
 
 FLAGS
-  --output-dir <path>  Project directory to add React support to. Defaults to the current working directory
-  -a, --author <name>  Author to attribute the generated code to
-  -p, --path <path>    Base path the React application will route to. Defaults to /<NAME>
-  --hydrate            Enable client-side hydration (required for interactive apps)
-  -f, --force          Overwrite existing files
+  -f, --force              Overwrite existing files
+  -a, --author <name>      Author to attribute the generated code to
+  -p, --path <path>        Base path the React application will route to. Defaults to /<NAME>
+  --output-dir <path>      Project directory to add React support to. Defaults to the current working directory
+  --hydrate                Enable client-side hydration (required for interactive apps)
+  --no-install             Skip running the package manager install after generating
 ```
 
 Running this a second time with a different `NAME` adds a second app to the same project — every
@@ -451,17 +531,17 @@ Add a new page to an existing React app in the current project.
 
 ```
 USAGE
-  $ rapidrest generate react-page APP NAME [--output-dir <path>] [--author <name>] [--service] [--force]
+  $ rapidrest generate react-page APP NAME [--output-dir <path>] [-a <name>] [-s] [-f]
 
 ARGUMENTS
   APP   Name of the React app to add the page to (e.g. app)
   NAME  Name of the page, optionally with a subpath (e.g. Dashboard, my/path/page)
 
 FLAGS
-  --output-dir <path>  Project directory to add the page to. Defaults to the current working directory
-  -a, --author <name>  Author to attribute the generated code to
-  -s, --service        Create a service class for server-side data retrieval for the page
-  -f, --force          Overwrite existing files
+  -f, --force              Overwrite existing files
+  -s, --service            Create a service class for server-side data retrieval for the page
+  -a, --author <name>      Author to attribute the generated code to
+  --output-dir <path>      Project directory to add the page to. Defaults to the current working directory
 ```
 
 Unless `--service` is passed, you're asked whether to generate a companion service class. If you decline, the page component instead exports a client-side `fetchProps` helper for retrieving its own data.
@@ -492,9 +572,11 @@ USAGE
   $ rapidrest generate auth [--datastore-type sql|mongo] [--sql-type postgres|better-sqlite3]
       [--default-accounts] [--method basic|otp|totp|passkey|fido2|mfa|oidc]...
       [--oidc-provider google|apple|facebook|microsoft|custom]...
-      [--author <name>] [--output-dir <path>] [--force]
+      [-a <name>] [--output-dir <path>] [--no-install] [-f]
 
 FLAGS
+  -f, --force                Overwrite existing files
+  -a, --author <name>        Author to attribute the generated code to
   --datastore-type <choice>  Which datastore backs authentication data: sql | mongo
   --sql-type <choice>        When --datastore-type sql and no "sql" datastore exists yet, which SQL
                               database to create it as: postgres | better-sqlite3
@@ -504,10 +586,9 @@ FLAGS
                               otp, totp, passkey, fido2, mfa, oidc
   --oidc-provider <choice>   When "oidc" is among --method, which third-party provider(s) to
                               configure. Repeatable. One of: google, apple, facebook, microsoft, custom
-  -a, --author <name>        Author to attribute the generated code to
   --output-dir <path>        Directory to write the generated files into. Defaults to the current
                               working directory
-  -f, --force                 Overwrite existing files
+  --no-install                Skip running the package manager install after generating
 ```
 
 `@rapidrest/auth` ships ready-made model and route base classes — this command doesn't hand-write a
@@ -540,8 +621,8 @@ Selecting `totp`/`fido2`/`mfa`/`passkey` adds the matching `auth.totp`/`auth.fid
 config block with sensible defaults; each selected OIDC provider adds its own `auth.oidc_<provider>`
 block. `@rapidrest/auth` and `argon2` (used for password hashing) are always added to
 `package.json`; `otplib` and `@simplewebauthn/server` are added when a method that needs them is
-selected, and `jwks-rsa` when a selected OIDC provider uses OpenID Connect. Install dependencies
-after running this command.
+selected, and `jwks-rsa` when a selected OIDC provider uses OpenID Connect. Dependencies are then
+installed automatically, unless `--no-install` is passed.
 
 **OIDC providers.** Selecting `oidc` prompts for one or more third-party providers. Google, Apple,
 Facebook, and Microsoft come with preset, well-known endpoints (verify these against the provider's
@@ -577,12 +658,12 @@ Start the RapidREST server in development mode with hot reloading.
 
 ```
 USAGE
-  $ rapidrest dev [--inspect] [--docker] [--port <value>]
+  $ rapidrest dev [--inspect] [-d] [-p <value>]
 
 FLAGS
-  --inspect  Enable the Node.js inspector on port 9229 for debugger attachment
   -d, --docker  Run in Docker mode (skips starting in-memory database servers)
   -p, --port    Preferred port to bind to (default 3000). If already in use, the next available port is used instead.
+  --inspect     Enable the Node.js inspector on port 9229 for debugger attachment
 ```
 
 Run this command from the root of a generated RapidREST project. It:
@@ -613,19 +694,20 @@ Build and start the RapidREST server for production.
 
 ```
 USAGE
-  $ rapidrest start [--no-build] [--docker] [--port <value>] [--bun]
+  $ rapidrest start [--no-build] [--no-lint] [-d] [-p <value>] [--bun]
 
 FLAGS
-  --no-build    Skip the build step
   -d, --docker  Run in Docker mode (skips starting in-memory database servers)
   -p, --port    Preferred port to bind to (default 3000). If already in use, the next available port is used instead.
+  --no-build    Skip the build step
+  --no-lint     Skip linting during the build step
   --bun         Use the Bun engine instead of Node.js. Requires Bun v1.4.0+; downloads a compatible version automatically if none is installed.
 ```
 
 Run this command from the root of a generated RapidREST project. It:
 
 1. If `--bun` is passed, resolves a Bun v1.4.0+ executable to run the server with (see below).
-2. Runs `yarn build` or `npm run build` (auto-detected from `yarn.lock` / `package.json`).
+2. Runs `yarn build` or `npm run build` (auto-detected from `yarn.lock` / `package.json`), which lints the project first unless `--no-lint` is passed.
 3. If the project has React support configured, also runs `vite build` to compile the frontend.
 4. Reads `src/config.ts` to detect which databases are configured and starts an in-memory server for each one — unless `--docker` is passed, in which case this step is skipped.
 5. Finds an available port to bind to, starting at 3000 (or `--port`, if given) and trying the next port up until a free one is found.
@@ -651,14 +733,24 @@ rapidrest start --bun        # run the server with Bun, downloading a compatible
 
 ### `rapidrest build`
 
-Build the RapidREST server project in the current directory.
+Build the RapidREST server project in the current directory (and its React frontend, if configured).
 
 ```
 USAGE
-  $ rapidrest build
+  $ rapidrest build [--no-lint]
+
+FLAGS
+  --no-lint  Skip linting before building
 ```
 
 Runs the project's `build` script via the detected package manager. Equivalent to `yarn build` or `npm run build` from the project root.
+
+**Example:**
+
+```sh
+rapidrest build
+rapidrest build --no-lint
+```
 
 ---
 
@@ -749,6 +841,174 @@ rapidrest upgrade --json   # machine-readable output, e.g. for CI
 
 ---
 
+### `rapidrest dep add`
+
+Add one or more dependencies to the current project.
+
+```
+USAGE
+  $ rapidrest dep add PACKAGE... [-D]
+
+ARGUMENTS
+  PACKAGE  One or more package names to add (e.g. lodash-es, axios@1.19.0). Repeatable
+
+FLAGS
+  -D, --dev  Add as a devDependency instead of a dependency
+```
+
+Equivalent to `yarn add`/`npm install <pkg>` via the detected package manager.
+
+**Example:**
+
+```sh
+rapidrest dep add lodash-es
+rapidrest dep add axios@1.19.0
+rapidrest dep add vitest --dev
+```
+
+---
+
+### `rapidrest dep install`
+
+Install the current project's dependencies.
+
+```
+USAGE
+  $ rapidrest dep install
+```
+
+Equivalent to `yarn install`/`npm install` via the detected package manager.
+
+---
+
+### `rapidrest dep remove`
+
+Remove one or more dependencies from the current project.
+
+```
+USAGE
+  $ rapidrest dep remove PACKAGE...
+
+ARGUMENTS
+  PACKAGE  One or more package names to remove. Repeatable
+```
+
+Equivalent to `yarn remove`/`npm uninstall` via the detected package manager.
+
+**Example:**
+
+```sh
+rapidrest dep remove lodash-es
+rapidrest dep remove axios lodash-es
+```
+
+---
+
+### `rapidrest dep upgrade`
+
+Upgrade the current project's dependencies to their latest published versions — a real mass
+upgrade, unlike `npm update`/`yarn upgrade`, which only move within your existing semver range.
+
+```
+USAGE
+  $ rapidrest dep upgrade [PACKAGE...] [--dry-run] [--exclude <name>...] [--no-install] [--peer]
+
+ARGUMENTS
+  PACKAGE  Specific package(s) to upgrade, optionally pinned to a version (e.g. lodash-es@4.17.21,
+           axios:1.19.0). Omit to upgrade every dependency
+
+FLAGS
+  --dry-run          List what would be upgraded without changing anything
+  --exclude <name>   Package name to exclude from the upgrade. Repeatable
+  --no-install       Skip running the package manager install after upgrading
+  --peer             Also consider peerDependencies when no specific packages are named
+```
+
+Without any package arguments, every dependency (and devDependency) in `package.json` is checked
+against its latest published version; passing one or more packages upgrades only those. Packages
+already at their latest version are reported and skipped, not treated as an error.
+
+**Example:**
+
+```sh
+rapidrest dep upgrade
+rapidrest dep upgrade --dry-run
+rapidrest dep upgrade lodash-es axios
+rapidrest dep upgrade lodash-es@4.17.21 axios:1.19.0
+rapidrest dep upgrade --exclude typescript --exclude eslint
+```
+
+---
+
+### `rapidrest test`
+
+Run the current project's test suite via Vitest.
+
+```
+USAGE
+  $ rapidrest test [FILE...] [--coverage] [--watch]
+
+ARGUMENTS
+  FILE  Optional test file path(s)/pattern(s) to run, passed straight through to Vitest
+
+FLAGS
+  --coverage  Run tests with code coverage
+  --watch     Run tests in watch mode instead of a single pass
+```
+
+**Example:**
+
+```sh
+rapidrest test
+rapidrest test --coverage
+rapidrest test --watch
+rapidrest test src/routes/HelloRoute.test.ts
+```
+
+---
+
+### `rapidrest release BUMP`
+
+Cut a new release of the current project.
+
+```
+USAGE
+  $ rapidrest release BUMP [--preid <id>] [--dry-run] [--no-push]
+
+ARGUMENTS
+  BUMP  Release strategy (major|minor|patch|premajor|preminor|prepatch|prerelease) or an explicit
+        x.y.z version
+
+FLAGS
+  --preid <id>  Prerelease identifier (e.g. "rc") for pre* strategies
+  --dry-run     Print the computed version and exit without changing anything
+  --no-push     Commit and tag locally but skip `git push`
+```
+
+Run this from the root of a project that follows the same `RELEASE_NOTES.md`/`CHANGELOG.md`
+conventions as this CLI's own repository. It:
+
+1. Computes the new version from `BUMP` (a semver strategy, applied via `npm version`'s rules, or an explicit version).
+2. Bumps `package.json`.
+3. Promotes `RELEASE_NOTES.md`'s `## Unreleased` heading to `## v<version>` — the file must have that heading, or the command fails before making any changes.
+4. Summarizes the commit messages since the last tag into a new entry in `CHANGELOG.md`.
+5. If a Helm chart is present under `helm/`, updates its `Chart.yaml`/`values.yaml` version fields.
+6. Commits the changes, tags the commit `v<version>`, and pushes both — unless `--no-push` is passed.
+
+Requires a clean working tree (no staged or unstaged changes) before it will touch anything.
+`--dry-run` prints the computed version and exits before any of the above happens, so it's safe to
+use as a check.
+
+**Example:**
+
+```sh
+rapidrest release patch
+rapidrest release 2.1.0 --dry-run
+rapidrest release prerelease --preid rc --no-push
+```
+
+---
+
 ### `rapidrest react export`
 
 Crawl the React app and write a static HTML/CSS/JS site to disk — no server required to serve the
@@ -758,7 +1018,7 @@ what's being exported. Requires a React app to be configured (see
 
 ```
 USAGE
-  $ rapidrest react export [--docker] [--port <value>]
+  $ rapidrest react export [-d] [-p <value>]
 
 FLAGS
   -d, --docker  Run in Docker mode (skips starting in-memory database servers)
@@ -793,3 +1053,9 @@ rapidrest react export --port 4000  # prefer port 4000 for the transient export 
 ## Regenerating add-ons after project changes
 
 `generate docker` and `generate k8s` are idempotent and safe to re-run with `--force` whenever the project's datastores change — they regenerate their output entirely from the current project state rather than patching existing files. `generate model` will offer to do this for you automatically when you configure a brand-new datastore while adding a model.
+
+---
+
+## License
+
+MPL v2.0 — see [LICENSE](./LICENSE).

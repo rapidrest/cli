@@ -31,9 +31,9 @@ export default class GenerateRoute extends Command {
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
     api: Flags.string({ description: "Use @ApiRoute instead of @Route for the generated route(s). Pass a value to specify an api version." }),
-    author: Flags.string({ alias: 'a', description: 'The author to attribute the resulting source code to.' }),
-    description: Flags.string({ alias: 'd', description: "The short description of the route."}),
-    model: Flags.string({ alias: 'm', description: "The name of the model class this route will serve data for (will extend ModelRoute)."}),
+    author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
+    description: Flags.string({ char: 'd', description: "The short description of the route."}),
+    model: Flags.string({ char: 'm', description: "The name of the model class this route will serve data for (will extend ModelRoute)."}),
     'no-model': Flags.boolean({ description: 'Skip all prompts concerning associating a model class.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated route into. Defaults to ./src/routes.' }),
     path: Flags.string({ description: 'The base path of the route (e.g. /api/v1/products).' }),
