@@ -1,8 +1,8 @@
 # RapidREST: CLI
 
-[![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/rapidrest.svg)](https://npmjs.com/package/@rapidrest/cli)
-[![License](https://img.shields.io/npm/l/rapidrest.svg)](https://github.com/rapidrest/cli/blob/main/package.json)
+[![CI](https://github.com/rapidrest/cli/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/rapidrest/cli/actions/workflows/build.yml)
+[![Coverage Status](https://coveralls.io/repos/github/rapidrest/cli/badge.svg?branch=main)](https://coveralls.io/github/rapidrest/cli?branch=main)
+[![npm version](https://img.shields.io/npm/v/@rapidrest/cli)](https://www.npmjs.com/package/@rapidrest/cli)
 
 The official CLI tool for [RapidREST](https://github.com/rapidrest) projects.
 
