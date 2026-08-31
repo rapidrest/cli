@@ -276,6 +276,18 @@ describe('generate react', () => {
       const content = exportEntry()![1] as string;
       expect(content).toContain(`Copyright (C) ${new Date().getFullYear()} Jane Doe`);
     });
+
+    // Regression test: cleanup (runStaticExport + objectFactory.destroy()) finishing doesn't mean
+    // the process exits on its own — something in that chain leaves the event loop alive, so a
+    // generated export.ts without this line hangs indefinitely after logging success. src/server.ts's
+    // generated shutdown path already calls process.exit(0) for the same reason; export.ts needs it too.
+    it('calls process.exit(0) after a successful export, so the process doesn\'t hang', async () => {
+      stubPrompts({ path: '/app', author: 'Author' });
+      await GenerateReact.run(['app'], ROOT);
+
+      const content = exportEntry()![1] as string;
+      expect(content).toContain('process.exit(0);');
+    });
   });
 
   describe('single-app to multi-app migration', () => {

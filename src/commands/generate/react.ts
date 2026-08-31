@@ -121,6 +121,11 @@ if (result.errors.length > 0) {
 }
 
 console.log(\`[export] Wrote \${result.pages.length} page(s) to dist/export.\`);
+
+// Mirrors src/server.ts's shutdown path: cleanup alone doesn't let the process exit on its own
+// (a lingering handle — e.g. prom-client's default metrics collection interval — keeps the event
+// loop alive), so an explicit exit is required once everything above has actually finished.
+process.exit(0);
 `;
 }
 
