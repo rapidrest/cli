@@ -5,12 +5,12 @@
  * CHANGELOG.md, then commits, tags, and pushes.
  *
  * Usage:
- *   yarn release <major|minor|patch|premajor|preminor|prepatch|prerelease|x.y.z> [options]
+ * yarn release <major|minor|patch|premajor|preminor|prepatch|prerelease|x.y.z> [options]
  *
  * Options:
- *   --preid=<id>   Prerelease identifier (e.g. "rc") for pre* strategies.
- *   --dry-run      Print the computed version and exit without changing anything.
- *   --no-push      Commit and tag locally but skip `git push`.
+ * --preid=<id> Prerelease identifier (e.g. "rc") for pre* strategies.
+ * --dry-run Print the computed version and exit without changing anything.
+ * --no-push Commit and tag locally but skip `git push`.
  */
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
