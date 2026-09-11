@@ -1,6 +1,6 @@
 # Release Notes
 
-## Unreleased
+## v2.0.0
 
 * Fixed issue that created database processes to not be cleaned up after a `dev` or `start` command
 * Fixed `react export` issue that caused the process to hang indefinitely

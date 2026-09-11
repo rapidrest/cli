@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-11
+
+### Added
+- Added changelog/contributors files to server template
+
+### Changed
+- Updated react and server templates
+- Dev command now sets NODE_ENV to "development"
+- Release command now ignores certain git commit message trailers
+- Updated tsconfig.tsbuildinfo
+
+### Fixed
+- Fixed clean issue with react export command
+- Fixed CI workflows
+- Fixed linter errors
+- Fixed multiple issues with process management that caused zombie processes to be left running after killing a `dev` or `start` command
+
+### Removed
+- Removed unused auth/login from react template
+
 ## [1.0.1] - 2026-08-29
 
 ### Fixed
@@ -286,7 +306,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: rapidrest/cli/compare/v1.0.1...HEAD
+[Unreleased]: rapidrest/cli/compare/v2.0.0...HEAD
+[2.0.0]: rapidrest/cli/compare/v1.0.1...v2.0.0
 [1.0.1]: rapidrest/cli/compare/v1.0.0...v1.0.1
 [1.0.0]: rapidrest/cli/compare/v0.19.0...v1.0.0
 [0.19.0]: https://github.com/rapidrest/cli/compare/v0.18.0...v0.19.0
