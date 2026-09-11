@@ -62,6 +62,7 @@ export default class Dev extends Command {
     const serverEnv = {
       ...process.env,
       ...dbEnv,
+      NODE_ENV: "development",
       PATH: `${projectBin}${delimiter}${process.env.PATH ?? ''}`,
       port: String(port),
     };

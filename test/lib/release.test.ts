@@ -100,6 +100,12 @@ describe('classifyChangelogLine', () => {
     expect(classifyChangelogLine('1.2.3')).toBeNull();
     expect(classifyChangelogLine('   ')).toBeNull();
   });
+
+  it('drops git trailer lines (attribution/reference metadata, not a changelog-worthy change)', () => {
+    expect(classifyChangelogLine('Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>')).toBeNull();
+    expect(classifyChangelogLine('Signed-off-by: Jean-Philippe Steinmetz <jp@example.com>')).toBeNull();
+    expect(classifyChangelogLine('Reviewed-by: Someone <someone@example.com>')).toBeNull();
+  });
 });
 
 describe('buildChangelogEntry', () => {

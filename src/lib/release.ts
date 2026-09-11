@@ -28,6 +28,11 @@ const CHANGELOG_NOISE_PATTERNS: RegExp[] = [
   /\btests?\b.*\bcoverage\b/i,
   /(claude notes|notes for claude|claude instructions|\.claude\/)/i,
   /^\d+\.\d+\.\d+(-[\w.]+)?$/,
+  // Git trailers (attribution/reference metadata, not a user-facing change) - every %B line is a
+  // changelog-bullet candidate with no subject/body distinction, so without this a commit's
+  // "Co-Authored-By: ..." line (added automatically by Claude Code, among other tools) leaks into
+  // the changelog as its own bogus "Changed" bullet.
+  /^(co-authored-by|signed-off-by|reviewed-by|acked-by|tested-by|change-id):/i,
 ];
 
 export type ChangelogCategory = 'Added' | 'Changed' | 'Fixed' | 'Removed';

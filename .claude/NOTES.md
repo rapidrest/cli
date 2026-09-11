@@ -21,6 +21,39 @@ libraries (see the verification-methodology decision below).
 
 ## Standing design decisions & constraints
 
+- **Commit discipline.** Don't `git commit` unless explicitly asked for *that specific piece of
+  work*. An autonomous-execution/"commit as you go" approval given for one approved plan (e.g. via
+  plan mode) is scoped to that plan only — it does not carry forward to later, separate requests in
+  the same session, even ones that look similar in kind (a follow-up review-and-fix pass, a
+  refactor, a new feature), and even after a full review-and-fix cycle with passing tests. Default
+  to leaving changes staged/unstaged and saying so; only commit automatically within the exact
+  scope of a plan that was explicitly approved as autonomous. If unsure whether new work falls
+  inside that scope, treat it as outside and ask.
+  
+- **Commit message style: a flat list of one-line, verb-led items — no summary/title line, no
+  `-`/`*` bullet markers.** This isn't just a style preference — it's dictated by how `release`
+  actually builds `CHANGELOG.md`. `collectChangelogBullets`/`classifyChangelogLine`
+  (`src/lib/release.ts`) parse `git log --pretty=format:%B` and treat **every non-blank line of a
+  commit's full message as its own changelog bullet** — there is no subject/body distinction. A
+  conventional "short imperative subject + blank line + prose body" commit therefore leaks one
+  changelog bullet per body sentence, and a `-`/`*`-prefixed line breaks `classifyChangelogLine`'s
+  verb detection (it reads the line's first whitespace-delimited word as the verb; a leading `-`
+  defeats that lookup and the dash leaks into the changelog text as `"- - Added foo"`). Correct
+  format:
+  - No separate summary/title line — if a commit needs an overview, that overview is itself just
+    one more flat line, not a heading distinct from the rest.
+  - No bullet-marker prefix of any kind — write bare lines.
+  - Lead each line with an imperative verb where it fits: `Add`/`Fix`/`Remove` (and `-ing` forms)
+    are recognized and become `Added`/`Fixed`/`Removed` entries; `Configuring`/`Converting`/
+    `Refactoring`/`Updating`/etc. become `Changed`. Anything else still works, defaulting to
+    `Changed` verbatim — see `CHANGELOG_VERB_REWRITES` in `src/lib/release.ts` for the full map.
+  - A blank line before a trailing git trailer (`Co-Authored-By:`, `Signed-off-by:`, etc.) is fine
+    — trailers matching `CHANGELOG_NOISE_PATTERNS` are dropped from the changelog — but nothing
+    else should follow the item list.
+  This mirrors JP's standing convention across his other repos; copy this exact rule verbatim into
+  each sibling repo's own NOTES.md rather than paraphrasing it, since the paraphrase is what caused
+  this to be gotten wrong in the first place (see the 2026-09-07 Session Log entry below).
+
 - **Verifying template correctness requires actually scaffolding a project and running its real
   build/lint/test cycle — reading the templates, or running this repo's own `test/` suite, is not
   enough.** `test/lib/template-integration.test.ts` only asserts on rendered *file contents*
@@ -111,9 +144,6 @@ libraries (see the verification-methodology decision below).
   `eslint-config-oclif@7` uses) since the template's `eslint.config.mjs` had zero active `import/*`
   rules — pure dead weight. If real `import/*` linting is wanted later, migrate to
   `eslint-plugin-import-x`, not the abandoned original.
-
-- **Commit discipline.** Don't `git commit` unless explicitly asked, even after a full
-  review-and-fix cycle with passing tests. Leave changes staged/unstaged and say so.
 
 ## Session Log
 
@@ -489,3 +519,37 @@ Full suite: 794 tests, 99.61%/98.54%/99.5%/99.78% stmt/branch/func/line coverage
 end-to-end against real scaffolded projects, and committed as their own commits: `doctor`
 (`d2f8a06`), `upgrade` (`30debb2`), `generate model` properties (`91a8087`), non-interactive
 `generate server` (`3e16fda`), `generate auth` (this entry, commit pending as of this note).
+
+### 2026-09-07 — `release`'s changelog generator was leaking `Co-Authored-By:` git trailers as bogus `Changed` bullets
+
+Found while working in a sibling repo (`mail-server`/`server`): its commit messages carried a
+required `Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>` trailer, and running `release`'s
+actual `collectChangelogBullets`/`classifyChangelogLine` parsing logic against that history (not
+just reading the code) showed the trailer line surfacing as its own `- Co-Authored-By: ...` bullet
+under `### Changed`, once per commit. Root cause: `CHANGELOG_NOISE_PATTERNS` filtered `.claude/`
+mentions and a few other known-noise shapes, but had no pattern for git trailers at all.
+
+- Fix: added one more noise pattern to `CHANGELOG_NOISE_PATTERNS`
+  (`/^(co-authored-by|signed-off-by|reviewed-by|acked-by|tested-by|change-id):/i`) matching the
+  standard git trailer keys, so any of these lines are dropped from the changelog like the other
+  noise shapes already were.
+- Also rewrote this file's own "Commit message style" standing decision above — the previous
+  wording ("concise, one line per task/bug/feature — no verbose prose... a short list of one-line
+  bullets, one per item") was itself ambiguous enough that it got misread as "one-line *summary* +
+  a `-`-prefixed bullet list body" across several commits in the `mail-server` repo, which is
+  exactly the shape that breaks `classifyChangelogLine`'s verb detection (leading `-` swallows the
+  verb lookup) and leaks per-body-line bullets into the changelog (no subject/body distinction
+  exists in `%B`-per-line parsing). The reworded version is explicit about both failure modes and
+  points at the exact functions/constants in `src/lib/release.ts` responsible, so it can't drift
+  from what the tool actually does again.
+- JP asked for this exact corrected rule to be copied verbatim into every sibling repo's own
+  `.claude/NOTES.md` (not paraphrased independently in each one, to avoid the same drift happening
+  again) — done in `mail-server`/`server`'s NOTES.md as of this same date; propagate to the
+  remaining sibling repos (`core`, `react`, `service-core`, `auth`, `restapi`, etc.) whenever each
+  is next touched, or in a dedicated pass if JP prefers.
+- Verification: added a `classifyChangelogLine` test case for the new pattern (`Co-Authored-By`/
+  `Signed-off-by`/`Reviewed-by` all assert `null`); `test/lib/release.test.ts` full file: 44/44
+  passing; `tsc -b` and `eslint` both clean. Also re-simulated the parser against `mail-server`'s
+  real (already-rewritten) commit history to confirm the trailer lines no longer appear as bullets.
+- Not committed — same standing "ask before committing" default as every other decision in this
+  file.
