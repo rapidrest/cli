@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Fixed issue that created database processes to not be cleaned up after a `dev` or `start` command
 * Fixed `react export` issue that caused the process to hang indefinitely
 * Added changelog/contributing files to server template
 * Updated server template's ci.yaml GitHub workflow with multiple fixes
