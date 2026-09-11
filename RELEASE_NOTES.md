@@ -6,7 +6,8 @@
 * Added changelog/contributing files to server template
 * Updated server template's ci.yaml GitHub workflow with multiple fixes
 * Removed unused files from react template
-* Updated react and server template package dependencies to latest versions
+* Updated server template to `service-core` version `^2.0.0`
+* Upgraded all dependencies to latest version for react/server templates
 * The `dev` command now sets `NODE_ENV` to `development`
 
 ## v1.0.1

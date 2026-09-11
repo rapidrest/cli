@@ -8,6 +8,7 @@ import spawn from 'cross-spawn';
 import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
 import { detectReact } from '../lib/project.js';
 import { findAvailablePort } from '../lib/port.js';
+import { killProcessTree } from '../lib/process.js';
 
 export default class Dev extends Command {
   static override description = 'Start the RapidREST server in development mode with hot reloading via nodemon + tsx.';
@@ -74,12 +75,16 @@ export default class Dev extends Command {
       tsxArgs.unshift('--inspect=0.0.0.0:9229');
     }
 
+    // Run each child in its own process group (POSIX only) so killProcessTree can terminate any
+    // further subprocesses it spawns, not just the immediate tsx/vite process.
+    const detached = process.platform !== 'win32';
+
     const childProcesses: ReturnType<typeof spawn>[] = [];
 
     const server = spawn(
       tsxExec,
       tsxArgs,
-      { cwd, stdio: 'inherit', env: serverEnv },
+      { cwd, stdio: 'inherit', env: serverEnv, detached },
     );
     childProcesses.push(server);
 
@@ -87,15 +92,16 @@ export default class Dev extends Command {
     if (await detectReact(cwd)) {
       this.log('Starting Vite in watch mode...');
       const viteBin = join(projectBin, `vite${ext}`);
-      const viteProc = spawn(viteBin, ['build', '--watch'], { cwd, stdio: 'inherit', env: serverEnv });
+      const viteProc = spawn(viteBin, ['build', '--watch'], { cwd, stdio: 'inherit', env: serverEnv, detached });
       childProcesses.push(viteProc);
     }
 
     // 6. Forward signals and clean up all child processes
+    let cleaned = false;
     const cleanup = async () => {
-      for (const p of childProcesses) {
-        p.kill();
-      }
+      if (cleaned) return;
+      cleaned = true;
+      await Promise.all(childProcesses.map((p) => killProcessTree(p)));
       for (const db of dbProcesses) {
         this.log(`Stopping database ${db.type}...`);
         await db.server.stop();

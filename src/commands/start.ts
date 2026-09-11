@@ -9,6 +9,7 @@ import { spawn } from 'child_process';
 import { detectDatabases, startDatabases, StartedDatabase } from '../lib/db.js';
 import { findAvailablePort } from '../lib/port.js';
 import { MIN_BUN_VERSION, resolveBunExecutable } from '../lib/bun.js';
+import { killProcessTree } from '../lib/process.js';
 import Build from './build.js';
 
 function detectServerPath(cwd: string): string {
@@ -92,11 +93,17 @@ export default class Start extends Command {
       cwd,
       stdio: 'inherit',
       env: serverEnv,
+      // Run in its own process group (POSIX only) so killProcessTree can terminate any
+      // subprocesses the server itself spawns, not just this one process.
+      detached: process.platform !== 'win32',
     });
 
     // 6. Forward signals and clean up
+    let cleaned = false;
     const cleanup = async () => {
-      server.kill();
+      if (cleaned) return;
+      cleaned = true;
+      await killProcessTree(server);
       for (const db of dbProcesses) {
         this.log(`Stopping database ${db.type}...`);
         await db.server.stop();
