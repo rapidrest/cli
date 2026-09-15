@@ -5,7 +5,7 @@
 import { access, readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
 import crossSpawn from 'cross-spawn';
-import { dump as dumpYaml, load as loadYaml } from 'js-yaml';
+import { load as loadYaml } from 'js-yaml';
 import semver, { type ReleaseType } from 'semver';
 
 export const RELEASE_TYPES: ReleaseType[] = ['major', 'minor', 'patch', 'premajor', 'preminor', 'prepatch', 'prerelease'];
@@ -175,7 +175,7 @@ export async function updateReleaseNotes(cwd: string, version: string): Promise<
   if (!notes.includes(UNRELEASED_HEADING)) {
     throw new Error(`No "${UNRELEASED_HEADING}" section found in ${path}.`);
   }
-  await writeFile(path, notes.replace(UNRELEASED_HEADING, `## v${version}`));
+  await writeFile(path, notes.replace(UNRELEASED_HEADING, `${UNRELEASED_HEADING}\n\n## v${version}`));
 }
 
 export async function previousTag(cwd: string): Promise<string | undefined> {
@@ -312,9 +312,6 @@ export async function detectHelm(cwd: string): Promise<boolean> {
 interface HelmValues {
   service?: { image?: { tag?: string } };
 }
-interface HelmChart {
-  appVersion?: string;
-}
 
 // Confirms both Helm files parse and have the field this command needs to set, before any
 // mutation happens — called during pre-flight so a malformed chart fails before `npm version`
@@ -329,38 +326,210 @@ export async function validateHelmFiles(cwd: string): Promise<void> {
   loadYaml(await readFile(chartPath, 'utf-8'));
 }
 
+const YAML_KEY_LINE = /^(\s*)(?:(-)\s+)?([A-Za-z0-9_.-]+|"[^"]*"|'[^']*'):(?=\s|$)(.*)$/;
+
+function unquoteYamlKey(key: string): string {
+  return /^["']/.test(key) ? key.slice(1, -1) : key;
+}
+
+// Splits what follows `key:` into its scalar (with quotes, if any) and the rest of the line (a trailing comment).
+// Returns undefined for values this can't rewrite in place: block scalars, flow collections, anchors, aliases and tags.
+function splitYamlScalar(rest: string): { leading: string; scalar: string; trailing: string } | undefined {
+  const leading = /^\s*/.exec(rest)![0];
+  const body = rest.slice(leading.length);
+  if (/^[|>{[&*!]/.test(body)) {
+    return undefined;
+  }
+  let end: number;
+  if (body.startsWith('"')) {
+    end = 1;
+    while (end < body.length && body[end] !== '"') {
+      end += body[end] === '\\' ? 2 : 1;
+    }
+    end += 1;
+  } else if (body.startsWith("'")) {
+    end = 1;
+    while (end < body.length && !(body[end] === "'" && body[end + 1] !== "'")) {
+      end += body[end] === "'" ? 2 : 1;
+    }
+    end += 1;
+  } else {
+    const comment = /(^|\s)#/.exec(body);
+    end = comment ? comment.index : body.length;
+    while (end > 0 && /\s/.test(body[end - 1])) {
+      end -= 1;
+    }
+  }
+  return { leading, scalar: body.slice(0, end), trailing: body.slice(end) };
+}
+
+function yamlValueAt(content: string, path: string[]): unknown {
+  let node: unknown = loadYaml(content);
+  for (const key of path) {
+    node = node && typeof node === 'object' ? (node as Record<string, unknown>)[key] : undefined;
+  }
+  return node;
+}
+
+// Sets the mapping value at `path` (e.g. ["service", "image", "tag"]) to the string `value` by rewriting only that line,
+// so comments, key order, quoting style and formatting everywhere else stay exactly as they were - loading and dumping
+// the document would drop every comment. The key is added under its parent when missing (the parent must exist). The
+// result is parsed again to confirm the value landed where expected; anything this can't edit in place throws.
+export function setYamlScalar(content: string, path: string[], value: string): string {
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const lines = content.split(/\r?\n/);
+  const stack: { indent: number; key: string }[] = [];
+  const parentPath = path.slice(0, -1).join('\0');
+  let parentLine = parentPath === '' ? -1 : undefined;
+  let blockScalarIndent: number | undefined;
+  let done = false;
+
+  for (let i = 0; i < lines.length && !done; i++) {
+    const line = lines[i];
+    const indent = /^\s*/.exec(line)![0].length;
+    if (blockScalarIndent !== undefined) {
+      if (line.trim() === '' || indent > blockScalarIndent) {
+        continue;
+      }
+      blockScalarIndent = undefined;
+    }
+    if (/^\s*(#.*)?$/.test(line) || /^\s*(---|\.\.\.)\s*$/.test(line)) {
+      continue;
+    }
+    const match = YAML_KEY_LINE.exec(line);
+    while (stack.length > 0 && stack[stack.length - 1].indent >= indent) {
+      stack.pop();
+    }
+    if (/^\s*-(\s|$)/.test(line)) {
+      // A sequence item: nothing beneath it is on a mapping-only path.
+      stack.push({ indent, key: '\0-' });
+    }
+    if (!match) {
+      continue;
+    }
+    const keyIndent = match[2] ? line.indexOf(match[3], indent + 1) : indent;
+    stack.push({ indent: keyIndent, key: unquoteYamlKey(match[3]) });
+    const keys = stack.map((entry) => entry.key);
+    const rest = match[4];
+    if (/^\s*[|>]/.test(rest)) {
+      blockScalarIndent = keyIndent;
+    }
+    if (keys.join('\0') === path.join('\0')) {
+      const parts = splitYamlScalar(rest);
+      if (!parts) {
+        throw new Error(`Can't update "${path.join('.')}": its value isn't a plain or quoted scalar.`);
+      }
+      const quote = /^["']/.test(parts.scalar) ? parts.scalar[0] : '';
+      const leading = parts.scalar === '' ? ' ' : parts.leading;
+      // An empty value followed by a comment ("tag: # set by CI") keeps a space before the comment.
+      const trailing = parts.scalar === '' && parts.trailing !== '' ? ` ${parts.trailing.trimStart()}` : parts.trailing;
+      lines[i] = `${line.slice(0, line.length - rest.length)}${leading}${quote}${value}${quote}${trailing}`;
+      done = true;
+    } else if (keys.join('\0') === parentPath) {
+      parentLine = i;
+    }
+  }
+
+  if (!done) {
+    if (parentLine === undefined) {
+      throw new Error(`Can't update "${path.join('.')}": "${path.slice(0, -1).join('.')}" doesn't exist.`);
+    }
+    const leaf = path[path.length - 1];
+    if (parentLine === -1) {
+      const last = lines.length > 0 && lines[lines.length - 1] === '' ? lines.length - 1 : lines.length;
+      lines.splice(last, 0, `${leaf}: ${value}`);
+    } else {
+      const parentIndent = /^\s*/.exec(lines[parentLine])![0].length;
+      const next = lines.slice(parentLine + 1).find((l) => !/^\s*(#.*)?$/.test(l));
+      const nextIndent = next === undefined ? 0 : /^\s*/.exec(next)![0].length;
+      const childIndent = nextIndent > parentIndent ? nextIndent : parentIndent + 2;
+      lines.splice(parentLine + 1, 0, `${' '.repeat(childIndent)}${leaf}: ${value}`);
+    }
+  }
+
+  const result = lines.join(eol);
+  let updated: unknown;
+  try {
+    updated = yamlValueAt(result, path);
+  } catch {
+    updated = undefined;
+  }
+  if (String(updated) !== value) {
+    throw new Error(`Updating "${path.join('.')}" didn't produce the expected value; update it by hand.`);
+  }
+  return result;
+}
+
+// Updates the project's own version in its README (the server template's layout), located by structure rather than by
+// matching version text: sibling projects are released in lock-step, so the README can mention another chart or package
+// at the very same version, which must stay put. Only two spots change:
+// - the "Tag" row of the Docker Image table (the one with a "Repository" row), keeping the column width;
+// - `--version` after this project's own chart reference, `.../charts/<chartName>` (from Chart.yaml's name).
+export function updateReadmeVersion(readme: string, chartName: string, version: string): string {
+  const semverText = String.raw`\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?`;
+  const eol = readme.includes('\r\n') ? '\r\n' : '\n';
+  const lines = readme.split(/\r?\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const tagRow = new RegExp(String.raw`^(\|\s*Tag\s*\|)( *)(${semverText})( *)(\|.*)$`).exec(lines[i]);
+    if (!tagRow) {
+      continue;
+    }
+    // Only inside a table that also has a Repository row (the Docker Image table).
+    let start = i;
+    while (start > 0 && lines[start - 1].trimStart().startsWith('|')) start -= 1;
+    let end = i;
+    while (end < lines.length - 1 && lines[end + 1].trimStart().startsWith('|')) end += 1;
+    if (!lines.slice(start, end + 1).some((line) => /^\|\s*Repository\s*\|/.test(line))) {
+      continue;
+    }
+    const [, label, before, current, after, rest] = tagRow;
+    const width = before.length + current.length + after.length;
+    const padding = ' '.repeat(Math.max(1, width - before.length - version.length));
+    lines[i] = `${label}${before}${version}${padding}${rest}`;
+  }
+  const escapedName = chartName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const chartReference = new RegExp(String.raw`(/charts/${escapedName}\s+--version[=\s]+)${semverText}(?![0-9A-Za-z.+-])`, 'g');
+  return lines.join(eol).replace(chartReference, (_match, prefix: string) => `${prefix}${version}`);
+}
+
 // Updates the Helm chart's image tag/appVersion, plus any single_node_install.sh / README.md
 // version references — but only the latter two if the project actually has them, since neither
-// is guaranteed to exist even on a project that does ship a Helm chart. Returns the paths
-// (relative to cwd) it actually touched, for staging alongside the version bump commit.
+// is guaranteed to exist even on a project that does ship a Helm chart. Every change is located by
+// structure, never by matching the previous version's text, because sibling projects share
+// versions: the YAML files change only `service.image.tag` and `appVersion` (keeping comments and
+// formatting), the install script only its own `VERSION=` line, and the README only its Docker
+// Image table's Tag row and this chart's own `--version` (see updateReadmeVersion). Returns the
+// paths (relative to cwd) it actually touched, for staging alongside the version bump commit.
 export async function updateHelmVersion(cwd: string, version: string): Promise<string[]> {
   const touched: string[] = [];
 
   const valuesPath = join(cwd, 'helm', 'values.yaml');
-  const values = loadYaml(await readFile(valuesPath, 'utf-8')) as HelmValues;
-  values.service!.image!.tag = version;
-  await writeFile(valuesPath, dumpYaml(values));
+  await writeFile(valuesPath, setYamlScalar(await readFile(valuesPath, 'utf-8'), ['service', 'image', 'tag'], version));
   touched.push(join('helm', 'values.yaml'));
 
   const chartPath = join(cwd, 'helm', 'Chart.yaml');
-  const chart = loadYaml(await readFile(chartPath, 'utf-8')) as HelmChart;
-  chart.appVersion = version;
-  await writeFile(chartPath, dumpYaml(chart));
+  const chartContent = await readFile(chartPath, 'utf-8');
+  const chartName = String((loadYaml(chartContent) as { name?: unknown } | null)?.name ?? '');
+  await writeFile(chartPath, setYamlScalar(chartContent, ['appVersion'], version));
   touched.push(join('helm', 'Chart.yaml'));
 
   const installScriptPath = join(cwd, 'single_node_install.sh');
   if (await fileExists(installScriptPath)) {
-    const installScriptRegex = /VERSION="?\b\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\b"?/g;
+    // Only a line that assigns VERSION itself (not e.g. OTHER_VERSION=), keeping its quoting.
+    const installScriptRegex =
+      /^(\s*(?:export\s+)?VERSION=)(["']?)\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\2(?=\s|;|$)/gm;
     const installScript = await readFile(installScriptPath, 'utf-8');
-    await writeFile(installScriptPath, installScript.replace(installScriptRegex, `VERSION="${version}"`));
+    await writeFile(
+      installScriptPath,
+      installScript.replace(installScriptRegex, (_match, assignment: string, quote: string) => `${assignment}${quote}${version}${quote}`),
+    );
     touched.push('single_node_install.sh');
   }
 
   const readmePath = join(cwd, 'README.md');
   if (await fileExists(readmePath)) {
-    const readmeRegex = /\b\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?\b/g;
     const readme = await readFile(readmePath, 'utf-8');
-    await writeFile(readmePath, readme.replace(readmeRegex, version));
+    await writeFile(readmePath, updateReadmeVersion(readme, chartName, version));
     touched.push('README.md');
   }
 

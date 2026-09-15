@@ -1,5 +1,11 @@
 # Release Notes
 
+## Unreleased
+
+* Fixed `release` stripping every comment from a Helm chart's `values.yaml` and `Chart.yaml`: it now changes only the `service.image.tag` and `appVersion` lines
+* Fixed `release` replacing every version-like string in `README.md` (turning `127.0.0.1` into the new version, and rewriting other projects' versions): it now updates only the Docker Image table's `Tag` row and the `--version` of the project's own chart reference
+* Fixed `release` rewriting other `*_VERSION=` assignments in `single_node_install.sh`; only `VERSION=` is updated, keeping its quoting
+
 ## v2.0.0
 
 * Fixed issue that created database processes to not be cleaned up after a `dev` or `start` command

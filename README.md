@@ -992,7 +992,7 @@ conventions as this CLI's own repository. It:
 2. Bumps `package.json`.
 3. Promotes `RELEASE_NOTES.md`'s `## Unreleased` heading to `## v<version>` — the file must have that heading, or the command fails before making any changes.
 4. Summarizes the commit messages since the last tag into a new entry in `CHANGELOG.md`.
-5. If a Helm chart is present under `helm/`, updates its `Chart.yaml`/`values.yaml` version fields.
+5. If a Helm chart is present under `helm/`, sets `service.image.tag` in `values.yaml` and `appVersion` in `Chart.yaml`, changing only those lines so comments and formatting are kept. It also updates `VERSION=` in `single_node_install.sh` and, in `README.md`, the Docker Image table's `Tag` row and the `--version` of this chart's own `.../charts/<name>` reference, when those files exist. Nothing is matched by version text, so another project mentioned at the same version is left alone.
 6. Commits the changes, tags the commit `v<version>`, and pushes both — unless `--no-push` is passed.
 
 Requires a clean working tree (no staged or unstaged changes) before it will touch anything.

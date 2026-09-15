@@ -553,3 +553,34 @@ mentions and a few other known-noise shapes, but had no pattern for git trailers
   real (already-rewritten) commit history to confirm the trailer lines no longer appear as bullets.
 - Not committed — same standing "ask before committing" default as every other decision in this
   file.
+
+### 2026-09-15 — `release` stripped Helm comments and rewrote unrelated README versions
+
+Found through the RapidMX `server` 1.0.0-beta.3 and `postfix-bridge` 1.1.0 releases: both `helm/values.yaml` files lost
+every comment, and the server README's `127.0.0.1` became `1.0.0-beta.3.1`.
+
+- **Cause** (`updateHelmVersion`, `src/lib/release.ts`): values.yaml and Chart.yaml went through js-yaml `load`/`dump`
+  (drops comments, refolds strings); README.md got `/\b\d+\.\d+\.\d+.../g` replaced everywhere (any version-shaped
+  text, including an IP's first three octets and other projects' pinned versions); the install-script regex wasn't
+  anchored, so `OTHER_VERSION="x.y.z"` matched too.
+- **Fix:** `setYamlScalar(content, path, value)` rewrites only the target line (indentation-stack key path, quoted keys,
+  sequence items and block scalars skipped, quote style/trailing comment/CRLF kept, a missing leaf inserted under its
+  parent at the children's indent), then re-parses with js-yaml and throws unless the path now holds the value (so an
+  unexpected shape fails the release instead of writing a broken file). Anchors/tags/flow/block values throw.
+  `updateReadmeVersion(readme, chartName, version)` finds the project's own references by structure, never by version
+  text: the `| Tag | x |` row of a table that also has a `| Repository |` row (column width kept) and
+  `/charts/<Chart.yaml name> --version[= ]x`. Install script: `^\s*(export\s+)?VERSION=` lines only, quoting kept.
+- **Why structure, not the previous version's text:** JP releases sibling repos in lock-step (e.g. 1.0.0 everywhere), so
+  a README can mention another chart/image/package at exactly this project's previous version. A first attempt that
+  replaced standalone occurrences of the previous version was rejected for that reason. Keep every release-time edit
+  structural (YAML key path, a specific README table row or this chart's own reference).
+- Surveyed all rapidmx/RapidREST READMEs: every Helm project (template-generated) has exactly those two references;
+  library READMEs only mention Node/Bun/dependency versions, which must not change.
+- Not committed. The working tree also had someone else's in-progress `updateReleaseNotes` change (keeps
+  `## Unreleased` above the new heading), which fails the existing "promotes the Unreleased heading" test - left alone.
+
+Verified: `vitest run test/lib/release.test.ts test/commands/release.test.ts` 67/67 (lock-step README fixture: a sibling
+chart, image, package and second table at the same version stay unchanged); `tsc --noEmit`, eslint on the touched files
+clean. Ran `updateHelmVersion(dir, "9.9.9")` with `tsx` on copies of server, postfix-bridge, auth-server, mail-server and
+petstore_example: only `service.image.tag`, `appVersion` (appended where missing, petstore), `VERSION=`, the README Tag
+row and the chart's own `--version` changed; comments and `127.0.0.1` intact.
