@@ -1,6 +1,6 @@
 # Release Notes
 
-## Unreleased
+## v2.1.0
 
 * Fixed `release` stripping every comment from a Helm chart's `values.yaml` and `Chart.yaml`: it now changes only the `service.image.tag` and `appVersion` lines
 * Fixed `release` replacing every version-like string in `README.md` (turning `127.0.0.1` into the new version, and rewriting other projects' versions): it now updates only the Docker Image table's `Tag` row and the `--version` of the project's own chart reference

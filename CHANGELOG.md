@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-15
+
+### Changed
+- Test comment and formatting preservation, lock-step README versions, CRLF files, missing keys and values that can't be edited in place
+- Document the fix in the README, release notes and NOTES
+- Co-Authored-By: Claude Opus 5 (1M context) <noreply@anthropic.com>
+
+### Fixed
+- Fixed release stripping every comment from a Helm chart's values.yaml and Chart.yaml by setting service.image.tag and appVersion through setYamlScalar, which rewrites only that line, keeps its quoting, trailing comment and line endings, and parses the result to confirm the value before writing
+- Fixed release rewriting every version-like string in README.md, which turned 127.0.0.1 into the new version and would change sibling projects released at the same version, by updating only the Docker Image table's Tag row and the --version of the project's own chart reference through updateReadmeVersion
+- Fixed release rewriting other *_VERSION= assignments in single_node_install.sh by updating only the VERSION= line, keeping its quoting
+
 ## [2.0.0] - 2026-09-11
 
 ### Added
@@ -306,7 +318,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: rapidrest/cli/compare/v2.0.0...HEAD
+[Unreleased]: rapidrest/cli/compare/v2.1.0...HEAD
+[2.1.0]: rapidrest/cli/compare/v2.0.0...v2.1.0
 [2.0.0]: rapidrest/cli/compare/v1.0.1...v2.0.0
 [1.0.1]: rapidrest/cli/compare/v1.0.0...v1.0.1
 [1.0.0]: rapidrest/cli/compare/v0.19.0...v1.0.0
