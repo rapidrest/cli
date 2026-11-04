@@ -5,7 +5,7 @@
 import { checkbox, input, password, select } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { detectApiRoute, installIfPackageJsonChanged, readPackageJsonRaw, readProjectDatastores, readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 
@@ -186,6 +186,7 @@ export default class GenerateAuth extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated files into. Defaults to the current working directory.' }),
     'datastore-type': Flags.string({ description: `Which datastore backs authentication data. One of: ${DATASTORE_TYPES.join(', ')}` }),
@@ -339,15 +340,17 @@ export default class GenerateAuth extends Command {
       hasJwksRsa,
     };
 
-    const templateDir = join(this.config.root, 'templates', 'auth');
-    const oidcProviderTemplateDir = join(this.config.root, 'templates', 'auth', 'oidc-provider');
+    const templates = await useTemplates(this, cwd, 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'auth');
+    const oidcProviderTemplateDir = join(templates.dir, 'auth', 'oidc-provider');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
 
       for (const providerContext of oidcProviderContexts) {
         this.log(`\nAdding OIDC provider: ${providerContext.label}...`);
-        await processTemplate(oidcProviderTemplateDir, outputDir, { ...context, ...providerContext }, { force: flags.force, projectDir: cwd });
+        await renderTemplate(this, oidcProviderTemplateDir, outputDir, { ...context, ...providerContext }, { force: flags.force, projectDir: cwd });
       }
 
       this.log(`\nAuthentication scaffolding generated at: ${outputDir}`);

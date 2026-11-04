@@ -4,7 +4,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { installIfPackageJsonChanged, readPackageJsonRaw, readProjectDatastores, readProjectName } from '../../lib/project.js';
 
 export default class GenerateHelm extends Command {
@@ -18,6 +18,7 @@ export default class GenerateHelm extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
     'output-dir': Flags.string({ description: 'Project directory to add Kubernetes (Helm) support to. Defaults to the current working directory.' }),
   };
@@ -47,10 +48,12 @@ export default class GenerateHelm extends Command {
       hasRedis,
     };
 
-    const templateDir = join(this.config.root, 'templates', 'helm');
+    const templates = await useTemplates(this, cwd, 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'helm');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
       this.log(`\nKubernetes (Helm) files generated at: ${outputDir}`);
 
       if (!flags['no-install']) {

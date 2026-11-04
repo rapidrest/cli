@@ -23,9 +23,10 @@ export interface Finding {
 export interface CheckContext {
   /** The project directory being checked (defaults to process.cwd() by the caller). */
   cwd: string;
-  /** The CLI's own installation root (`this.config.root`), used only by checks whose fix needs
-   * to copy a canonical file out of the CLI's bundled `templates/` — e.g. a missing vitest.config.ts. */
-  templatesDir: string;
+  /** Finds the templates directory, used only by checks whose fix copies a canonical file out of the
+   * templates (e.g. a missing vitest.config.ts). A function, so a run that fixes nothing never resolves
+   * (or downloads) templates. */
+  templatesDir: () => Promise<string>;
 }
 
 export interface Check {
@@ -223,7 +224,7 @@ const missingVitestConfig: Check = {
         severity: 'error',
         message: 'vitest.config.ts is missing — vitest\'s default transform cannot handle decorator syntax, so every generated test will fail to even parse. Run with --fix to copy the standard config.',
         fix: async () => {
-          const source = join(templatesDir, 'server', 'vitest.config.ts');
+          const source = join(await templatesDir(), 'server', 'vitest.config.ts');
           await mkdir(dirname(target), { recursive: true });
           await copyFile(source, target);
         },

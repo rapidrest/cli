@@ -4,7 +4,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 import Handlebars from 'handlebars';
 import { readFile, writeFile } from 'fs/promises';
-import { join } from 'path';
+import { basename, join } from 'path';
+import { resolvePackageJsonRanges, type ResolveVersion } from './versionResolve.js';
 
 export interface PatchEntry {
   template: string;
@@ -221,6 +222,7 @@ export async function applyPatches(
   projectDir: string,
   context: Record<string, unknown>,
   patches: PatchEntry[],
+  opts?: { resolveVersion?: ResolveVersion },
 ): Promise<void> {
   for (const entry of patches) {
     if (entry.condition && !resolveCondition(entry.condition, context)) continue;
@@ -265,6 +267,9 @@ export async function applyPatches(
         // File doesn't exist — treat as empty; patch becomes the initial content
       }
       const patchJson = JSON.parse(renderedPatch) as Record<string, unknown>;
+      if (opts?.resolveVersion && basename(targetPath) === 'package.json') {
+        await resolvePackageJsonRanges(patchJson, opts.resolveVersion);
+      }
       const merged = jsonMerge(existingJson, patchJson);
       await writeFile(targetPath, JSON.stringify(merged, null, 2) + '\n', 'utf-8');
     }

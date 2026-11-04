@@ -41,7 +41,9 @@ describe('doctor', () => {
 
     await Doctor.run([], ROOT);
 
-    expect(runDoctor).toHaveBeenCalledWith({ cwd: process.cwd(), templatesDir: join(ROOT, 'templates') });
+    expect(runDoctor).toHaveBeenCalledWith({ cwd: process.cwd(), templatesDir: expect.any(Function) });
+    // Resolves the templates lazily: in a CLI checkout, its own templates/.
+    expect(await vi.mocked(runDoctor).mock.calls[0][0].templatesDir()).toBe(join(ROOT, 'templates'));
   });
 
   it('reports "No issues found." when there are no findings', async () => {

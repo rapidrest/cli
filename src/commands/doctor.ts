@@ -3,8 +3,8 @@
 // SPDX-License-Identifier: MPL-2.0
 ///////////////////////////////////////////////////////////////////////////////
 import { Command, Flags } from '@oclif/core';
-import { join } from 'path';
 import { applyFixes, Finding, runDoctor } from '../lib/doctor.js';
+import { templatesFlag, useTemplates } from '../lib/templateCommand.js';
 
 export default class Doctor extends Command {
   static override description = 'Validate an existing RapidREST project against known issues and optionally fix them.';
@@ -18,12 +18,13 @@ export default class Doctor extends Command {
   static override flags = {
     fix: Flags.boolean({ description: 'Automatically apply fixes for findings that support it.' }),
     json: Flags.boolean({ description: 'Output findings as JSON instead of a formatted report.' }),
+    templates: templatesFlag,
   };
 
   async run(): Promise<void> {
     const { flags } = await this.parse(Doctor);
     const cwd = process.cwd();
-    const ctx = { cwd, templatesDir: join(this.config.root, 'templates') };
+    const ctx = { cwd, templatesDir: async () => (await useTemplates(this, cwd, 'project', flags.templates)).dir };
 
     let findings = await runDoctor(ctx);
     let fixed: Finding[] = [];

@@ -4,7 +4,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { detectPackageManager, detectReact, readProjectDatastores, readProjectName } from '../../lib/project.js';
 
 export default class GenerateDocker extends Command {
@@ -18,6 +18,7 @@ export default class GenerateDocker extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     'output-dir': Flags.string({ description: 'Project directory to add Docker support to. Defaults to the current working directory.' }),
     // Undefined (the default) falls back to filesystem detection (detectReact) - correct for a
     // standalone `generate docker` run against an already-existing project. `generate server` passes
@@ -61,10 +62,12 @@ export default class GenerateDocker extends Command {
       },
     };
 
-    const templateDir = join(this.config.root, 'templates', 'docker');
+    const templates = await useTemplates(this, cwd, 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'docker');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
       this.log(`\nDocker files generated at: ${outputDir}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));

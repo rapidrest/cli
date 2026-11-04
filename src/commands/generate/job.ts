@@ -5,7 +5,7 @@
 import { input } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 
@@ -23,6 +23,7 @@ export default class GenerateJob extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     description: Flags.string({ char: 'd', description: "The short description of the job."}),
     schedule: Flags.string({char: 's', description: "The crontab-style schedule that the job will execute with (e.g. `* * * * *` runs every second)."}),
@@ -57,10 +58,12 @@ export default class GenerateJob extends Command {
       year: new Date().getFullYear(),
     };
 
-    const templateDir = join(this.config.root, 'templates', 'job');
+    const templates = await useTemplates(this, process.cwd(), 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'job');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
       this.log(`\nJob "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));

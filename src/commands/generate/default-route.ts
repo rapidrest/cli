@@ -5,7 +5,7 @@
 import { checkbox, confirm, input } from '@inquirer/prompts';
 import { Command, Flags } from '@oclif/core';
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import { readProjectDatastores } from '../../lib/project.js';
 
@@ -25,6 +25,7 @@ export default class GenerateDefaultRoute extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     'api-route': Flags.boolean({ allowNo: true, description: 'Use @ApiRoute instead of @Route for the generated route(s). Use --api to also set a version; omit both --api-route and --api to be prompted.' }),
     api: Flags.string({ description: "The api version to use with --api-route (e.g. \"1\" for /api/v1). Passing --api alone (without --api-route) also implies --api-route." }),
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
@@ -113,10 +114,12 @@ export default class GenerateDefaultRoute extends Command {
       staticPath,
     };
 
-    const templateDir = join(this.config.root, 'templates', 'default-route');
+    const templates = await useTemplates(this, cwd, 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'default-route');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
       for (const route of routes) {
         this.log(`\nRoute "${route}" generated.`);
       }

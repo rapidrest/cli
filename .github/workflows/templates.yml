@@ -1,0 +1,106 @@
+name: Templates
+
+# Publishes a templates release (see templates/README.md): a GitHub release of this repository, tagged
+# templates-v<version>, carrying a zip of templates/ and its manifest. The CLI downloads templates from
+# these releases. Like Publish, it runs from the tag's own Build, only once every Build of the commit
+# has passed; `yarn release templates <bump>` makes the commit and tag.
+
+on:
+  workflow_run:
+    workflows: ["Build"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      startsWith(github.event.workflow_run.head_branch, 'templates-v')
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Require a release tag on main and every Build of its commit green
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          TAG: ${{ github.event.workflow_run.head_branch }}
+          WORKFLOW_ID: ${{ github.event.workflow_run.workflow_id }}
+        run: |
+          set -euo pipefail
+          if ! git tag --points-at HEAD | grep -qxF "$TAG" || ! git merge-base --is-ancestor HEAD origin/main; then
+            echo "::error::Tag $TAG doesn't point at $SHA on main; not releasing."
+            exit 1
+          fi
+          url="repos/$REPO/actions/workflows/$WORKFLOW_ID/runs?head_sha=$SHA&per_page=100"
+          for attempt in $(seq 1 90); do
+            pending=$(gh api "$url" --jq '[.workflow_runs[] | select(.status != "completed")] | length')
+            failed=$(gh api "$url" --jq '[.workflow_runs[] | select(.status == "completed" and .conclusion != "success")
+              | "\(.id) (\(.head_branch)): \(.conclusion)"] | join(", ")')
+            if [ -n "$failed" ]; then
+              echo "::error::Not releasing $TAG: a Build of $SHA did not succeed: $failed. Rerun it; a green rerun triggers this workflow again."
+              exit 1
+            fi
+            if [ "$pending" = 0 ]; then
+              echo "Every Build of $SHA succeeded."
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "::error::Timed out waiting for the other Builds of $SHA to finish."
+          exit 1
+
+  release:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Package and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
+          TAG: ${{ github.event.workflow_run.head_branch }}
+        run: |
+          set -euo pipefail
+          version="${TAG#templates-v}"
+          manifest_version=$(node -p 'require("./templates/templates.json").version')
+          if [ "$manifest_version" != "$version" ]; then
+            echo "::error::templates/templates.json says $manifest_version, but the tag is $TAG."
+            exit 1
+          fi
+
+          mkdir -p out
+          # git archive packs exactly the tracked files, dotfiles included, with the templates at the
+          # zip's root; nothing goes through npm packing.
+          git archive --format=zip -o out/rapidrest-templates.zip "$SHA:templates"
+          sha=$(sha256sum out/rapidrest-templates.zip | cut -d' ' -f1)
+          node -e 'const m = require("./templates/templates.json"); m.sha256 = process.argv[1];
+            require("fs").writeFileSync("out/templates.json", JSON.stringify(m, null, 2) + "\n")' "$sha"
+
+          # This version's section of templates/RELEASE_NOTES.md.
+          awk -v heading="## v$version" '$0 == heading { found = 1; next } found && /^## / { exit } found { print }' \
+            templates/RELEASE_NOTES.md > out/notes.md
+          [ -s out/notes.md ] || echo "Templates $version." > out/notes.md
+
+          prerelease=()
+          case "$version" in *-*) prerelease=(--prerelease) ;; esac
+          # --latest=false: the repository's "latest release" stays the CLI's.
+          gh release create "$TAG" out/rapidrest-templates.zip out/templates.json \
+            --verify-tag --latest=false "${prerelease[@]}" \
+            --title "Templates $version" --notes-file out/notes.md

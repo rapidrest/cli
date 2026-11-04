@@ -260,6 +260,66 @@ describe('upgrade', () => {
     });
   });
 
+  describe('planUpgrade — scaffold-time ranges and the templates version', () => {
+    beforeEach(async () => {
+      await writeFileDeep(join(templatesDir, 'server', 'package.json'), JSON.stringify({
+        dependencies: { '@rapidrest/core': '^6', lodash: '^4' },
+        devDependencies: { '@rapidrest/cli': '^{{cliVersion}}' },
+        rapidrest: { templates: '{{templatesVersion}}' },
+      }));
+    });
+
+    it('compares against the resolved ranges, and the running CLI', async () => {
+      await scaffoldProject({
+        packageJson: { name: 'my-app', dependencies: { '@rapidrest/core': '^6.0.0', lodash: '^4.18.0' }, devDependencies: {} },
+      });
+      const plan = await planUpgrade({
+        ...ctx,
+        cliVersion: '3.1.0',
+        resolveVersion: async (name, range) => (name === '@rapidrest/core' ? '^6.1.0' : range),
+      });
+      expect(plan.dependencyChanges).toEqual([
+        { section: 'dependencies', name: '@rapidrest/core', from: '^6.0.0', to: '^6.1.0' },
+        { section: 'devDependencies', name: '@rapidrest/cli', from: undefined, to: '^3.1.0' },
+      ]);
+    });
+
+    it('does not loosen a range the project already satisfies when a lookup failed', async () => {
+      await scaffoldProject({
+        packageJson: { name: 'my-app', dependencies: { '@rapidrest/core': '^5.1.0', lodash: '^4.18.0' }, devDependencies: {} },
+      });
+      const plan = await planUpgrade(ctx);
+      // lodash ^4.18.0 already satisfies ^4: left alone. core ^5.1.0 doesn't satisfy ^6: changed.
+      expect(plan.dependencyChanges.map((d) => d.name)).toEqual(['@rapidrest/core', '@rapidrest/cli']);
+      await applyUpgrade(ctx, plan);
+      const pkg = JSON.parse(await readFile(join(cwd, 'package.json'), 'utf-8'));
+      expect(pkg.dependencies).toEqual({ '@rapidrest/core': '^6', lodash: '^4.18.0' });
+    });
+
+    it('records the templates version applied', async () => {
+      await scaffoldProject({
+        packageJson: { name: 'my-app', dependencies: { '@rapidrest/core': '^6.0.0', lodash: '^4.0.0' }, devDependencies: { '@rapidrest/cli': '^3.0.0' }, rapidrest: { templates: '1.0.0' } },
+      });
+      const plan = await planUpgrade({ ...ctx, templatesVersion: '1.2.0', cliVersion: '3.0.0' });
+      expect(plan.dependencyChanges).toEqual([]);
+      expect(plan.templatesVersionChange).toEqual({ from: '1.0.0', to: '1.2.0' });
+      await applyUpgrade(ctx, plan);
+      const raw = await readFile(join(cwd, 'package.json'), 'utf-8');
+      expect(JSON.parse(raw).rapidrest).toEqual({ templates: '1.2.0' });
+      expect(raw).toContain('\n\t"name"'); // indentation kept
+
+      // Already recorded: nothing to change.
+      expect((await planUpgrade({ ...ctx, templatesVersion: '1.2.0', cliVersion: '3.0.0' })).templatesVersionChange).toBeUndefined();
+    });
+
+    it('records it alongside dependency changes, and from nothing', async () => {
+      await scaffoldProject({ packageJson: { name: 'my-app', dependencies: {}, devDependencies: {} } });
+      const plan = await planUpgrade({ ...ctx, templatesVersion: '1.2.0', cliVersion: '3.0.0' });
+      expect(plan.templatesVersionChange).toEqual({ from: undefined, to: '1.2.0' });
+      expect(plan.packageJsonWrite!.data).toMatchObject({ dependencies: { '@rapidrest/core': '^6' }, rapidrest: { templates: '1.2.0' } });
+    });
+  });
+
   describe('planUpgrade — dependency changes', () => {
     it('reports a stale version pin', async () => {
       await scaffoldProject({

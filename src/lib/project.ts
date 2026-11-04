@@ -7,6 +7,7 @@ import { access, readFile, readdir, writeFile } from 'fs/promises';
 import { join } from 'path';
 import { promisify } from 'util';
 import spawn from 'cross-spawn';
+import { detectIndent } from './json-format.js';
 
 const execFileAsync = promisify(execFile);
 
@@ -374,14 +375,7 @@ export interface ProjectPackageJson {
   indent: string;
 }
 
-// Detects the indentation unit used by the file's first indented line (e.g. "\t" for the
-// tab-indented package.json the server template ships). Anything writing package.json back out
-// should reuse this rather than a hardcoded 2-space indent, or every write silently reformats the
-// whole file.
-function detectIndent(raw: string): string {
-  const match = raw.match(/^[ \t]+/m);
-  return match ? match[0] : '  ';
-}
+export { detectIndent };
 
 export async function readProjectPackageJson(cwd: string): Promise<ProjectPackageJson | undefined> {
   try {

@@ -477,6 +477,23 @@ describe('applyPatches', () => {
     expect((result.devDependencies as Record<string, unknown>)['mongodb-memory-server']).toBe('^11.2.0');
   });
 
+  it('json-merge: resolves scaffold-time ranges in a package.json patch, and only there', async () => {
+    await writeFile(join(projectDir, 'package.json'), JSON.stringify({ dependencies: { lodash: '^4' } }));
+    await writeFile(join(templateDir, 'patches', 'deps.json'), JSON.stringify({ dependencies: { mongodb: '^7' } }));
+    await writeFile(join(templateDir, 'patches', 'other.json'), JSON.stringify({ dependencies: { mongodb: '^7' } }));
+    const resolveVersion = async (name: string, range: string) => `${range}.9.0`;
+
+    await applyPatches(templateDir, projectDir, {}, [
+      { template: 'patches/deps.json', target: 'package.json', strategy: 'json-merge' },
+      { template: 'patches/other.json', target: 'other.json', strategy: 'json-merge' },
+    ], { resolveVersion });
+
+    const pkg = JSON.parse(await readFile(join(projectDir, 'package.json'), 'utf-8'));
+    // Only the patch's own ranges are resolved; the project's existing ones are left alone.
+    expect(pkg.dependencies).toEqual({ lodash: '^4', mongodb: '^7.9.0' });
+    expect(JSON.parse(await readFile(join(projectDir, 'other.json'), 'utf-8')).dependencies.mongodb).toBe('^7');
+  });
+
   it('json-merge: creates the file if it does not exist', async () => {
     await writeFile(
       join(templateDir, 'patches', 'deps.json'),

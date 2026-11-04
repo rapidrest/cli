@@ -11,7 +11,9 @@ vi.mock('../../src/lib/upgrade.js', async (importOriginal) => {
 });
 
 import { planUpgrade, applyUpgrade, UpgradePlan } from '../../src/lib/upgrade.js';
+import { resolveTemplates } from '../../src/lib/templateSource.js';
 import Upgrade from '../../src/commands/upgrade.js';
+import { TEST_TEMPLATES_VERSION } from '../setup.js';
 
 const ROOT = process.cwd();
 
@@ -32,12 +34,50 @@ describe('upgrade', () => {
     vi.clearAllMocks();
   });
 
-  it('calls planUpgrade with the current working directory and the CLI templates dir', async () => {
+  const expectedCtx = () => expect.objectContaining({
+    cwd: process.cwd(),
+    templatesDir: join(ROOT, 'templates'),
+    templatesVersion: TEST_TEMPLATES_VERSION,
+    cliVersion: expect.any(String),
+    resolveVersion: expect.any(Function),
+  });
+
+  it('calls planUpgrade with the project, the resolved templates and a version resolver', async () => {
     vi.mocked(planUpgrade).mockResolvedValue(emptyPlan());
 
     await Upgrade.run([], ROOT);
 
-    expect(planUpgrade).toHaveBeenCalledWith({ cwd: process.cwd(), templatesDir: join(ROOT, 'templates') });
+    expect(planUpgrade).toHaveBeenCalledWith(expectedCtx());
+  });
+
+  it('resolves templates compatible with the project by default, and the newest with --latest', async () => {
+    vi.mocked(planUpgrade).mockResolvedValue(emptyPlan());
+
+    await Upgrade.run([], ROOT);
+    expect(vi.mocked(resolveTemplates).mock.calls.at(-1)![0]).toMatchObject({ mode: 'project', cwd: process.cwd() });
+
+    await Upgrade.run(['--latest', '--templates', '1.2.3'], ROOT);
+    expect(vi.mocked(resolveTemplates).mock.calls.at(-1)![0]).toMatchObject({ mode: 'latest', override: '1.2.3' });
+  });
+
+  it('reports a change to the recorded templates version, and applies it with --write', async () => {
+    const plan: UpgradePlan = { ...emptyPlan(), templatesVersionChange: { to: '1.1.0' } };
+    vi.mocked(planUpgrade).mockResolvedValue(plan);
+
+    await Upgrade.run(['--write'], ROOT);
+
+    const output = logSpy.mock.calls.map((c) => String(c[0])).join('\n');
+    expect(output).toContain('Updated the recorded templates version: (none) -> 1.1.0');
+    expect(applyUpgrade).toHaveBeenCalledWith(expectedCtx(), plan);
+  });
+
+  it('includes the templates version in --json output', async () => {
+    vi.mocked(planUpgrade).mockResolvedValue({ ...emptyPlan(), templatesVersionChange: { from: '1.0.0', to: '1.1.0' } });
+
+    await Upgrade.run(['--json'], ROOT);
+
+    const parsed = JSON.parse(logSpy.mock.calls[0][0] as string);
+    expect(parsed.templates).toEqual({ version: TEST_TEMPLATES_VERSION, from: '1.0.0' });
   });
 
   it('reports "Already up to date." when there is nothing to change', async () => {
@@ -108,7 +148,7 @@ describe('upgrade', () => {
 
       await Upgrade.run(['--write'], ROOT);
 
-      expect(applyUpgrade).toHaveBeenCalledWith({ cwd: process.cwd(), templatesDir: join(ROOT, 'templates') }, plan);
+      expect(applyUpgrade).toHaveBeenCalledWith(expectedCtx(), plan);
     });
 
     it('says "Updated" instead of "Would update", and does not prompt to run --write', async () => {

@@ -57,6 +57,7 @@ import GenerateHelm from '../../../src/commands/generate/k8s.js';
 import GenerateReact from '../../../src/commands/generate/react.js';
 import GenerateDefaultRoute from '../../../src/commands/generate/default-route.js';
 import GenerateServer from '../../../src/commands/generate/server.js';
+import { TEST_TEMPLATES_DIR } from '../../setup.js';
 
 const ROOT = process.cwd();
 
@@ -117,7 +118,11 @@ describe('generate server', () => {
       year: new Date().getFullYear(),
       apiRoute: false,
       apiVersion: undefined,
+      // Recorded in the new project's package.json.
+      templatesVersion: '0.0.0-test',
+      cliVersion: expect.any(String),
     });
+    expect(vi.mocked(processTemplate).mock.calls[0][3]).toMatchObject({ resolveVersion: expect.any(Function) });
   });
 
   it('maps selected database and feature choices to boolean flags on context.features', async () => {
@@ -296,7 +301,7 @@ describe('generate server', () => {
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledOnce();
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'acl', '--type', 'admin', '--no-api-route'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'Test Author', '--type', 'acl', '--type', 'admin', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -306,7 +311,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'status', '--force', '--no-api-route'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'Test Author', '--type', 'status', '--force', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -316,7 +321,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'metrics', '--api-route', '--api', '3'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'Test Author', '--type', 'metrics', '--api-route', '--api', '3'],
         expect.any(String),
       );
     });
@@ -326,7 +331,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Test Author', '--type', 'metrics', '--no-api-route'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'Test Author', '--type', 'metrics', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -336,7 +341,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', join(process.cwd(), 'my-project'), '--author', 'Test Author', '--type', 'push', '--no-api-route'],
+        ['--output-dir', join(process.cwd(), 'my-project'), '--templates', TEST_TEMPLATES_DIR, '--author', 'Test Author', '--type', 'push', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -379,7 +384,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--author', 'Flag Author'], ROOT);
 
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'Flag Author', '--type', 'acl', '--no-api-route'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'Flag Author', '--type', 'acl', '--no-api-route'],
         expect.any(String),
       );
     });
@@ -392,7 +397,7 @@ describe('generate server', () => {
 
       expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
       expect((GenerateDocker as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--no-has-react'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--no-has-react'],
         expect.any(String),
       );
     });
@@ -409,7 +414,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateDocker as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--force', '--no-has-react'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--force', '--no-has-react'],
         expect.any(String),
       );
     });
@@ -419,7 +424,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateDocker as any).run).toHaveBeenCalledWith(
-        ['--output-dir', join(process.cwd(), 'my-project'), '--no-has-react'],
+        ['--output-dir', join(process.cwd(), 'my-project'), '--templates', TEST_TEMPLATES_DIR, '--no-has-react'],
         expect.any(String),
       );
     });
@@ -429,7 +434,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out'], ROOT);
 
       expect((GenerateDocker as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--has-react'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--has-react'],
         expect.any(String),
       );
     });
@@ -442,7 +447,7 @@ describe('generate server', () => {
 
       expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
       expect((GenerateHelm as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--no-install'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--no-install'],
         expect.any(String),
       );
     });
@@ -459,7 +464,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateHelm as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--force', '--no-install'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--force', '--no-install'],
         expect.any(String),
       );
     });
@@ -469,7 +474,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateHelm as any).run).toHaveBeenCalledWith(
-        ['--output-dir', join(process.cwd(), 'my-project'), '--no-install'],
+        ['--output-dir', join(process.cwd(), 'my-project'), '--templates', TEST_TEMPLATES_DIR, '--no-install'],
         expect.any(String),
       );
     });
@@ -490,7 +495,7 @@ describe('generate server', () => {
 
       expect((GenerateReact as any).run).toHaveBeenCalledOnce();
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['app', '--output-dir', '/tmp/out', '--no-install'],
+        ['app', '--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--no-install'],
         expect.any(String),
       );
     });
@@ -507,7 +512,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--force'], ROOT);
 
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['app', '--output-dir', '/tmp/out', '--force', '--no-install'],
+        ['app', '--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--force', '--no-install'],
         expect.any(String),
       );
     });
@@ -517,7 +522,7 @@ describe('generate server', () => {
       await GenerateServer.run(['my-project'], ROOT);
 
       expect((GenerateReact as any).run).toHaveBeenCalledWith(
-        ['app', '--output-dir', join(process.cwd(), 'my-project'), '--no-install'],
+        ['app', '--output-dir', join(process.cwd(), 'my-project'), '--templates', TEST_TEMPLATES_DIR, '--no-install'],
         expect.any(String),
       );
     });
@@ -610,7 +615,7 @@ describe('generate server', () => {
         await runWithFeatureFlags(['--route', 'admin', '--route', 'status']);
 
         expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-          ['--output-dir', '/tmp/out', '--author', 'Author', '--type', 'admin', '--type', 'status', '--no-api-route'],
+          ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'Author', '--type', 'admin', '--type', 'status', '--no-api-route'],
           expect.any(String),
         );
         const [, , context] = vi.mocked(processTemplate).mock.calls[0];
@@ -677,7 +682,7 @@ describe('generate server', () => {
         expect(context.apiRoute).toBe(true);
         expect(context.apiVersion).toBe('');
         expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-          ['--output-dir', '/tmp/out', '--author', 'Author', '--type', 'status', '--api-route', '--api', ''],
+          ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'Author', '--type', 'status', '--api-route', '--api', ''],
           expect.any(String),
         );
       });
@@ -770,7 +775,7 @@ describe('generate server', () => {
       expect((context as any).features).toMatchObject({ sqlite: true, react: true, docker: false, k8s: true });
       expect((context as any).scm).toMatchObject({ gitlab: true });
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'File Author', '--type', 'acl', '--api-route', '--api', '1'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'File Author', '--type', 'acl', '--api-route', '--api', '1'],
         expect.any(String),
       );
     });
@@ -813,7 +818,7 @@ describe('generate server', () => {
 
       expect(checkbox).not.toHaveBeenCalled();
       expect((GenerateDefaultRoute as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/out', '--author', 'a', '--type', 'status', '--no-api-route'],
+        ['--output-dir', '/tmp/out', '--templates', TEST_TEMPLATES_DIR, '--author', 'a', '--type', 'status', '--no-api-route'],
         expect.any(String),
       );
     });

@@ -6,7 +6,7 @@ import { confirm, input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { existsSync } from "fs";
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { formatDefaultPropertyValue, installIfPackageJsonChanged, readPackageJsonRaw, readProjectDatastores, readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
@@ -118,6 +118,7 @@ export default class GenerateModel extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     cache: Flags.string({ char: 'c', description: "Set the cache TTL of this model. If passed with no value, defaults to 60." }),
     datastore: Flags.string({ aliases: ['ds'], description: "The name of the datastore that the model will be bound to."}),
@@ -279,10 +280,12 @@ export default class GenerateModel extends Command {
       isRedis:      datastoreType === 'redis',
     };
 
-    const templateDir = join(this.config.root, 'templates', 'model');
+    const templates = await useTemplates(this, process.cwd(), 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'model');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
       this.log(`\nModel "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
 
       if (newDatastore) {
@@ -294,7 +297,7 @@ export default class GenerateModel extends Command {
           if (answer) {
             this.log('\nUpdating Docker support...');
             await GenerateDocker.run([
-              '--output-dir', outputDir, '--force'
+              '--output-dir', outputDir, '--templates', templates.dir, '--force',
             ], this.config.root);
           }
         }
@@ -307,7 +310,7 @@ export default class GenerateModel extends Command {
           if (answer) {
             this.log('\nUpdating Kubernetes (Helm) support...');
             await GenerateHelm.run([
-              '--output-dir', outputDir, '--force', '--no-install'
+              '--output-dir', outputDir, '--templates', templates.dir, '--force', '--no-install',
             ], this.config.root);
           }
         }

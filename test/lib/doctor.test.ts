@@ -22,7 +22,7 @@ describe('doctor', () => {
   beforeEach(async () => {
     cwd = await mkdtemp(join(os.tmpdir(), 'rrdoctor-'));
     templatesDir = await mkdtemp(join(os.tmpdir(), 'rrdoctor-tpl-'));
-    ctx = { cwd, templatesDir };
+    ctx = { cwd, templatesDir: async () => templatesDir };
   });
 
   afterEach(async () => {

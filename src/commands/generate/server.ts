@@ -6,7 +6,7 @@ import { checkbox, confirm, input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { installIfPackageJsonChanged } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 import GenerateDocker from './docker.js';
@@ -110,6 +110,7 @@ export default class GenerateServer extends Command {
 
   static override flags = {
     force: Flags.boolean({ description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Directory to write the generated project into. Defaults to ./<name>.' }),
     answers: Flags.string({ description: 'Path to a JSON file supplying answers for any of the flags below, for reuse across projects. Flags always take precedence over the file; either takes precedence over the interactive prompts.' }),
@@ -279,15 +280,23 @@ export default class GenerateServer extends Command {
       year: new Date().getFullYear(),
     };
 
-    const templateDir = join(this.config.root, 'templates', 'server');
+    // Passed on to every generator run below, so one scaffold renders one templates version.
+    const templates = await useTemplates(this, process.cwd(), 'new', flags.templates);
+    // Recorded in the project's package.json: later commands in the project keep to this
+    // templates major, and its @rapidrest/cli devDependency is the CLI that scaffolded it.
+    context.templatesVersion = templates.version;
+    context.cliVersion = this.config.version;
+
+    const templateDir = join(templates.dir, 'server');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force });
 
       if (routeTypes.length > 0) {
         this.log(`\nAdding default routes: ${routeTypes.join(', ')}...`);
         await GenerateDefaultRoute.run([
           '--output-dir', outputDir,
+          '--templates', templates.dir,
           '--author', author,
           ...routeTypes.flatMap((type) => ['--type', type]),
           ...(flags.force ? ['--force'] : []),
@@ -303,6 +312,7 @@ export default class GenerateServer extends Command {
         this.log('\nAdding Docker support...');
         await GenerateDocker.run([
           '--output-dir', outputDir,
+          '--templates', templates.dir,
           ...(flags.force ? ['--force'] : []),
           // Explicit, not left to GenerateDocker's own filesystem detection: this runs before React
           // generation below, so detectReact(cwd) would see no vite.config.ts yet even when --react
@@ -315,6 +325,7 @@ export default class GenerateServer extends Command {
         this.log('\nAdding Kubernetes (Helm) support...');
         await GenerateHelm.run([
           '--output-dir', outputDir,
+          '--templates', templates.dir,
           ...(flags.force ? ['--force'] : []),
           '--no-install',
         ], this.config.root);
@@ -325,6 +336,7 @@ export default class GenerateServer extends Command {
         await GenerateReact.run([
           'app',
           '--output-dir', outputDir,
+          '--templates', templates.dir,
           ...(flags.force ? ['--force'] : []),
           '--no-install',
         ], this.config.root);

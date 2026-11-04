@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "jwks-rsa": "^4.1.0"
+    "jwks-rsa": "^4"
   }
 }

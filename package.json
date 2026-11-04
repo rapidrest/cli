@@ -61,8 +61,7 @@
   "files": [
     "./bin",
     "./dist",
-    "./oclif.manifest.json",
-    "./templates"
+    "./oclif.manifest.json"
   ],
   "keywords": [
     "oclif"
@@ -100,7 +99,7 @@
     "posttest": "yarn lint",
     "prepack": "yarn build && yarn oclif manifest && yarn oclif readme",
     "test": "vitest run",
-    "version": "yarn oclif readme && node scripts/postversion.js && git add README.md templates/server/package.json",
+    "version": "yarn oclif readme && node scripts/postversion.js && git add README.md",
     "release": "tsx scripts/release.ts"
   },
   "types": "dist/index.d.ts"

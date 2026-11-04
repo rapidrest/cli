@@ -6,6 +6,12 @@
  *
  * Usage:
  * yarn release <major|minor|patch|premajor|preminor|prepatch|prerelease|x.y.z> [options]
+ * yarn release templates <major|minor|patch|premajor|preminor|prepatch|prerelease|x.y.z> [options]
+ *
+ * The second form releases the templates (templates/), which are versioned and released on their
+ * own: it bumps templates/templates.json, moves templates/RELEASE_NOTES.md's "Unreleased" section
+ * under the new version, then commits and tags `templates-v<version>`. Pushing that tag runs the
+ * Templates workflow, which publishes the GitHub release the CLI downloads templates from.
  *
  * Options:
  * --preid=<id> Prerelease identifier (e.g. "rc") for pre* strategies.
@@ -21,7 +27,8 @@ const ROOT = path.resolve(import.meta.dirname, "..");
 const PKG_PATH = path.join(ROOT, "package.json");
 const RELEASE_NOTES_PATH = path.join(ROOT, "RELEASE_NOTES.md");
 const CHANGELOG_PATH = path.join(ROOT, "CHANGELOG.md");
-const SERVER_TEMPLATE_PATH = path.join(ROOT, "templates", "server");
+const TEMPLATES_MANIFEST_PATH = path.join(ROOT, "templates", "templates.json");
+const TEMPLATES_RELEASE_NOTES_PATH = path.join(ROOT, "templates", "RELEASE_NOTES.md");
 const UNRELEASED_HEADING = "## Unreleased";
 const CHANGELOG_UNRELEASED_HEADING = "## [Unreleased]";
 const CHANGELOG_DEFAULT_HEADER = `# Changelog
@@ -80,6 +87,8 @@ const CHANGELOG_VERB_REWRITES: Record<string, { category: ChangelogCategory; wor
 const RELEASE_TYPES: ReleaseType[] = ["major", "minor", "patch", "premajor", "preminor", "prepatch", "prerelease"];
 
 interface Args {
+    /** Release the templates rather than the CLI. */
+    templates: boolean;
     bump?: string;
     preid?: string;
     dryRun: boolean;
@@ -87,8 +96,8 @@ interface Args {
 }
 
 function parseArgs(argv: string[]): Args {
-    const args: Args = { dryRun: false, push: true };
-    for (const arg of argv) {
+    const args: Args = { templates: argv[0] === "templates", dryRun: false, push: true };
+    for (const arg of args.templates ? argv.slice(1) : argv) {
         if (arg === "--dry-run") args.dryRun = true;
         else if (arg === "--no-push") args.push = false;
         else if (arg.startsWith("--preid=")) args.preid = arg.slice("--preid=".length);
@@ -140,16 +149,17 @@ function computeNewVersion(currentVersion: string, bump: string | undefined, pre
     throw new Error(`"${bump}" is not a valid release strategy or semver version.`);
 }
 
-function updateReleaseNotes(version: string): void {
-    const notes = readFileSync(RELEASE_NOTES_PATH, "utf-8");
+function updateReleaseNotes(version: string, notesPath: string = RELEASE_NOTES_PATH): void {
+    const notes = readFileSync(notesPath, "utf-8");
     if (!notes.includes(UNRELEASED_HEADING)) {
-        throw new Error(`No "${UNRELEASED_HEADING}" section found in ${RELEASE_NOTES_PATH}.`);
+        throw new Error(`No "${UNRELEASED_HEADING}" section found in ${notesPath}.`);
     }
-    writeFileSync(RELEASE_NOTES_PATH, notes.replace(UNRELEASED_HEADING, `## v${version}`));
+    writeFileSync(notesPath, notes.replace(UNRELEASED_HEADING, `## v${version}`));
 }
 
 function previousTag(): string | undefined {
-    const result = spawnSync("git", ["describe", "--tags", "--abbrev=0"], { cwd: ROOT, encoding: "utf-8" });
+    // CLI release tags only: the templates' `templates-v*` tags are a release line of their own.
+    const result = spawnSync("git", ["describe", "--tags", "--abbrev=0", "--match", "v[0-9]*"], { cwd: ROOT, encoding: "utf-8" });
     return result.status === 0 ? result.stdout.trim() : undefined;
 }
 
@@ -264,18 +274,40 @@ function updateChangelog(version: string): void {
     writeFileSync(CHANGELOG_PATH, content);
 }
 
-function updateTemplates(version: string): void {
-    const templatePkg = path.join(SERVER_TEMPLATE_PATH, 'package.json');
-    const content = readFileSync(templatePkg, 'utf-8');
-    const updated = content.replace(
-        /"@rapidrest\/cli":\s*"\^[\w.-]+"/,
-        `"@rapidrest/cli": "^${version}"`,
-    );
-    writeFileSync(templatePkg, updated, 'utf-8');
+function releaseTemplates(args: Args): void {
+    const manifest = JSON.parse(readFileSync(TEMPLATES_MANIFEST_PATH, "utf-8")) as { version: string };
+    const newVersion = computeNewVersion(manifest.version, args.bump, args.preid);
+    const tag = `templates-v${newVersion}`;
+
+    if (args.dryRun) {
+        console.log(`Dry run: templates ${manifest.version} -> ${newVersion} (no changes made)`);
+        return;
+    }
+
+    assertCleanWorkingTree();
+
+    manifest.version = newVersion;
+    writeFileSync(TEMPLATES_MANIFEST_PATH, `${JSON.stringify(manifest, null, 2)}\n`);
+    updateReleaseNotes(newVersion, TEMPLATES_RELEASE_NOTES_PATH);
+
+    run("git", ["add", TEMPLATES_MANIFEST_PATH, TEMPLATES_RELEASE_NOTES_PATH]);
+    run("git", ["commit", "-m", `templates ${newVersion}`]);
+    run("git", ["tag", tag]);
+
+    if (args.push) {
+        run("git", ["push"]);
+        run("git", ["push", "origin", tag]);
+    } else {
+        console.log(`Skipping push (--no-push). Run \`git push && git push origin ${tag}\` when ready.`);
+    }
 }
 
 function main(): void {
     const args = parseArgs(process.argv.slice(2));
+    if (args.templates) {
+        releaseTemplates(args);
+        return;
+    }
     const pkg = JSON.parse(readFileSync(PKG_PATH, "utf-8")) as { version: string };
     const newVersion = computeNewVersion(pkg.version, args.bump, args.preid);
 
@@ -297,7 +329,6 @@ function main(): void {
     }
     updateReleaseNotes(newVersion);
     updateChangelog(newVersion);
-    updateTemplates(newVersion);
 
     run("git", ["add", "*"]);
     run("git", ["commit", "-m", newVersion]);

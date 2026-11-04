@@ -93,19 +93,8 @@ describe('processTemplate / renderTemplateFiles rename', () => {
   });
 });
 
-async function listFiles(dir: string): Promise<string[]> {
-  const out: string[] = [];
-  for (const e of await readdir(dir, { withFileTypes: true })) {
-    const full = join(dir, e.name);
-    if (e.name === 'node_modules') continue;
-    if (e.isDirectory()) out.push(...(await listFiles(full)));
-    else out.push(full);
-  }
-  return out;
-}
-
 describe('npm package contents', () => {
-  it('publishes every file under templates/ (npm ignore rules must not strip any)', async () => {
+  it('publishes no templates (they are released separately, as GitHub releases)', async () => {
     // --ignore-scripts: skip prepack (build + oclif manifest/readme), we only need the file list.
     const res = spawnSync('npm pack --dry-run --json --ignore-scripts', {
       cwd: REPO_ROOT,
@@ -114,14 +103,8 @@ describe('npm package contents', () => {
       maxBuffer: 64 * 1024 * 1024,
     });
     expect(res.status, res.stderr).toBe(0);
-    const packed = new Set<string>(
-      (JSON.parse(res.stdout)[0].files as { path: string }[]).map((f) => f.path),
-    );
-    const onDisk = (await listFiles(join(REPO_ROOT, 'templates'))).map((f) =>
-      relative(REPO_ROOT, f).replaceAll('\\', '/'),
-    );
-    expect(onDisk.length).toBeGreaterThan(0);
-    const missing = onDisk.filter((f) => !packed.has(f));
-    expect(missing).toEqual([]);
+    const packed = (JSON.parse(res.stdout)[0].files as { path: string }[]).map((f) => f.path);
+    expect(packed.length).toBeGreaterThan(0);
+    expect(packed.filter((p) => p.startsWith('templates/'))).toEqual([]);
   }, 120_000);
 });

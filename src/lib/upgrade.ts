@@ -15,11 +15,19 @@ import {
   readProjectPackageJson,
   writeProjectPackageJson,
 } from './project.js';
+import { minVersion, satisfies, validRange } from 'semver';
 import { renderTemplateFiles } from './template.js';
+import { isResolvableRange, resolvePackageJsonRanges, type ResolveVersion } from './versionResolve.js';
 
 export interface UpgradeContext {
   cwd: string;
   templatesDir: string;
+  /** The templates' version, recorded as package.json `rapidrest.templates` when applied. */
+  templatesVersion?: string;
+  /** The running CLI's version, which the project's @rapidrest/cli devDependency is brought to. */
+  cliVersion?: string;
+  /** Resolves the templates' scaffold-time dependency ranges (see versionResolve.ts). */
+  resolveVersion?: ResolveVersion;
 }
 
 export interface FileChange {
@@ -38,6 +46,8 @@ export interface DependencyChange {
 export interface UpgradePlan {
   fileChanges: FileChange[];
   dependencyChanges: DependencyChange[];
+  /** Set when package.json `rapidrest.templates` will change to the templates being applied. */
+  templatesVersionChange?: { from?: string; to: string };
   /** The full merged package.json + its detected indent, present only when dependencyChanges is
    * non-empty. Not meant for direct inspection — applyUpgrade uses it to write the file back
    * without re-deriving it; --json output should report dependencyChanges instead. */
@@ -72,7 +82,7 @@ const SYNCABLE_TEMPLATE_DIRS = ['server', 'docker', 'helm', 'default-route'];
 // naive re-render from just features.* would silently drop anything beyond the base scaffold.
 const EXCLUDED_RELPATHS = new Set(['src/config.ts', 'test/config.ts']);
 
-async function buildContext(cwd: string): Promise<Record<string, unknown>> {
+async function buildContext(cwd: string, ctx?: UpgradeContext): Promise<Record<string, unknown>> {
   const [datastores, pkgManager, author, projectName, apiInfo, pkgFile] = await Promise.all([
     readProjectDatastores(cwd),
     detectPackageManager(cwd),
@@ -94,6 +104,8 @@ async function buildContext(cwd: string): Promise<Record<string, unknown>> {
   const hasRedis = datastores.some((ds) => ds.type === 'redis');
 
   return {
+    templatesVersion: ctx?.templatesVersion,
+    cliVersion: ctx?.cliVersion,
     year: new Date().getFullYear(),
     author,
     description,
@@ -182,10 +194,20 @@ async function readOptionalJson(path: string): Promise<Record<string, unknown> |
   }
 }
 
+// Whether a dependency's current range already satisfies the template's: a scaffold-time range the
+// resolver couldn't resolve (offline) stays as written (`^6`), and a project on `^6.1.0` is not
+// "changed" to that looser range.
+function alreadySatisfied(from: string | undefined, to: string): boolean {
+  if (!from || !isResolvableRange(to) || !validRange(from)) return false;
+  const floor = minVersion(from);
+  return !!floor && satisfies(floor, to);
+}
+
 async function planDependencyChanges(
   cwd: string,
   templatesDir: string,
   serverPackageJson: string | undefined,
+  resolveVersion?: ResolveVersion,
 ): Promise<{ dependencyChanges: DependencyChange[]; packageJsonWrite?: { data: Record<string, unknown>; indent: string } }> {
   if (!serverPackageJson) return { dependencyChanges: [] };
 
@@ -203,35 +225,48 @@ async function planDependencyChanges(
     if (helmPatch) canonical = jsonMerge(canonical, helmPatch);
   }
 
-  const projectPkg = projectPkgFile.data as PackageJsonDeps;
-  const updated = jsonMerge(projectPkgFile.data, {
-    dependencies: canonical.dependencies ?? {},
-    devDependencies: canonical.devDependencies ?? {},
-  });
+  if (resolveVersion) await resolvePackageJsonRanges(canonical, resolveVersion);
 
+  const projectPkg = projectPkgFile.data as PackageJsonDeps;
   const dependencyChanges: DependencyChange[] = [];
+  const toApply: PackageJsonDeps = { dependencies: {}, devDependencies: {} };
   for (const section of ['dependencies', 'devDependencies'] as const) {
     const canonicalSection = canonical[section] ?? {};
     const projectSection = projectPkg[section] ?? {};
     for (const [name, to] of Object.entries(canonicalSection)) {
       const from = projectSection[name];
-      if (from !== to) {
+      if (from !== to && !alreadySatisfied(from, to)) {
         dependencyChanges.push({ section, name, from, to });
+        toApply[section]![name] = to;
       }
     }
   }
 
   if (dependencyChanges.length === 0) return { dependencyChanges: [] };
+  const updated = jsonMerge(projectPkgFile.data, toApply as Record<string, unknown>);
 
   return { dependencyChanges, packageJsonWrite: { data: updated, indent: projectPkgFile.indent } };
 }
 
 export async function planUpgrade(ctx: UpgradeContext): Promise<UpgradePlan> {
-  const context = await buildContext(ctx.cwd);
+  const context = await buildContext(ctx.cwd, ctx);
   const { fileChanges, serverPackageJson } = await planFileChanges(ctx.cwd, ctx.templatesDir, context);
-  const { dependencyChanges, packageJsonWrite } = await planDependencyChanges(ctx.cwd, ctx.templatesDir, serverPackageJson);
+  let { dependencyChanges, packageJsonWrite } = await planDependencyChanges(
+    ctx.cwd, ctx.templatesDir, serverPackageJson, ctx.resolveVersion);
 
-  return { fileChanges, dependencyChanges, packageJsonWrite };
+  // Record the templates version applied, so later commands in the project keep to its major.
+  let templatesVersionChange: UpgradePlan['templatesVersionChange'];
+  const projectPkgFile = ctx.templatesVersion ? await readProjectPackageJson(ctx.cwd) : undefined;
+  if (projectPkgFile && ctx.templatesVersion) {
+    const recorded = (projectPkgFile.data.rapidrest as { templates?: unknown } | undefined)?.templates;
+    if (recorded !== ctx.templatesVersion) {
+      templatesVersionChange = { from: typeof recorded === 'string' ? recorded : undefined, to: ctx.templatesVersion };
+      const base = packageJsonWrite ?? { data: projectPkgFile.data, indent: projectPkgFile.indent };
+      packageJsonWrite = { ...base, data: jsonMerge(base.data, { rapidrest: { templates: ctx.templatesVersion } }) };
+    }
+  }
+
+  return { fileChanges, dependencyChanges, templatesVersionChange, packageJsonWrite };
 }
 
 export async function applyUpgrade(ctx: UpgradeContext, plan: UpgradePlan): Promise<void> {

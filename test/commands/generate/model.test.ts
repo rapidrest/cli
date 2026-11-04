@@ -54,6 +54,7 @@ import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateDocker from '../../../src/commands/generate/docker.js';
 import GenerateHelm from '../../../src/commands/generate/k8s.js';
 import GenerateModel from '../../../src/commands/generate/model.js';
+import { TEST_TEMPLATES_DIR } from '../../setup.js';
 
 const ROOT = process.cwd();
 
@@ -525,7 +526,7 @@ describe('generate model', () => {
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       expect((GenerateDocker as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/m', '--force'],
+        ['--output-dir', '/tmp/m', '--templates', TEST_TEMPLATES_DIR, '--force'],
         expect.any(String),
       );
     });
@@ -564,7 +565,7 @@ describe('generate model', () => {
       await GenerateModel.run(['Widget', '--output-dir', '/tmp/m'], ROOT);
 
       expect((GenerateHelm as any).run).toHaveBeenCalledWith(
-        ['--output-dir', '/tmp/m', '--force', '--no-install'],
+        ['--output-dir', '/tmp/m', '--templates', TEST_TEMPLATES_DIR, '--force', '--no-install'],
         expect.any(String),
       );
     });

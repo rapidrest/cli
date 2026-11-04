@@ -8,6 +8,8 @@ import { readFile, writeFile, mkdir, readdir, copyFile } from 'fs/promises';
 import { join, relative, dirname, extname } from 'path';
 import { type PatchEntry, applyPatches } from './patch.js';
 import { toOutputPath } from './template-names.js';
+import { detectIndent } from './json-format.js';
+import { resolvePackageJsonRanges, type ResolveVersion } from './versionResolve.js';
 
 // Register eq as a subexpression helper so templates can write {{#if (eq a "b")}}...{{/if}}.
 // Templates may also use the shorthand {{#eq a "b"}}...{{/if}}; that form is normalised
@@ -52,6 +54,13 @@ async function walk(dir: string): Promise<string[]> {
     }
   }
   return files;
+}
+
+// Rewrites a rendered package.json with its scaffold-time ranges resolved, keeping its indentation.
+async function resolvePackageJsonContent(content: string, resolveVersion: ResolveVersion): Promise<string> {
+  const pkg = JSON.parse(content) as Record<string, unknown>;
+  await resolvePackageJsonRanges(pkg, resolveVersion);
+  return JSON.stringify(pkg, null, detectIndent(content)) + '\n';
 }
 
 async function isTemplateRoot(dir: string): Promise<boolean> {
@@ -115,7 +124,12 @@ export async function processTemplate(
   templateDir: string,
   outputDir: string,
   context: Record<string, unknown>,
-  opts?: { force?: boolean; projectDir?: string },
+  opts?: {
+    force?: boolean;
+    projectDir?: string;
+    /** Resolves scaffold-time dependency ranges (see versionResolve.ts) in every package.json written or patched. */
+    resolveVersion?: ResolveVersion;
+  },
 ): Promise<void> {
   let config: TemplateConfig = {};
   const manifestPath = join(templateDir, 'template.config.json');
@@ -173,13 +187,16 @@ export async function processTemplate(
         // noEscape: true prevents HTML-escaping < > & in TypeScript source
         content = Handlebars.compile(escaped, { noEscape: true })(context);
       }
+      if (opts?.resolveVersion && toOutputPath(compiledRel) === 'package.json') {
+        content = await resolvePackageJsonContent(content, opts.resolveVersion);
+      }
       await writeFile(outPath, content, 'utf-8');
     }
   }
 
   if (config.patches?.length) {
     const cwd = opts?.projectDir ?? process.cwd();
-    await applyPatches(templateDir, cwd, context, config.patches);
+    await applyPatches(templateDir, cwd, context, config.patches, { resolveVersion: opts?.resolveVersion });
   }
 }
 

@@ -5,7 +5,7 @@
 import { confirm } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { findExistingReactApps, readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 
@@ -37,6 +37,7 @@ export default class GenerateReactPage extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Project directory to add React support to. Defaults to the current working directory.' }),
     service: Flags.boolean({ char: 's', description: 'Creates a service class for performing server-side data retrieval for the page.' }),
@@ -80,10 +81,12 @@ export default class GenerateReactPage extends Command {
       year: new Date().getFullYear(),
     };
 
-    const templateDir = join(this.config.root, 'templates', 'react-page');
+    const templates = await useTemplates(this, cwd, 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'react-page');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
       this.log(`\nReact app page "${args.name}" generated at: ${join(outputDir, 'apps', args.app, args.name, 'index.tsx')}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));

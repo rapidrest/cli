@@ -5,7 +5,7 @@
 import { confirm, input, select, Separator } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import {
   readProjectDatastores,
   readProjectModels,
@@ -30,6 +30,7 @@ export default class GenerateRoute extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     api: Flags.string({ description: "Use @ApiRoute instead of @Route for the generated route(s). Pass a value to specify an api version." }),
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     description: Flags.string({ char: 'd', description: "The short description of the route."}),
@@ -87,7 +88,7 @@ export default class GenerateRoute extends Command {
           if (selected === '__new__') {
             this.log('');
             const modelsBefore = new Set(await readProjectModels(cwd));
-            await GenerateModel.run([], this.config.root);
+            await GenerateModel.run(flags.templates ? ['--templates', flags.templates] : [], this.config.root);
             this.log('');
             const modelsAfter = await readProjectModels(cwd);
             model = modelsAfter.find((m) => !modelsBefore.has(m)) ?? '';
@@ -152,10 +153,12 @@ export default class GenerateRoute extends Command {
       year: new Date().getFullYear(),
     };
 
-    const templateDir = join(this.config.root, 'templates', 'route');
+    const templates = await useTemplates(this, cwd, 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'route');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
       this.log(`\nRoute "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));

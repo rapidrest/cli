@@ -463,6 +463,19 @@ describe('generate server', () => {
     };
   }
 
+  it('renders a valid package.json recording the templates and CLI versions, with resolvable ranges', async () => {
+    for (const features of [{}, { mongodb: true, postgresql: true, sqlite: true, redis: true, hasDatabase: true, hasSqlDatastore: true }]) {
+      await withTmpDir(async (dir) => {
+        const ctx = makeServerContext({ features, pkgMgr: { yarn: true }, templatesVersion: '1.4.0', cliVersion: '3.2.1' });
+        await processTemplate(serverTemplateDir, dir, ctx, { projectDir: dir });
+        const pkg = JSON.parse(await import('fs/promises').then(fs => fs.readFile(join(dir, 'package.json'), 'utf-8')));
+        expect(pkg.rapidrest).toEqual({ templates: '1.4.0' });
+        expect(pkg.devDependencies['@rapidrest/cli']).toBe('^3.2.1');
+        expect(pkg.dependencies['@rapidrest/core']).toMatch(/^\^\d+$/);
+      });
+    }
+  });
+
   it('generates core server files when all optional features are disabled', async () => {
     await withTmpDir(async (dir) => {
       const ctx = makeServerContext();

@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "@simplewebauthn/server": "^13.3.3"
+    "@simplewebauthn/server": "^13"
   }
 }

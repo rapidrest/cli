@@ -35,6 +35,27 @@ describe('processTemplate', () => {
     expect(out).toBe('export const greeting = "Hello, World!";');
   });
 
+  it('resolves scaffold-time ranges in a rendered root package.json, keeping its indentation', async () => {
+    await writeFile(join(templateDir, 'package.json'),
+      '{\n\t"name": "{{name}}",\n\t"dependencies": { "a": "^6", "b": "1.0.0" }\n}\n');
+    await mkdir(join(templateDir, 'sub'));
+    await writeFile(join(templateDir, 'sub', 'package.json'), '{ "dependencies": { "a": "^6" } }');
+    const resolveVersion = async (_name: string, range: string) => (range === '^6' ? '^6.2.0' : range);
+
+    await processTemplate(templateDir, outputDir, { name: 'x' }, { resolveVersion });
+
+    expect(await readFile(join(outputDir, 'package.json'), 'utf-8'))
+      .toBe('{\n\t"name": "x",\n\t"dependencies": {\n\t\t"a": "^6.2.0",\n\t\t"b": "1.0.0"\n\t}\n}\n');
+    // Only the project's own package.json.
+    expect(await readFile(join(outputDir, 'sub', 'package.json'), 'utf-8')).toBe('{ "dependencies": { "a": "^6" } }');
+  });
+
+  it('writes package.json untouched without a resolver', async () => {
+    await writeFile(join(templateDir, 'package.json'), '{ "dependencies": { "a": "^6" } }');
+    await processTemplate(templateDir, outputDir, {});
+    expect(await readFile(join(outputDir, 'package.json'), 'utf-8')).toBe('{ "dependencies": { "a": "^6" } }');
+  });
+
   it('skips a nested subdirectory that is its own template (has a template.config.json)', async () => {
     await writeFile(join(templateDir, 'main.ts'), 'main');
     await mkdir(join(templateDir, 'nested', 'src'), { recursive: true });

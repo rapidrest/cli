@@ -798,20 +798,23 @@ rapidrest doctor --json   # machine-readable output, e.g. for CI
 ### `rapidrest upgrade`
 
 Refresh an existing RapidREST project's generator-owned boilerplate files and dependency versions
-against the currently installed templates.
+against the newest [templates](#templates) compatible with it.
 
 ```
 USAGE
-  $ rapidrest upgrade [--write] [--json]
+  $ rapidrest upgrade [--write] [--json] [--latest] [--templates <value>]
 
 FLAGS
-  --write  Apply the changes. Without this flag, only reports what would change
-  --json   Output the plan as JSON instead of a formatted report
+  --write              Apply the changes. Without this flag, only reports what would change
+  --json               Output the plan as JSON instead of a formatted report
+  --latest             Use the newest templates this CLI supports, even a newer templates major than the
+                       project is on (for a project moving to new @rapidrest majors)
+  --templates=<value>  A templates release version, or a local templates directory or .zip
 ```
 
 Run this from the root of a generated RapidREST project. Unlike [`doctor`](#rapidrest-doctor),
 which detects a fixed set of known-bad patterns, `upgrade` re-syncs a project against whatever the
-currently installed CLI's templates actually contain — dependency version bumps, config/build-file
+templates it resolves actually contain — dependency version bumps, config/build-file
 fixes, new boilerplate — the same way you'd get by hand-diffing a fresh scaffold against your
 existing project, but automated.
 
@@ -829,7 +832,10 @@ are left exactly as they are.
 rapidrest upgrade          # report what would change
 rapidrest upgrade --write  # apply it
 rapidrest upgrade --json   # machine-readable output, e.g. for CI
+rapidrest upgrade --latest --write  # move to the newest templates major, after upgrading @rapidrest majors
 ```
+
+Applying an upgrade also records the templates version in `package.json` (`rapidrest.templates`).
 
 **Known limitations:**
 
@@ -1055,6 +1061,30 @@ rapidrest react export --port 4000  # prefer port 4000 for the transient export 
 ## Regenerating add-ons after project changes
 
 `generate docker` and `generate k8s` are idempotent and safe to re-run with `--force` whenever the project's datastores change — they regenerate their output entirely from the current project state rather than patching existing files. `generate model` will offer to do this for you automatically when you configure a brand-new datastore while adding a model.
+
+---
+
+## Templates
+
+The templates `generate`, `upgrade` and `doctor` render are released separately from the CLI, as
+GitHub releases of this repository tagged `templates-v<version>`, so templates (including dependency
+versions) can change without a CLI release. The CLI downloads the release it needs and caches it in
+`~/.rapidrest/templates/` (or `$RAPIDREST_HOME/templates/`).
+
+- **A new project** gets the newest templates this CLI can render. The project records that version
+  in its `package.json` (`"rapidrest": { "templates": "1.0.0" }`).
+- **Inside an existing project**, only templates from the same major as that recorded version, and
+  targeting the `@rapidrest` majors the project has installed, are used. A project keeps receiving
+  fixes and never jumps to templates written for framework versions it doesn't use. Use
+  `rapidrest upgrade --latest` to move to a newer major deliberately.
+- **Dependency versions** in the templates are written as `^<major>` and resolved to the newest
+  matching release when you scaffold, so a new project starts on current versions.
+- **Offline**, the CLI uses its cached copy. Pass `--templates <directory|zip>` (or set
+  `RAPIDREST_TEMPLATES`) to use a local copy, or `--templates <version>` to pick a release.
+- The release list is fetched from the GitHub API at most once an hour. If GitHub rate limits you
+  (60 requests an hour without a token, shared by everything on your network), set `GITHUB_TOKEN`.
+
+See [templates/README.md](templates/README.md) for how templates are versioned and released.
 
 ---
 

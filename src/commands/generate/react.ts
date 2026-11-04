@@ -6,7 +6,7 @@ import { confirm, input } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { mkdir, readFile, rename, writeFile } from 'fs/promises';
 import { basename, join } from 'path';
-import { processTemplate } from '../../lib/template.js';
+import { renderTemplate, templatesFlag, useTemplates } from '../../lib/templateCommand.js';
 import { findExistingReactApps, installIfPackageJsonChanged, readPackageJsonRaw, readProjectName, type ExistingReactApp } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 
@@ -150,6 +150,7 @@ export default class GenerateReact extends Command {
 
   static override flags = {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
+    templates: templatesFlag,
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     hydrate: Flags.boolean({ description: 'Enable client-side hydration. Required for interactive apps.' }),
     'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
@@ -210,10 +211,12 @@ export default class GenerateReact extends Command {
       year,
     };
 
-    const templateDir = join(this.config.root, 'templates', 'react');
+    const templates = await useTemplates(this, cwd, 'project', flags.templates);
+
+    const templateDir = join(templates.dir, 'react');
 
     try {
-      await processTemplate(templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
+      await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: cwd });
 
       // vite.config.ts/tsconfig.client.json/src/export.ts all depend on every app in the project
       // (not just this one), so they're generated directly rather than copied from the template
