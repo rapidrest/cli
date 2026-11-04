@@ -6,7 +6,7 @@ import { confirm } from '@inquirer/prompts';
 import { Args, Command, Flags } from '@oclif/core';
 import { join } from 'path';
 import { processTemplate } from '../../lib/template.js';
-import { readProjectName } from '../../lib/project.js';
+import { findExistingReactApps, readProjectName } from '../../lib/project.js';
 import { inputAuthor } from '../../lib/prompts.js';
 
 // Converts a (possibly slash-delimited) page path like "my/path/page" into a
@@ -58,6 +58,17 @@ export default class GenerateReactPage extends Command {
 
     const className = toPascalCase(args.name);
 
+    // @rapidrest/react registers a @ReactService only under the route whose mount path prefixes it,
+    // so the service's path must be the page's public URL (the app's @Route path plus the page),
+    // not the app's directory name. Falls back to `generate react`'s default mount, /<app>.
+    const existingApp = (await findExistingReactApps(cwd)).find((a) => a.appDir.replace(/^\.\//, '') === `apps/${args.app}`);
+    if (!existingApp) {
+      this.warn(`No ReactRoute found for apps/${args.app}; assuming it is mounted at /${args.app}.`);
+    }
+    const routePrefix = (existingApp?.routePath ?? `/${args.app}`).replace(/\/\*?$/, '');
+    const pagePath = args.name.replace(/^\/+|\/+$/g, '');
+    const servicePath = `${routePrefix}/${pagePath}`;
+
     const context: Record<string, unknown> = {
       author,
       app: args.app,
@@ -65,6 +76,7 @@ export default class GenerateReactPage extends Command {
       className,
       project_name: await readProjectName(cwd),
       service,
+      servicePath,
       year: new Date().getFullYear(),
     };
 

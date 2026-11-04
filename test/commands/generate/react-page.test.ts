@@ -14,6 +14,7 @@ vi.mock('../../../src/lib/template.js', () => ({
 }));
 
 vi.mock('../../../src/lib/project.js', () => ({
+  findExistingReactApps: vi.fn(),
   readProjectName: vi.fn(),
 }));
 
@@ -23,7 +24,7 @@ vi.mock('../../../src/lib/prompts.js', () => ({
 
 import { confirm } from '@inquirer/prompts';
 import { processTemplate } from '../../../src/lib/template.js';
-import { readProjectName } from '../../../src/lib/project.js';
+import { findExistingReactApps, readProjectName } from '../../../src/lib/project.js';
 import { inputAuthor } from '../../../src/lib/prompts.js';
 import GenerateReactPage from '../../../src/commands/generate/react-page.js';
 
@@ -46,6 +47,9 @@ describe('generate react-page', () => {
     vi.mocked(processTemplate).mockResolvedValue(undefined);
     vi.mocked(inputAuthor).mockResolvedValue('Default Author');
     vi.mocked(readProjectName).mockResolvedValue('my-app');
+    vi.mocked(findExistingReactApps).mockResolvedValue([
+      { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'apps/app', routePath: '/app', router: false },
+    ]);
   });
 
   afterEach(() => {
@@ -85,6 +89,41 @@ describe('generate react-page', () => {
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.project_name).toBe('another-app');
       expect(readProjectName).toHaveBeenCalledWith(process.cwd());
+    });
+  });
+
+  describe('@ReactService path (the page\'s public URL)', () => {
+    async function servicePathFor(app: string, page: string): Promise<unknown> {
+      stubPrompts({ author: 'Author' });
+      await GenerateReactPage.run([app, page], ROOT);
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      return context.servicePath;
+    }
+
+    it('prefixes the page path with the app route\'s mount path', async () => {
+      expect(await servicePathFor('app', 'my/path/page')).toBe('/app/my/path/page');
+    });
+
+    it('uses the mount path, not the app name, when they differ', async () => {
+      vi.mocked(findExistingReactApps).mockResolvedValue([
+        { routeFile: 'src/routes/AdminRoute.ts', className: 'AdminRoute', appDir: 'apps/admin', routePath: '/console/*', router: false },
+      ]);
+      expect(await servicePathFor('admin', 'users')).toBe('/console/users');
+    });
+
+    it('drops the prefix for an app mounted at the root', async () => {
+      vi.mocked(findExistingReactApps).mockResolvedValue([
+        { routeFile: 'src/routes/WwwRoute.ts', className: 'WwwRoute', appDir: './apps/www', routePath: '/', router: false },
+      ]);
+      expect(await servicePathFor('www', '/about/')).toBe('/about');
+    });
+
+    it('warns and assumes /<app> when no route for the app is found', async () => {
+      vi.mocked(findExistingReactApps).mockResolvedValue([]);
+      const warn = vi.spyOn(GenerateReactPage.prototype, 'warn').mockImplementation(() => undefined as any);
+      expect(await servicePathFor('app', 'Dashboard')).toBe('/app/Dashboard');
+      expect(warn).toHaveBeenCalledWith(expect.stringContaining('No ReactRoute found for apps/app'));
+      warn.mockRestore();
     });
   });
 

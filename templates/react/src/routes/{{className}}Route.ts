@@ -11,7 +11,10 @@ export class {{className}}Route extends ReactRoute {
     {{#if cache}}
     protected readonly cacheTTL: number = {{cache}};
     {{/if}}
-    {{#if hydrate}}
+    {{#if router}}
+    // Client-side navigation between this app's pages; implies hydrate.
+    protected readonly router: boolean = true;
+    {{else if hydrate}}
     protected readonly hydrate: boolean = {{hydrate}};
     {{/if}}
 }

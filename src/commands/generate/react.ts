@@ -43,11 +43,17 @@ async function migrateToNamespacedAppDir(cwd: string, app: ExistingReactApp, log
 // the rest of this generator's output) it's written directly here rather than from a template
 // file. Regenerated on every `generate react` call so it never falls out of sync with the
 // project's actual set of apps.
-function renderViteConfig(appDirs: string[]): string {
-  const appDirLiteral = appDirs.length === 1
-    ? JSON.stringify(appDirs[0])
-    : `[${appDirs.map((d) => JSON.stringify(d)).join(', ')}]`;
-  return `import { createViteConfig } from "@rapidrest/react/vite";\n\nexport default createViteConfig({ appDir: ${appDirLiteral} });\n`;
+// Apps using the client-side router (`router = true` on the route) also need their router entry built,
+// which createViteConfig() does for the appDirs listed in its `router` option.
+export function renderViteConfig(apps: { appDir: string; router: boolean }[]): string {
+  const list = (dirs: string[]) => `[${dirs.map((d) => JSON.stringify(d)).join(', ')}]`;
+  const appDirs = apps.map((a) => a.appDir);
+  const routerDirs = apps.filter((a) => a.router).map((a) => a.appDir);
+  const options = [`appDir: ${appDirs.length === 1 ? JSON.stringify(appDirs[0]) : list(appDirs)}`];
+  if (routerDirs.length > 0) {
+    options.push(`router: ${routerDirs.length === appDirs.length ? 'true' : list(routerDirs)}`);
+  }
+  return `import { createViteConfig } from "@rapidrest/react/vite";\n\nexport default createViteConfig({ ${options.join(', ')} });\n`;
 }
 
 // Same rationale as renderViteConfig — this file's content never actually varies per app
@@ -139,6 +145,7 @@ export default class GenerateReact extends Command {
   static override examples = [
     '<%= config.bin %> <%= command.id %> app',
     '<%= config.bin %> <%= command.id %> app --path "/my-app"',
+    '<%= config.bin %> <%= command.id %> app --path "/my-app" --router',
   ];
 
   static override flags = {
@@ -148,6 +155,7 @@ export default class GenerateReact extends Command {
     'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
     'output-dir': Flags.string({ description: 'Project directory to add React support to. Defaults to the current working directory.' }),
     path: Flags.string({ char: 'p', description: 'The base path the React application will route to' }),
+    router: Flags.boolean({ description: 'Enable client-side navigation between the app\'s pages. Implies --hydrate.' }),
   };
 
   async run(): Promise<void> {
@@ -164,10 +172,17 @@ export default class GenerateReact extends Command {
       required: true,
     });
 
-    const hydrate = flags.hydrate ?? await confirm({
-      message: 'Enable client-side hydration? (required for interactive apps):',
+    // The router implies hydration (the page has to hydrate for the router to take over), so
+    // asking about hydration is only needed when the router is off.
+    const router = flags.router ?? await confirm({
+      message: 'Enable client-side navigation between pages? (implies hydration):',
       default: false
     });
+
+    const hydrate = router || (flags.hydrate ?? await confirm({
+      message: 'Enable client-side hydration? (required for interactive apps):',
+      default: false
+    }));
 
     const author = flags.author ?? (await inputAuthor(cwd));
 
@@ -191,6 +206,7 @@ export default class GenerateReact extends Command {
       name: args.name,
       path: routePath,
       project_name: await readProjectName(cwd),
+      router,
       year,
     };
 
@@ -203,9 +219,11 @@ export default class GenerateReact extends Command {
       // (not just this one), so they're generated directly rather than copied from the template
       // — see renderViteConfig()'s comment. Always (re)written, covering both the first app and
       // every subsequent one, so they never need --force to survive a second `generate react` call.
-      const allAppDirs = [...existingApps.map((a) => a.appDir), `apps/${args.name}`];
-      const allApps = [...existingApps.map((a) => ({ appDir: a.appDir, routePath: a.routePath })), { appDir: `apps/${args.name}`, routePath }];
-      await writeFile(join(outputDir, 'vite.config.ts'), renderViteConfig(allAppDirs), 'utf-8');
+      const allApps = [
+        ...existingApps.map((a) => ({ appDir: a.appDir, routePath: a.routePath, router: a.router })),
+        { appDir: `apps/${args.name}`, routePath, router },
+      ];
+      await writeFile(join(outputDir, 'vite.config.ts'), renderViteConfig(allApps), 'utf-8');
       await writeFile(join(outputDir, 'tsconfig.client.json'), TSCONFIG_CLIENT_CONTENT, 'utf-8');
       await writeFile(join(outputDir, 'src', 'export.ts'), renderExportEntry(allApps, author, year), 'utf-8');
 

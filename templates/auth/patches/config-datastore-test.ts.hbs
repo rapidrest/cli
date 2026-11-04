@@ -1,0 +1,13 @@
+    {{datastore}}: {
+{{#if isSql}}        // Tests run SQL datastores against an in-memory better-sqlite3 database, as the rest of
+        // test/config.ts does; see the acl datastore above.
+        type: "better-sqlite3",
+        host: "localhost",
+        database: ":memory:",
+        synchronize: true,
+{{else}}        type: "mongodb",
+        host: "localhost",
+        port: 9999,
+        database: "{{project_name}}-auth",
+        synchronize: true,
+{{/if}}    },

@@ -627,8 +627,21 @@ describe('findExistingReactApps', () => {
         `}\n`,
     );
     expect(await findExistingReactApps(tmpDir)).toEqual([
-      { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/' },
+      { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/', router: false },
     ]);
+  });
+
+  it('reports router: true for a ReactRoute subclass that opts into the client-side router', async () => {
+    await writeFile(
+      join(tmpDir, 'src', 'routes', 'AppRoute.ts'),
+      `@Route("/app")\n` +
+        `export class AppRoute extends ReactRoute {\n` +
+        `    protected readonly appDir: string = "apps/app";\n` +
+        `    protected readonly router: boolean = true;\n` +
+        `}\n`,
+    );
+    const [app] = await findExistingReactApps(tmpDir);
+    expect(app.router).toBe(true);
   });
 
   it('defaults routePath to "" when no @Route decorator is present', async () => {

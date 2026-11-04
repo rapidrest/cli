@@ -19,7 +19,7 @@ conf.defaults({
     version: packageInfo.version,
     cookieSecret: "COOKIE_SECRET",
     cors: {
-        origin: ["http://localhost:3000"],
+        origins: ["http://localhost:3000"],
     },
     datastores: {
         {{#if features.hasDatabase}}

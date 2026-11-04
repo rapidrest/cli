@@ -33,6 +33,14 @@
       "insertInto": "",
       "idempotencyKey": "react",
       "condition": "hydrate"
+    },
+    {
+      "template": "patches/config-react-manifest.txt",
+      "target": "test/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "",
+      "idempotencyKey": "react",
+      "condition": "hydrate"
     }
   ]
 }

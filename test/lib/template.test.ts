@@ -35,6 +35,22 @@ describe('processTemplate', () => {
     expect(out).toBe('export const greeting = "Hello, World!";');
   });
 
+  it('skips a nested subdirectory that is its own template (has a template.config.json)', async () => {
+    await writeFile(join(templateDir, 'main.ts'), 'main');
+    await mkdir(join(templateDir, 'nested', 'src'), { recursive: true });
+    await writeFile(join(templateDir, 'nested', 'template.config.json'), '{}');
+    await writeFile(join(templateDir, 'nested', 'src', 'inner.ts'), 'inner');
+    await mkdir(join(templateDir, 'plain'));
+    await writeFile(join(templateDir, 'plain', 'kept.ts'), 'kept');
+
+    await processTemplate(templateDir, outputDir, {});
+
+    expect(await readFile(join(outputDir, 'main.ts'), 'utf-8')).toBe('main');
+    expect(await readFile(join(outputDir, 'plain', 'kept.ts'), 'utf-8')).toBe('kept');
+    await expect(readFile(join(outputDir, 'nested', 'src', 'inner.ts'), 'utf-8')).rejects.toThrow();
+    await expect(readFile(join(outputDir, 'nested', 'template.config.json'), 'utf-8')).rejects.toThrow();
+  });
+
   it('substitutes {{name}} placeholders in output file paths', async () => {
     await writeFile(join(templateDir, '{{name}}.ts'), 'class {{name}} {}');
     await processTemplate(templateDir, outputDir, { name: 'Product' });

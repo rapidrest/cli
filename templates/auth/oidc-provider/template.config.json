@@ -8,6 +8,13 @@
       "strategy": "ts-block-insert",
       "insertInto": "auth",
       "idempotencyKey": "{{name}}"
+    },
+    {
+      "template": "patches/config-oidc.ts.hbs",
+      "target": "test/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "auth",
+      "idempotencyKey": "{{name}}"
     }
   ]
 }

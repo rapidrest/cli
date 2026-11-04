@@ -45,18 +45,21 @@ import GenerateReact from '../../../src/commands/generate/react.js';
 const ROOT = process.cwd();
 
 // Default prompt order (no flags):
-//   input(path) → confirm(hydrate) → inputAuthor(cwd)
+//   input(path) → confirm(router) → confirm(hydrate, only when router is off) → inputAuthor(cwd)
 function stubPrompts({
   path = '/app',
+  router = false,
   hydrate = false,
   author,
 }: {
   path?: string;
+  router?: boolean;
   hydrate?: boolean;
   author?: string;
 } = {}) {
   vi.mocked(input).mockResolvedValueOnce(path);
-  vi.mocked(confirm).mockResolvedValueOnce(hydrate);
+  vi.mocked(confirm).mockResolvedValueOnce(router);
+  if (!router) vi.mocked(confirm).mockResolvedValueOnce(hydrate);
   if (author !== undefined) vi.mocked(inputAuthor).mockResolvedValueOnce(author);
 }
 
@@ -119,7 +122,7 @@ describe('generate react', () => {
 
   describe('flag shortcuts bypass prompts', () => {
     it('--path skips the path input prompt', async () => {
-      vi.mocked(confirm).mockResolvedValueOnce(false);
+      vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
       await GenerateReact.run(['app', '--path', '/fixed-path'], ROOT);
 
@@ -130,17 +133,40 @@ describe('generate react', () => {
 
     it('--hydrate skips the hydrate confirm prompt', async () => {
       vi.mocked(input).mockResolvedValueOnce('/app');
+      vi.mocked(confirm).mockResolvedValueOnce(false); // router
 
       await GenerateReact.run(['app', '--hydrate'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.hydrate).toBe(true);
+      expect(context.router).toBe(false);
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1);
+    });
+
+    it('--router skips both confirm prompts and implies hydrate', async () => {
+      vi.mocked(input).mockResolvedValueOnce('/app');
+
+      await GenerateReact.run(['app', '--router'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.router).toBe(true);
+      expect(context.hydrate).toBe(true);
       expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+    });
+
+    it('answering yes to the router prompt skips the hydrate prompt and implies hydrate', async () => {
+      stubPrompts({ router: true, author: 'Author' });
+      await GenerateReact.run(['app'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.router).toBe(true);
+      expect(context.hydrate).toBe(true);
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1);
     });
 
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('/app');
-      vi.mocked(confirm).mockResolvedValueOnce(false);
+      vi.mocked(confirm).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
 
       await GenerateReact.run(['app', '--author', 'Flag Author'], ROOT);
 
@@ -211,13 +237,34 @@ describe('generate react', () => {
 
     it('writes an array-form vite.config.ts covering every existing app plus the new one', async () => {
       vi.mocked(findExistingReactApps).mockResolvedValue([
-        { routeFile: 'src/routes/WwwRoute.ts', className: 'WwwRoute', appDir: 'apps/www', routePath: '/' },
+        { routeFile: 'src/routes/WwwRoute.ts', className: 'WwwRoute', appDir: 'apps/www', routePath: '/', router: false },
       ]);
       stubPrompts({ author: 'Author' });
       await GenerateReact.run(['admin'], ROOT);
 
       const call = vi.mocked(writeFile).mock.calls.find(([p]) => String(p).endsWith('vite.config.ts'));
       expect(call![1]).toContain('appDir: ["apps/www", "apps/admin"]');
+      expect(call![1]).not.toContain('router');
+    });
+
+    it('passes router: true to createViteConfig when every app uses the router', async () => {
+      stubPrompts({ router: true, author: 'Author' });
+      await GenerateReact.run(['app'], ROOT);
+
+      const call = vi.mocked(writeFile).mock.calls.find(([p]) => String(p).endsWith('vite.config.ts'));
+      expect(call![1]).toContain('createViteConfig({ appDir: "apps/app", router: true })');
+    });
+
+    it('lists only the routed appDirs in createViteConfig when some apps use the router', async () => {
+      vi.mocked(findExistingReactApps).mockResolvedValue([
+        { routeFile: 'src/routes/WwwRoute.ts', className: 'WwwRoute', appDir: 'apps/www', routePath: '/', router: true },
+        { routeFile: 'src/routes/DocsRoute.ts', className: 'DocsRoute', appDir: 'apps/docs', routePath: '/docs', router: false },
+      ]);
+      stubPrompts({ author: 'Author' });
+      await GenerateReact.run(['admin'], ROOT);
+
+      const call = vi.mocked(writeFile).mock.calls.find(([p]) => String(p).endsWith('vite.config.ts'));
+      expect(call![1]).toContain('createViteConfig({ appDir: ["apps/www", "apps/docs", "apps/admin"], router: ["apps/www"] })');
     });
 
     it('writes tsconfig.client.json with a broad "apps" include', async () => {
@@ -258,7 +305,7 @@ describe('generate react', () => {
 
     it('switches to the multi-app `apps` array form covering every existing app plus the new one', async () => {
       vi.mocked(findExistingReactApps).mockResolvedValue([
-        { routeFile: 'src/routes/WwwRoute.ts', className: 'WwwRoute', appDir: 'apps/www', routePath: '/' },
+        { routeFile: 'src/routes/WwwRoute.ts', className: 'WwwRoute', appDir: 'apps/www', routePath: '/', router: false },
       ]);
       stubPrompts({ path: '/admin', author: 'Author' });
       await GenerateReact.run(['admin'], ROOT);
@@ -293,7 +340,7 @@ describe('generate react', () => {
   describe('single-app to multi-app migration', () => {
     it('does not migrate anything when no existing app uses the old layout', async () => {
       vi.mocked(findExistingReactApps).mockResolvedValue([
-        { routeFile: 'src/routes/WwwRoute.ts', className: 'WwwRoute', appDir: 'apps/www', routePath: '/' },
+        { routeFile: 'src/routes/WwwRoute.ts', className: 'WwwRoute', appDir: 'apps/www', routePath: '/', router: false },
       ]);
       stubPrompts({ author: 'Author' });
       await GenerateReact.run(['admin'], ROOT);
@@ -303,7 +350,7 @@ describe('generate react', () => {
 
     it('migrates an app still on the old (non-namespaced) layout to apps/<name>/', async () => {
       vi.mocked(findExistingReactApps).mockResolvedValue([
-        { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/' },
+        { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/', router: false },
       ]);
       vi.mocked(readFile).mockResolvedValue('appDir: string = "app";');
       stubPrompts({ author: 'Author' });
@@ -318,10 +365,10 @@ describe('generate react', () => {
     it('re-reads existing apps after migrating, so vite.config.ts uses the migrated appDir', async () => {
       vi.mocked(findExistingReactApps)
         .mockResolvedValueOnce([
-          { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/' },
+          { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/', router: false },
         ])
         .mockResolvedValueOnce([
-          { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'apps/app', routePath: '/' },
+          { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'apps/app', routePath: '/', router: false },
         ]);
       vi.mocked(readFile).mockResolvedValue('appDir: string = "app";');
       stubPrompts({ author: 'Author' });
@@ -342,7 +389,7 @@ describe('generate react', () => {
 
     it('logs a migration message for each migrated app', async () => {
       vi.mocked(findExistingReactApps).mockResolvedValue([
-        { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/' },
+        { routeFile: 'src/routes/AppRoute.ts', className: 'AppRoute', appDir: 'app', routePath: '/', router: false },
       ]);
       const logSpy = vi.spyOn(GenerateReact.prototype, 'log').mockImplementation(() => undefined);
       stubPrompts({ author: 'Author' });

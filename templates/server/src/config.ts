@@ -43,7 +43,7 @@ conf.defaults({
     },
     cookie_secret: "COOKIE_SECRET",
     cors: {
-        origin: ["http://localhost:3000"],
+        origins: ["http://localhost:3000"],
     },
     datastores: {
         {{#if features.hasDatabase}}

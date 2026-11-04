@@ -19,8 +19,24 @@
       "condition": "datastore"
     },
     {
+      "template": "patches/config-datastore-test.ts.hbs",
+      "target": "test/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "datastores",
+      "idempotencyKey": "{{datastore}}",
+      "condition": "datastore"
+    },
+    {
       "template": "patches/config-totp.ts.hbs",
       "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "auth",
+      "idempotencyKey": "totp",
+      "condition": "hasTotpConfig"
+    },
+    {
+      "template": "patches/config-totp.ts.hbs",
+      "target": "test/config.ts",
       "strategy": "ts-block-insert",
       "insertInto": "auth",
       "idempotencyKey": "totp",
@@ -35,8 +51,24 @@
       "condition": "methods.passkey"
     },
     {
+      "template": "patches/config-passkey.ts.hbs",
+      "target": "test/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "auth",
+      "idempotencyKey": "passkey",
+      "condition": "methods.passkey"
+    },
+    {
       "template": "patches/config-fido2.ts.hbs",
       "target": "src/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "auth",
+      "idempotencyKey": "fido2",
+      "condition": "hasFido2Config"
+    },
+    {
+      "template": "patches/config-fido2.ts.hbs",
+      "target": "test/config.ts",
       "strategy": "ts-block-insert",
       "insertInto": "auth",
       "idempotencyKey": "fido2",

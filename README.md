@@ -597,10 +597,11 @@ regardless of which methods are selected; the rest are conditional on the matchi
 
 | File | Condition | What it does |
 |------|-----------|---------|
-| `src/models/auth.ts` | always | Re-exports `User`/`Alias`/`Secret`/`Profile` (SQL or Mongo variant) so the server's ClassLoader discovers their metadata |
+| `src/models/auth.ts` | always | Re-exports `User`/`Alias`/`Secret`/`Profile`/`SystemSettings` (SQL or Mongo variant) so the server's ClassLoader discovers their metadata |
 | `src/routes/RegistrationRoute.ts` | always | Self-service sign-up — creates a user and login alias, then issues a token |
 | `src/routes/UserRoute.ts` | always | Admin CRUD over user accounts (deny-by-default ACL; grant access via `trusted_roles`) |
 | `src/routes/AuthLogoutRoute.ts` | always | Clears the session cookie, if any |
+| `src/routes/AuthElevationRoute.ts` | always | Elevates the session after re-verifying identity — required by every `@RequiresElevation`-gated action (changing secrets, managing users, the admin `restart`/`clear-cache` endpoints) |
 | `src/routes/SecretRoute.ts` | always | CRUD over secrets (password, TOTP, passkey, FIDO2, recovery codes) — also how a password gets changed and how TOTP/Passkey/FIDO2 get enrolled |
 | `src/routes/AuthBasicRoute.ts` | `basic` | Username/password (HTTP Basic) login |
 | `src/routes/AuthOTPRoute.ts` | `otp` | One-time password (email/SMS) login |
@@ -619,7 +620,8 @@ if not. This is unlike `generate model`, where you can name a datastore anything
 Token issuing reuses the `auth:` block every generated project's `src/config.ts` already has.
 Selecting `totp`/`fido2`/`mfa`/`passkey` adds the matching `auth.totp`/`auth.fido2`/`auth.passkey`
 config block with sensible defaults; each selected OIDC provider adds its own `auth.oidc_<provider>`
-block. `@rapidrest/auth` and `argon2` (used for password hashing) are always added to
+block. These blocks are added to `test/config.ts` too, so the project's tests can start the server.
+`@rapidrest/auth` and `argon2` (used for password hashing) are always added to
 `package.json`; `otplib` and `@simplewebauthn/server` are added when a method that needs them is
 selected, and `jwks-rsa` when a selected OIDC provider uses OpenID Connect. Dependencies are then
 installed automatically, unless `--no-install` is passed.

@@ -245,7 +245,7 @@ describe('generate job', () => {
 describe('generate react', () => {
   const reactTemplateDir = join(TEMPLATES, 'react');
   const baseContext = {
-    name: 'dashboard', className: 'Dashboard', author: 'Test', hydrate: false,
+    name: 'dashboard', className: 'Dashboard', author: 'Test', hydrate: false, router: false,
     path: '/dashboard', project_name: 'my-app', year: 2025,
   };
 
@@ -317,20 +317,44 @@ export default conf;
     });
   });
 
-  it('adds a react.manifestPath config block to src/config.ts when hydrate is enabled', async () => {
+  it('adds a react.manifestPath config block to src/config.ts and test/config.ts when hydrate is enabled', async () => {
     await withConfigFiles(async (dir) => {
       await processTemplate(reactTemplateDir, dir, { ...baseContext, hydrate: true }, { projectDir: dir });
-      const srcConfig = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'config.ts'), 'utf-8'));
-      expect(srcConfig).toContain('react:');
-      expect(srcConfig).toContain('manifestPath: "dist/public/.vite/manifest.json"');
+      for (const file of [join(dir, 'src', 'config.ts'), join(dir, 'test', 'config.ts')]) {
+        const config = await import('fs/promises').then(fs => fs.readFile(file, 'utf-8'));
+        expect(config).toContain('react:');
+        expect(config).toContain('manifestPath: "dist/public/.vite/manifest.json"');
+      }
     });
   });
 
   it('does not add a react.manifestPath config block when hydrate is disabled', async () => {
     await withConfigFiles(async (dir) => {
       await processTemplate(reactTemplateDir, dir, baseContext, { projectDir: dir });
+      for (const file of [join(dir, 'src', 'config.ts'), join(dir, 'test', 'config.ts')]) {
+        const config = await import('fs/promises').then(fs => fs.readFile(file, 'utf-8'));
+        expect(config).not.toContain('manifestPath');
+      }
+    });
+  });
+
+  it('sets hydrate on the route class when hydrate is enabled without the router', async () => {
+    await withConfigFiles(async (dir) => {
+      await processTemplate(reactTemplateDir, dir, { ...baseContext, hydrate: true }, { projectDir: dir });
+      const route = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'DashboardRoute.ts'), 'utf-8'));
+      expect(route).toContain('protected readonly hydrate: boolean = true;');
+      expect(route).not.toContain('router');
+    });
+  });
+
+  it('sets router (and not the implied hydrate) on the route class, and adds the manifest config, when the router is enabled', async () => {
+    await withConfigFiles(async (dir) => {
+      await processTemplate(reactTemplateDir, dir, { ...baseContext, hydrate: true, router: true }, { projectDir: dir });
+      const route = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'routes', 'DashboardRoute.ts'), 'utf-8'));
+      expect(route).toContain('protected readonly router: boolean = true;');
+      expect(route).not.toContain('hydrate: boolean');
       const srcConfig = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'config.ts'), 'utf-8'));
-      expect(srcConfig).not.toContain('manifestPath');
+      expect(srcConfig).toContain('manifestPath: "dist/public/.vite/manifest.json"');
     });
   });
 });
@@ -341,7 +365,7 @@ describe('generate react-page', () => {
   const reactPageTemplateDir = join(TEMPLATES, 'react-page');
   const baseContext = {
     app: 'app', name: 'Dashboard', className: 'Dashboard', author: 'Test',
-    project_name: 'my-app', service: true, year: 2025,
+    project_name: 'my-app', service: true, servicePath: '/app/Dashboard', year: 2025,
   };
 
   it('generates the page component under apps/<app>/<name>/index.tsx and a flat service class, with no scaffolding artifacts', async () => {
@@ -386,7 +410,7 @@ describe('generate react-page', () => {
     await withTmpDir(async (dir) => {
       await processTemplate(reactPageTemplateDir, dir, baseContext, { projectDir: dir });
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'services', 'DashboardService.ts'), 'utf-8'));
-      expect(content).toContain('@ReactService("app/Dashboard")');
+      expect(content).toContain('@ReactService("/app/Dashboard")');
       expect(content).toContain('export default class DashboardService');
       expect(content).toContain('@author Test');
       expect(content).toContain("app's Dashboard page");
@@ -394,7 +418,7 @@ describe('generate react-page', () => {
   });
 
   describe('nested page paths', () => {
-    const nestedContext = { ...baseContext, name: 'my/path/page', className: 'MyPathPage' };
+    const nestedContext = { ...baseContext, name: 'my/path/page', className: 'MyPathPage', servicePath: '/app/my/path/page' };
 
     it('nests the page component under the full subpath while keeping the service class flat', async () => {
       await withTmpDir(async (dir) => {
@@ -412,7 +436,7 @@ describe('generate react-page', () => {
         expect(pageContent).toContain('export default function MyPathPage()');
 
         const serviceContent = await import('fs/promises').then(fs => fs.readFile(join(dir, 'src', 'services', 'MyPathPageService.ts'), 'utf-8'));
-        expect(serviceContent).toContain('@ReactService("app/my/path/page")');
+        expect(serviceContent).toContain('@ReactService("/app/my/path/page")');
         expect(serviceContent).toContain('export default class MyPathPageService');
       });
     });
@@ -817,6 +841,96 @@ describe('generate k8s — helm template (PostgreSQL support)', () => {
       expect(content).toContain('{{- else if $.Values.postgresql.create }}');
       expect(content).toContain('datastores__acl__type: {{ print "postgres" | b64enc | quote }}');
       expect(content).toContain('datastores__sql__type: {{ print "postgres" | b64enc | quote }}');
+    });
+  });
+});
+
+// ─── auth ─────────────────────────────────────────────────────────────────────
+
+describe('generate auth', () => {
+  const authTemplateDir = join(TEMPLATES, 'auth');
+  const configSource = `import nconf from "nconf";
+
+const conf = nconf.argv();
+
+conf.defaults({
+    auth: {
+        secret: "secret",
+    },
+    datastores: {
+    },
+});
+
+export default conf;
+`;
+  const context = (isSql: boolean) => ({
+    author: 'Test', year: 2025, project_name: 'my-app',
+    datastore: isSql ? 'sql' : 'mongo', isSql, isPostgreSql: false, isSqlite: isSql,
+    apiRoute: false, apiVersion: undefined, defaultAccounts: false,
+    methods: { basic: true, otp: false, totp: true, passkey: true, fido2: true, mfa: false, oidc: false },
+    hasTotpConfig: true, hasFido2Config: true, hasOtplib: true, hasWebauthn: true, hasJwksRsa: false,
+  });
+
+  async function withProject(fn: (dir: string) => Promise<void>): Promise<void> {
+    await withTmpDir(async (dir) => {
+      await mkdir(join(dir, 'src'), { recursive: true });
+      await mkdir(join(dir, 'test'), { recursive: true });
+      await writeFile(join(dir, 'src', 'config.ts'), configSource, 'utf-8');
+      await writeFile(join(dir, 'test', 'config.ts'), configSource, 'utf-8');
+      await writeFile(join(dir, 'package.json'), '{ "name": "my-app" }', 'utf-8');
+      await fn(dir);
+    });
+  }
+  const read = (dir: string, ...p: string[]) => import('fs/promises').then(fs => fs.readFile(join(dir, ...p), 'utf-8'));
+
+  it('never copies the nested oidc-provider template into the project', async () => {
+    await withProject(async (dir) => {
+      await processTemplate(authTemplateDir, dir, context(false), { projectDir: dir });
+      const files = await listFiles(dir);
+      expect(files.some((f) => f.startsWith('/oidc-provider/'))).toBe(false);
+    });
+  });
+
+  it('always generates the elevation route', async () => {
+    await withProject(async (dir) => {
+      await processTemplate(authTemplateDir, dir, context(true), { projectDir: dir });
+      const route = await read(dir, 'src', 'routes', 'AuthElevationRoute.ts');
+      expect(route).toContain('import { BaseAuthElevationRouteSQL } from "@rapidrest/auth/sql";');
+      expect(route).toContain('@Route("/auth/elevation")');
+      expect(route).toContain('export class AuthElevationRoute extends BaseAuthElevationRouteSQL {}');
+    });
+  });
+
+  it('re-exports the SystemSettings model the generated routes use', async () => {
+    await withProject(async (dir) => {
+      await processTemplate(authTemplateDir, dir, context(false), { projectDir: dir });
+      expect(await read(dir, 'src', 'models', 'auth.ts')).toContain('SystemSettingsMongo } from "@rapidrest/auth/mongo"');
+    });
+  });
+
+  it('adds the method config blocks to test/config.ts as well as src/config.ts', async () => {
+    await withProject(async (dir) => {
+      await processTemplate(authTemplateDir, dir, context(false), { projectDir: dir });
+      for (const file of [['src', 'config.ts'], ['test', 'config.ts']]) {
+        const config = await read(dir, ...file);
+        expect(config).toContain('totp: {');
+        expect(config).toContain('passkey: {');
+        expect(config).toContain('fido2: {');
+      }
+    });
+  });
+
+  it('adds a test datastore to test/config.ts (in-memory MongoDB on the test port, or in-memory sqlite)', async () => {
+    await withProject(async (dir) => {
+      await processTemplate(authTemplateDir, dir, context(false), { projectDir: dir });
+      const testConfig = await read(dir, 'test', 'config.ts');
+      expect(testConfig).toMatch(/mongo: \{\s+type: "mongodb",\s+host: "localhost",\s+port: 9999,/);
+    });
+    await withProject(async (dir) => {
+      await processTemplate(authTemplateDir, dir, context(true), { projectDir: dir });
+      const testConfig = await read(dir, 'test', 'config.ts');
+      expect(testConfig).toMatch(/sql: \{[\s\S]*type: "better-sqlite3",[\s\S]*database: ":memory:",/);
+      expect(await read(dir, 'src', 'config.ts')).toContain('database: "./data/my-app-auth.db"');
     });
   });
 });

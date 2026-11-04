@@ -36,18 +36,26 @@ interface TemplateConfig {
   patches?: PatchEntry[];
 }
 
+// A subdirectory with its own template.config.json is a separate template nested inside this one
+// (e.g. auth/oidc-provider, applied once per provider by its own processTemplate() call), so it is
+// never part of the enclosing template's output.
 async function walk(dir: string): Promise<string[]> {
   const entries = await readdir(dir, { withFileTypes: true });
   const files: string[] = [];
   for (const entry of entries) {
     const full = join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (await isTemplateRoot(full)) continue;
       files.push(...await walk(full));
     } else {
       files.push(full);
     }
   }
   return files;
+}
+
+async function isTemplateRoot(dir: string): Promise<boolean> {
+  return (await readdir(dir)).includes('template.config.json');
 }
 
 function resolveContextValue(path: string, context: Record<string, unknown>): unknown {
