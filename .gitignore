@@ -17,3 +17,7 @@ pnpm-lock.yaml
 !.yarn/releases
 !.yarn/sdks
 !.yarn/versions
+
+# Local install state in the server template (previously ignored by templates/server/.gitignore,
+# which is now stored as _gitignore)
+/templates/server/.yarn/install-state.gz

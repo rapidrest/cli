@@ -7,6 +7,7 @@ import fsExtra from 'fs-extra';
 import { readFile, writeFile, mkdir, readdir, copyFile } from 'fs/promises';
 import { join, relative, dirname, extname } from 'path';
 import { type PatchEntry, applyPatches } from './patch.js';
+import { toOutputPath } from './template-names.js';
 
 // Register eq as a subexpression helper so templates can write {{#if (eq a "b")}}...{{/if}}.
 // Templates may also use the shorthand {{#eq a "b"}}...{{/if}}; that form is normalised
@@ -129,7 +130,7 @@ export async function processTemplate(
 
     if (relPath === 'template.config.json') continue;
     if (patchTemplates.has(relPath.replace(/\\/g, '/'))) continue;
-    if (isExcluded(relPath, conditionalFiles, context)) continue;
+    if (isExcluded(toOutputPath(relPath), conditionalFiles, context)) continue;
 
     const useHelm = helmPaths.length > 0 && isHelmPath(relPath, helmPaths);
 
@@ -142,7 +143,7 @@ export async function processTemplate(
         })
       : Handlebars.compile(relNorm, { noEscape: true })(context);
 
-    const outPath = join(outputDir, compiledRel);
+    const outPath = join(outputDir, toOutputPath(compiledRel));
 
     if (!opts?.force && await fsExtra.pathExists(outPath)) {
       throw new Error(`File already exists: ${outPath}\nUse --force to overwrite.`);
@@ -210,7 +211,7 @@ export async function renderTemplateFiles(
 
     if (relPath === 'template.config.json') continue;
     if (patchTemplates.has(relPath.replace(/\\/g, '/'))) continue;
-    if (isExcluded(relPath, conditionalFiles, context)) continue;
+    if (isExcluded(toOutputPath(relPath), conditionalFiles, context)) continue;
     if (BINARY_EXTENSIONS.has(extname(filePath).toLowerCase())) continue;
 
     const useHelm = helmPaths.length > 0 && isHelmPath(relPath, helmPaths);
@@ -232,7 +233,7 @@ export async function renderTemplateFiles(
       content = Handlebars.compile(escaped, { noEscape: true })(context);
     }
 
-    results.push({ relPath: compiledRel, content });
+    results.push({ relPath: toOutputPath(compiledRel), content });
   }
 
   return results;
