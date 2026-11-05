@@ -2,7 +2,7 @@
 
 The templates are released on their own (tags `templates-v<version>`), separately from the CLI. See README.md.
 
-## Unreleased
+## v1.2.0
 
 * Fixed `route`'s generated test failing `findById` with 403: the request was anonymous, and since
   `@rapidrest/service-core` 2.5 a `.*` ACL record only matches an authenticated user. It now sends the record owner's
