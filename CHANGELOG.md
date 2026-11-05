@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-11-05
+
+### Changed
+- templates 1.1.0
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- templates 1.1.1
+- Updated the template engine to 1.2, which passes the route test template aclIsMongo, startMongo, usesMongoApi and usesSqlApi, and making the templates require it
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Fixed
+- Fixed a new SQLite or PostgreSQL project failing to install its dependencies with npm (ERESOLVE): the server template asked for better-sqlite3 13, which typeorm 1.1 doesn't support, and now asks for 12 as generate model already did
+- Fixed generate route's test hanging when a project's datastores are of mixed kinds (a SQL model with MongoDB ACLs) or the route has no model in a MongoDB project: it now reads ACLs through the acl datastore's own repository type and starts the test MongoDB whenever the project has one
+- Fixed generate route's test failing findById with 403: the request was anonymous, and since service-core 2.5 a .* ACL record only matches an authenticated user, so it now sends the record owner's token
+- Fixed a model-less route's test expecting Hello World! from an authenticated request, which the route answers with the user's uid
+
 ## [3.1.0] - 2026-11-05
 
 ### Added
@@ -411,7 +426,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: https://github.com/rapidrest/cli/compare/v3.1.0...HEAD
+[Unreleased]: https://github.com/rapidrest/cli/compare/v3.1.1...HEAD
+[3.1.1]: https://github.com/rapidrest/cli/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/rapidrest/cli/compare/v3.0.1...v3.1.0
 [3.0.1]: rapidrest/cli/compare/v3.0.0...v3.0.1
 [3.0.0]: rapidrest/cli/compare/v2.1.0...v3.0.0

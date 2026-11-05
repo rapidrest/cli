@@ -5,7 +5,7 @@
     "type": "git",
     "url": "git+https://github.com/rapidrest/cli.git"
   },
-  "version": "3.1.0",
+  "version": "3.1.1",
   "author": "RapidREST <rapidrests@gmail.com>",
   "homepage": "https://github.com/rapidrest/cli",
   "license": "MPL-2.0",
