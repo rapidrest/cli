@@ -1933,8 +1933,8 @@ __metadata:
     vitest: "npm:^4.1.11"
     yauzl: "npm:^3.4.0"
   bin:
-    rapidrest: ./bin/run.js
-    rr: ./bin/run.js
+    rapidrest: bin/run.js
+    rr: bin/run.js
   languageName: unknown
   linkType: soft
 
