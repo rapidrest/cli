@@ -1,5 +1,13 @@
 # Release Notes
 
+## Unreleased
+
+### Added
+
+* `release` also bumps the version in a Claude Code plugin's `.claude-plugin/plugin.json` when the project has one,
+  keeping its formatting, and commits it with the release. Installed copies of a plugin only update when that version
+  changes. A manifest without a `version` (a plugin that tracks commits instead) is left alone
+
 ## v3.1.1
 
 ### Fixed

@@ -15,12 +15,13 @@ import {
   stageAndCommit,
   updateChangelog,
   updateHelmVersion,
+  updatePluginManifestVersion,
   updateReleaseNotes,
   validateHelmFiles,
 } from '../lib/release.js';
 
 export default class Release extends Command {
-  static override description = 'Cuts a new release of the current project: bumps the version, promotes RELEASE_NOTES.md\'s "Unreleased" section, summarizes commits into CHANGELOG.md, updates Helm chart files if present, then commits, tags, and pushes.';
+  static override description = 'Cuts a new release of the current project: bumps the version, promotes RELEASE_NOTES.md\'s "Unreleased" section, summarizes commits into CHANGELOG.md, updates Helm chart files and a Claude Code plugin manifest (.claude-plugin/plugin.json) if present, then commits, tags, and pushes.';
 
   static override examples = [
     '<%= config.bin %> <%= command.id %> patch',
@@ -97,7 +98,12 @@ export default class Release extends Command {
         helmFiles = await updateHelmVersion(cwd, newVersion);
       }
 
-      await stageAndCommit(cwd, newVersion, helmFiles);
+      const pluginFiles = await updatePluginManifestVersion(cwd, newVersion);
+      if (pluginFiles.length > 0) {
+        this.log('Updated the Claude Code plugin version in .claude-plugin/plugin.json.');
+      }
+
+      await stageAndCommit(cwd, newVersion, [...helmFiles, ...pluginFiles]);
       this.log(`Committed and tagged v${newVersion}.`);
 
       if (!flags['no-push']) {

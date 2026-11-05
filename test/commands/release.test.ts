@@ -16,6 +16,7 @@ vi.mock('../../src/lib/release.js', () => ({
   stageAndCommit: vi.fn(),
   updateChangelog: vi.fn(),
   updateHelmVersion: vi.fn(),
+  updatePluginManifestVersion: vi.fn(),
   updateReleaseNotes: vi.fn(),
   validateHelmFiles: vi.fn(),
 }));
@@ -31,6 +32,7 @@ import {
   stageAndCommit,
   updateChangelog,
   updateHelmVersion,
+  updatePluginManifestVersion,
   updateReleaseNotes,
   validateHelmFiles,
 } from '../../src/lib/release.js';
@@ -50,6 +52,7 @@ describe('release', () => {
     vi.mocked(updateReleaseNotes).mockResolvedValue(undefined);
     vi.mocked(updateChangelog).mockResolvedValue(undefined);
     vi.mocked(updateHelmVersion).mockResolvedValue([]);
+    vi.mocked(updatePluginManifestVersion).mockResolvedValue([]);
     vi.mocked(validateHelmFiles).mockResolvedValue(undefined);
     vi.mocked(stageAndCommit).mockResolvedValue(undefined);
     vi.mocked(pushRelease).mockResolvedValue(undefined);
@@ -93,6 +96,22 @@ describe('release', () => {
   it('still validates on --dry-run and errors if there is no Unreleased section', async () => {
     vi.mocked(hasUnreleasedSection).mockResolvedValue(false);
     await expect(Release.run(['patch', '--dry-run'], ROOT)).rejects.toThrow(/Unreleased/);
+  });
+
+  it('stages the Claude Code plugin manifest when it updated one', async () => {
+    vi.mocked(detectHelm).mockResolvedValue(true);
+    vi.mocked(updateHelmVersion).mockResolvedValue(['helm/Chart.yaml']);
+    vi.mocked(updatePluginManifestVersion).mockResolvedValue(['.claude-plugin/plugin.json']);
+
+    await Release.run(['patch'], ROOT);
+
+    expect(updatePluginManifestVersion).toHaveBeenCalledWith(process.cwd(), '1.2.4');
+    expect(stageAndCommit).toHaveBeenCalledWith(process.cwd(), '1.2.4', ['helm/Chart.yaml', '.claude-plugin/plugin.json']);
+  });
+
+  it('does not update the plugin manifest on --dry-run', async () => {
+    await Release.run(['patch', '--dry-run'], ROOT);
+    expect(updatePluginManifestVersion).not.toHaveBeenCalled();
   });
 
   describe('Helm detection', () => {

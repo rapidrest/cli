@@ -536,6 +536,26 @@ export async function updateHelmVersion(cwd: string, version: string): Promise<s
   return touched;
 }
 
+// A Claude Code plugin keeps its version in .claude-plugin/plugin.json, and installed copies only
+// update when that version changes, so it moves with package.json. Only an existing `version`
+// field is updated: a plugin that leaves it out deliberately has Claude Code track commits instead.
+// Returns the path (relative to cwd) it touched, if any, for staging alongside the version bump.
+export async function updatePluginManifestVersion(cwd: string, version: string): Promise<string[]> {
+  const manifestPath = join(cwd, '.claude-plugin', 'plugin.json');
+  if (!(await fileExists(manifestPath))) return [];
+
+  const content = await readFile(manifestPath, 'utf-8');
+  const manifest = JSON.parse(content) as Record<string, unknown>;
+  if (typeof manifest.version !== 'string') return [];
+
+  manifest.version = version;
+  const indent = /^[ \t]+(?=")/m.exec(content)?.[0] ?? '  ';
+  const eol = content.includes('\r\n') ? '\r\n' : '\n';
+  const serialized = JSON.stringify(manifest, null, indent).replace(/\n/g, eol);
+  await writeFile(manifestPath, serialized + (content.endsWith('\n') ? eol : ''));
+  return [join('.claude-plugin', 'plugin.json')];
+}
+
 // --no-git-tag-version: this command does its own combined commit/tag afterward (stageAndCommit).
 // --ignore-scripts: skips the project's own pre/postversion hooks so this command fully owns the
 // release flow regardless of what hooks a project's package.json happens to define.

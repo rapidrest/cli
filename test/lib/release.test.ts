@@ -27,6 +27,7 @@ import {
   updateChangelog,
   updateChangelogLinks,
   updateHelmVersion,
+  updatePluginManifestVersion,
   updateReadmeVersion,
   updateReleaseNotes,
   validateHelmFiles,
@@ -425,6 +426,56 @@ describe('detectHelm / validateHelmFiles / updateHelmVersion', () => {
     const touched = await updateHelmVersion(tmpDir, '1.2.4');
     expect(touched).not.toContain('single_node_install.sh');
     expect(touched).not.toContain('README.md');
+  });
+});
+
+describe('updatePluginManifestVersion', () => {
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = await mkdtemp(join(os.tmpdir(), 'rrrelease-plugin-'));
+  });
+
+  afterEach(async () => {
+    await rm(tmpDir, { recursive: true, force: true });
+  });
+
+  const writeManifest = async (content: string): Promise<string> => {
+    await mkdir(join(tmpDir, '.claude-plugin'), { recursive: true });
+    const path = join(tmpDir, '.claude-plugin', 'plugin.json');
+    await writeFile(path, content);
+    return path;
+  };
+
+  it('does nothing when the project has no plugin manifest', async () => {
+    expect(await updatePluginManifestVersion(tmpDir, '1.2.4')).toEqual([]);
+  });
+
+  it('sets the version, keeping the other fields, their order and the file\'s formatting', async () => {
+    const path = await writeManifest('{\n  "name": "demo",\n  "version": "0.1.0",\n  "author": { "name": "A" }\n}\n');
+
+    const touched = await updatePluginManifestVersion(tmpDir, '1.2.4');
+
+    expect(touched).toEqual([join('.claude-plugin', 'plugin.json')]);
+    expect(await readFile(path, 'utf-8')).toBe(
+      '{\n  "name": "demo",\n  "version": "1.2.4",\n  "author": {\n    "name": "A"\n  }\n}\n',
+    );
+  });
+
+  it('keeps CRLF line endings and a 4-space indent', async () => {
+    const path = await writeManifest('{\r\n    "name": "demo",\r\n    "version": "0.1.0"\r\n}\r\n');
+
+    await updatePluginManifestVersion(tmpDir, '2.0.0');
+
+    expect(await readFile(path, 'utf-8')).toBe('{\r\n    "name": "demo",\r\n    "version": "2.0.0"\r\n}\r\n');
+  });
+
+  it('leaves a manifest without a version alone, since the plugin then tracks commits', async () => {
+    const content = '{\n  "name": "demo"\n}\n';
+    const path = await writeManifest(content);
+
+    expect(await updatePluginManifestVersion(tmpDir, '1.2.4')).toEqual([]);
+    expect(await readFile(path, 'utf-8')).toBe(content);
   });
 });
 
