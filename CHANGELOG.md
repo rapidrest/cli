@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-11-05
+
+### Changed
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Fixed
+- Fixed release rewriting the whole of a Claude Code plugin's plugin.json when bumping its version, expanding inline arrays and objects: it now changes only the top-level version value
+
 ## [3.2.0] - 2026-11-05
 
 ### Added
@@ -435,7 +443,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: https://github.com/rapidrest/cli/compare/v3.2.0...HEAD
+[Unreleased]: https://github.com/rapidrest/cli/compare/v3.2.1...HEAD
+[3.2.1]: https://github.com/rapidrest/cli/compare/v3.2.0...v3.2.1
 [3.2.0]: https://github.com/rapidrest/cli/compare/v3.1.1...v3.2.0
 [3.1.1]: https://github.com/rapidrest/cli/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/rapidrest/cli/compare/v3.0.1...v3.1.0

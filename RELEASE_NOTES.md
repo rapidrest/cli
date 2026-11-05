@@ -1,6 +1,6 @@
 # Release Notes
 
-## Unreleased
+## v3.2.1
 
 ### Fixed
 
