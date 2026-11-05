@@ -451,14 +451,18 @@ describe('updatePluginManifestVersion', () => {
     expect(await updatePluginManifestVersion(tmpDir, '1.2.4')).toEqual([]);
   });
 
-  it('sets the version, keeping the other fields, their order and the file\'s formatting', async () => {
-    const path = await writeManifest('{\n  "name": "demo",\n  "version": "0.1.0",\n  "author": { "name": "A" }\n}\n');
+  it('changes only the top-level version, leaving the rest of the file byte for byte', async () => {
+    const path = await writeManifest(
+      '{\n  "name": "demo",\n  "author": { "name": "A", "version": "9.9.9" },\n  "description": "has \\"version\\": \\"x\\"",\n' +
+      '  "version": "0.1.0",\n  "keywords": ["a", "b"]\n}\n',
+    );
 
     const touched = await updatePluginManifestVersion(tmpDir, '1.2.4');
 
     expect(touched).toEqual([join('.claude-plugin', 'plugin.json')]);
     expect(await readFile(path, 'utf-8')).toBe(
-      '{\n  "name": "demo",\n  "version": "1.2.4",\n  "author": {\n    "name": "A"\n  }\n}\n',
+      '{\n  "name": "demo",\n  "author": { "name": "A", "version": "9.9.9" },\n  "description": "has \\"version\\": \\"x\\"",\n' +
+      '  "version": "1.2.4",\n  "keywords": ["a", "b"]\n}\n',
     );
   });
 

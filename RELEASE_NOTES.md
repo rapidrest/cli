@@ -1,5 +1,12 @@
 # Release Notes
 
+## Unreleased
+
+### Fixed
+
+* `release` rewrote the whole of a Claude Code plugin's `.claude-plugin/plugin.json` when bumping its version,
+  expanding inline arrays and objects. It now changes only the top-level `version` value
+
 ## v3.2.0
 
 ### Added

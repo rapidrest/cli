@@ -548,12 +548,47 @@ export async function updatePluginManifestVersion(cwd: string, version: string):
   const manifest = JSON.parse(content) as Record<string, unknown>;
   if (typeof manifest.version !== 'string') return [];
 
-  manifest.version = version;
-  const indent = /^[ \t]+(?=")/m.exec(content)?.[0] ?? '  ';
-  const eol = content.includes('\r\n') ? '\r\n' : '\n';
-  const serialized = JSON.stringify(manifest, null, indent).replace(/\n/g, eol);
-  await writeFile(manifestPath, serialized + (content.endsWith('\n') ? eol : ''));
+  // Replace only the top-level version string, leaving the rest of the file byte for byte.
+  const span = topLevelStringValueSpan(content, 'version');
+  if (!span) return [];
+  await writeFile(manifestPath, content.slice(0, span.start) + JSON.stringify(version) + content.slice(span.end));
   return [join('.claude-plugin', 'plugin.json')];
+}
+
+// Finds the source span (quotes included) of a top-level object property's string value in JSON
+// text, skipping nested objects and arrays and the contents of every string.
+function topLevelStringValueSpan(json: string, key: string): { start: number; end: number } | undefined {
+  const readString = (from: number): number => {
+    let i = from + 1;
+    while (i < json.length && json[i] !== '"') i += json[i] === '\\' ? 2 : 1;
+    return i + 1; // index just past the closing quote
+  };
+
+  let depth = 0;
+  let expectKey = false;
+  for (let i = 0; i < json.length; i++) {
+    const c = json[i];
+    if (c === '{' || c === '[') {
+      depth++;
+      expectKey = c === '{' && depth === 1;
+    } else if (c === '}' || c === ']') {
+      depth--;
+    } else if (c === ',' && depth === 1) {
+      expectKey = true;
+    } else if (c === '"') {
+      const end = readString(i);
+      if (depth === 1 && expectKey) {
+        expectKey = false;
+        if (JSON.parse(json.slice(i, end)) === key) {
+          let j = end;
+          while (/[\s:]/.test(json[j] ?? '')) j++;
+          return json[j] === '"' ? { start: j, end: readString(j) } : undefined;
+        }
+      }
+      i = end - 1;
+    }
+  }
+  return undefined;
 }
 
 // --no-git-tag-version: this command does its own combined commit/tag afterward (stageAndCommit).
