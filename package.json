@@ -11,6 +11,7 @@
     "rr": "./bin/run.js"
   },
   "bugs": "https://github.com/rapidrest/cli/issues",
+  "packageManager": "yarn@4.12.0",
   "dependencies": {
     "@inquirer/prompts": "^8.6.0",
     "@oclif/core": "^4",

@@ -50,6 +50,10 @@
 * Prereleases are published to npm under the `next` tag, and releases under `latest`
 * The validate job enables corepack, so its `yarn npm audit` actually runs
 * Every workflow installs corepack before enabling it, since Node 25 and later no longer bundle it
+* Pinned Yarn (`packageManager: yarn@4.12.0`). Without it, CI ran the image's Yarn 1 against the Yarn 4 lockfile, so
+  every Build since September failed installing dependencies, and the validate job's audit never ran
+* Updated `handlebars` (4.7.10), `undici` (8.12.3) and the transitive `brace-expansion`, `follow-redirects` and
+  `undici` 6 to versions without known high-severity advisories
 * A new Templates workflow publishes a templates release from a `templates-v*` tag's green Build, and
   `yarn release templates <bump>` cuts one
 
