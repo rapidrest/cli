@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-11-05
+
+### Added
+- Added release support for Claude Code plugins: it bumps the version in .claude-plugin/plugin.json when the project has one, keeping its formatting, and commits it with the release, leaving a manifest without a version alone
+
+### Changed
+- templates 1.2.0
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
 ## [3.1.1] - 2026-11-05
 
 ### Changed
@@ -426,7 +435,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: https://github.com/rapidrest/cli/compare/v3.1.1...HEAD
+[Unreleased]: https://github.com/rapidrest/cli/compare/v3.2.0...HEAD
+[3.2.0]: https://github.com/rapidrest/cli/compare/v3.1.1...v3.2.0
 [3.1.1]: https://github.com/rapidrest/cli/compare/v3.1.0...v3.1.1
 [3.1.0]: https://github.com/rapidrest/cli/compare/v3.0.1...v3.1.0
 [3.0.1]: rapidrest/cli/compare/v3.0.0...v3.0.1
