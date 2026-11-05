@@ -1,5 +1,57 @@
 # Release Notes
 
+## Unreleased
+
+### Breaking
+
+* **The templates are no longer part of the npm package.** They are released on their own, as GitHub releases of this
+  repository tagged `templates-v<version>`, so templates (and the dependency versions they write) can change without a
+  CLI release. The CLI downloads the newest templates it can use the first time a command needs them and caches them
+  in `~/.rapidrest/templates/` (or `$RAPIDREST_HOME/templates/`), so the first `generate` needs network access. Offline,
+  the cached copy is used, or pass `--templates <directory|zip>`. See the README's Templates section.
+
+### Added
+
+* Inside an existing project, only templates compatible with it are used: templates from the major the project was
+  scaffolded with, targeting the `@rapidrest` majors it has installed. A project keeps receiving template fixes and is
+  never moved to templates written for framework versions it doesn't use
+* A new project records the templates version it was scaffolded from in its `package.json`
+  (`"rapidrest": { "templates": "1.0.0" }`), and its `@rapidrest/cli` devDependency is the CLI that scaffolded it
+* `--templates <version|directory|zip>` (or `RAPIDREST_TEMPLATES`) on every command that renders templates (`generate *`,
+  `upgrade`, `doctor`), to pick a templates release or use a local copy
+* `upgrade --latest` moves a project to the newest templates this CLI supports, across a templates major, for a project
+  moving to new `@rapidrest` majors. `upgrade --write` records the templates version it applied
+* Dependency versions written as `^<major>` in the templates are resolved to the newest matching release when you
+  scaffold, so a new project starts on current versions. If the registry can't be reached, the range is written as is
+* `generate react --router` (and a prompt) for `@rapidrest/react`'s client-side navigation between an app's pages. It
+  sets `router = true` on the app's route and builds the router in `vite.config.ts`
+* `generate auth` also generates `AuthElevationRoute` (`/auth/elevation`). Without it, nothing could perform a
+  `@RequiresElevation` action: changing secrets, managing users, or the admin `restart`/`clear-cache` endpoints
+* `generate auth` re-exports `@rapidrest/auth`'s `SystemSettings` model, which the generated registration, secret,
+  user and OIDC routes use
+* Templates `1.0.0`: `@rapidrest/core` 6.1, `@rapidrest/service-core` 2.5, `@rapidrest/auth` 2.0 and
+  `@rapidrest/react` 2.3
+
+### Fixed
+
+* `generate react-page --service` wrote a `@ReactService` path that `@rapidrest/react` 2.x never registers, so the page
+  silently got none of its service's props. The path is now the page's public URL under the app's mount path
+* `generate auth` copied the OIDC provider template (`oidc-provider/`) into every project
+* A generated project's tests couldn't start its server: the auth method (TOTP, passkey, FIDO2), OIDC provider and
+  React manifest settings were only added to `src/config.ts`. They are now added to `test/config.ts` too, with an
+  in-memory test datastore for auth
+* The generated CORS allow-list was ignored, allowing every origin: the config key is `cors.origins`, not
+  `cors.origin`. Since `@rapidrest/service-core` 2.5 the same list also decides which origins may open a WebSocket
+* Generated projects were missing `.gitignore` and `.npmignore`, which npm packaging dropped from the templates
+
+### CI
+
+* The CLI is published only from a release tag's own Build, and only once every Build of that commit has passed
+* Prereleases are published to npm under the `next` tag, and releases under `latest`
+* The validate job enables corepack, so its `yarn npm audit` actually runs
+* A new Templates workflow publishes a templates release from a `templates-v*` tag's green Build, and
+  `yarn release templates <bump>` cuts one
+
 ## v2.1.0
 
 * Fixed `release` stripping every comment from a Helm chart's `values.yaml` and `Chart.yaml`: it now changes only the `service.image.tag` and `appVersion` lines

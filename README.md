@@ -93,6 +93,10 @@ RapidREST requires Node.js LTS (24) or later.
 Once installed, the CLI is available as both `rapidrest` and the shorter alias `rr`. Every example
 below works with either name.
 
+The project templates aren't part of the npm package: the CLI downloads them from GitHub the first
+time it needs them and caches them, so the first `generate` needs network access. See
+[Templates](#templates).
+
 ---
 
 ## Quick Start
@@ -169,6 +173,7 @@ FLAGS
   --api-version <value>   API version segment when --api-route is set (e.g. "1" for /api/v1)
   --scm <choice>          Source control manager: github | gitlab | git | p4 | svn | none
   --no-install            Skip running the package manager install after generating
+  --templates <value>     A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 Every flag above stands in for one interactive prompt — pass it (or supply it via `--answers`) to
@@ -194,6 +199,12 @@ Any default routes selected above are generated via [`generate default-route`](#
 
 Once the project is written, its dependencies are installed automatically via the package manager
 you chose (or detected). Pass `--no-install` to skip this and run it yourself later.
+
+The project's dependencies start on the newest release of each major the templates target (for
+example `"@rapidrest/core": "^6.1.0"`), looked up when you scaffold, and its `@rapidrest/cli`
+devDependency is the CLI you scaffolded with. The project records the templates version it was
+made from in its `package.json` (`"rapidrest": { "templates": "1.0.0" }`); later `generate`
+commands in the project stay on templates compatible with it (see [Templates](#templates)).
 
 **`--answers <file>`** — a JSON file with any of the flags above as camelCase keys, every key
 optional:
@@ -258,6 +269,7 @@ FLAGS
   --property <name:type>   Add a typed property to the model (e.g. quantity:number). Append ? to the type
                             for an optional property (e.g. bio:string?). Repeatable
   --no-install             Skip running the package manager install after generating
+  --templates <value>      A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 If the project does not contain an existing datastore, or you simply want to set up a different
@@ -316,6 +328,7 @@ FLAGS
   --api <version>           Use @ApiRoute instead of @Route for the generated route. Pass a version to prefix the
                              path with /api/v<version>; pass an empty value for /api with no version
   --no-model                Skip all prompts about associating a model class
+  --templates <value>       A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 If `--api` is omitted, you're asked whether this is an API route; confirming then prompts for a version (blank for no version prefix). Passing `--api <version>` skips both prompts and generates the route with `@ApiRoute(path, version)` instead of `@Route(path)`.
@@ -365,6 +378,7 @@ FLAGS
                            --api with a value on its own also implies --api-route
   --static-path <path>     Path containing the static files to serve, when the static route is included. Defaults to
                            `public`
+  --templates <value>      A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 A bare `--api` with no value can't reliably be told apart from `--api` followed by another flag,
@@ -416,6 +430,7 @@ FLAGS
   -d, --description <text>  Short description of the job
   -o, --output-dir <path>   Directory to write the generated job into. Defaults to ./src/jobs
   -s, --schedule <cron>     Crontab-style schedule the job runs on (e.g. `* * * * *` runs every minute)
+  --templates <value>       A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 A matching test file is always generated alongside the job, at `test/jobs/<NAME>.test.ts`.
@@ -444,6 +459,7 @@ FLAGS
   --output-dir <path>      Project directory to add Docker support to. Defaults to the current working directory
   --has-react / --no-has-react  Whether the project includes a React app (affects which directories the
                            Dockerfile copies). Defaults to auto-detecting an existing project
+  --templates <value>      A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 Generates a set of Docker and Docker Compose files with pre-configured databases based on the existing project configuration.
@@ -470,6 +486,7 @@ FLAGS
   -f, --force              Overwrite existing files
   --output-dir <path>      Project directory to add Kubernetes (Helm) support to. Defaults to the current working directory
   --no-install             Skip running the package manager install after generating
+  --templates <value>      A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 Generates a Helm chart under `helm/`, tailored to the project's configured datastores.
@@ -490,7 +507,7 @@ Add a RapidREST-managed React frontend application to the current project.
 ```
 USAGE
   $ rapidrest generate react NAME [--output-dir <path>] [-a <name>] [-p <base-path>]
-      [--hydrate] [--no-install] [-f]
+      [--router] [--hydrate] [--no-install] [-f]
 
 ARGUMENTS
   NAME  Name of the React app (e.g. app)
@@ -500,8 +517,10 @@ FLAGS
   -a, --author <name>      Author to attribute the generated code to
   -p, --path <path>        Base path the React application will route to. Defaults to /<NAME>
   --output-dir <path>      Project directory to add React support to. Defaults to the current working directory
+  --router                 Enable client-side navigation between the app's pages. Implies --hydrate
   --hydrate                Enable client-side hydration (required for interactive apps)
   --no-install             Skip running the package manager install after generating
+  --templates <value>      A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 Running this a second time with a different `NAME` adds a second app to the same project — every
@@ -511,12 +530,19 @@ app in the project. If the project's first app was generated before multi-app su
 (a plain `app/` directory, not yet under `apps/`), it's **migrated automatically** — moved to
 `apps/<name>/` and its route class updated — no manual restructuring step required.
 
+Without `--router` or `--hydrate`, you're asked first whether to enable client-side navigation and,
+if not, whether to enable hydration. `--router` sets `router = true` on the app's route: pages are
+still rendered on the server, and once loaded, clicks between the app's pages fetch the next page's
+data instead of a whole document (see `@rapidrest/react`'s README). `vite.config.ts` builds the
+router for every app that uses it.
+
 **Example:**
 
 ```sh
 cd my-api
 rapidrest generate react app
 rapidrest generate react app --path /dashboard --hydrate
+rapidrest generate react app --path /dashboard --router
 rapidrest dev
 
 # Add a second app — migrates app/ to apps/app/ if needed, regenerates vite.config.ts for both
@@ -542,13 +568,14 @@ FLAGS
   -s, --service            Create a service class for server-side data retrieval for the page
   -a, --author <name>      Author to attribute the generated code to
   --output-dir <path>      Project directory to add the page to. Defaults to the current working directory
+  --templates <value>      A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 Unless `--service` is passed, you're asked whether to generate a companion service class. If you decline, the page component instead exports a client-side `fetchProps` helper for retrieving its own data.
 
 `NAME` may include a subpath (e.g. `my/path/page`), which nests the page component accordingly. The component and service class names are always derived by PascalCasing `NAME` — each `/`-, `-`, or `_`-separated segment is capitalized and joined, so `my/path/page` becomes `MyPathPage`.
 
-Writes `apps/<APP>/<NAME>/index.tsx`. When a service class is created, it's written flat to `src/services/<PascalCase NAME>Service.ts` regardless of NAME's subpath.
+Writes `apps/<APP>/<NAME>/index.tsx`. When a service class is created, it's written flat to `src/services/<PascalCase NAME>Service.ts` regardless of NAME's subpath. Its `@ReactService` path is the page's public URL, the app's mount path plus `NAME` (`/dashboard/my/path/page` for an app mounted at `/dashboard`), which is how `@rapidrest/react` matches a service to its page; the mount path is read from the app's route class.
 
 **Example:**
 
@@ -589,6 +616,7 @@ FLAGS
   --output-dir <path>        Directory to write the generated files into. Defaults to the current
                               working directory
   --no-install                Skip running the package manager install after generating
+  --templates <value>        A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 `@rapidrest/auth` ships ready-made model and route base classes — this command doesn't hand-write a
@@ -767,6 +795,7 @@ USAGE
 FLAGS
   --fix   Automatically apply fixes for findings that support it
   --json  Output findings as JSON instead of a formatted report
+  --templates <value>  A templates release version, or a local templates directory or .zip (see "Templates")
 ```
 
 Run this from the root of a generated RapidREST project to check it against a set of known issues
@@ -809,7 +838,7 @@ FLAGS
   --json               Output the plan as JSON instead of a formatted report
   --latest             Use the newest templates this CLI supports, even a newer templates major than the
                        project is on (for a project moving to new @rapidrest majors)
-  --templates=<value>  A templates release version, or a local templates directory or .zip
+  --templates <value>  A templates release version, or a local templates directory or .zip
 ```
 
 Run this from the root of a generated RapidREST project. Unlike [`doctor`](#rapidrest-doctor),

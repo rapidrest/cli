@@ -14,3 +14,12 @@ templates).
   project is scaffolded, so a routine dependency update no longer needs a templates release.
 * A new project records the templates version it was scaffolded with in package.json (`rapidrest.templates`), and its
   `@rapidrest/cli` devDependency is the CLI that scaffolded it.
+* `auth` generates `AuthElevationRoute` (`/auth/elevation`), required by every `@RequiresElevation` action, and
+  re-exports the `SystemSettings` model its routes use.
+* `react` can enable `@rapidrest/react`'s client-side navigation (`router = true`).
+* Fixed `react-page`'s `@ReactService` path, which `@rapidrest/react` 2.x never registered: it is now the page's
+  public URL under the app's mount path.
+* Fixed a generated project's tests failing to start the server: auth method, OIDC provider and React manifest
+  settings are now added to `test/config.ts` too.
+* Fixed the CORS allow-list being ignored (`cors.origins`, not `cors.origin`); since `@rapidrest/service-core` 2.5 it
+  also decides which origins may open a WebSocket.
