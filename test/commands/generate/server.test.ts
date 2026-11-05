@@ -584,6 +584,24 @@ describe('generate server', () => {
       expect((context as any).features).toMatchObject({ postgresql: true, redis: true, mongodb: false, sqlite: false });
     });
 
+    it('--no-db skips the database checkbox and enables no databases', async () => {
+      vi.mocked(input).mockResolvedValueOnce('desc');
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+      vi.mocked(select).mockResolvedValueOnce('yarn').mockResolvedValueOnce('github');
+      vi.mocked(checkbox).mockResolvedValueOnce([]); // otherFeatures only — db checkbox skipped
+      vi.mocked(confirm).mockResolvedValueOnce(false);
+
+      await GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--no-db'], ROOT);
+
+      expect(vi.mocked(checkbox)).toHaveBeenCalledTimes(1);
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect((context as any).features).toMatchObject({ postgresql: false, redis: false, mongodb: false, sqlite: false, hasDatabase: false });
+    });
+
+    it('--no-db cannot be combined with --db', async () => {
+      await expect(GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--no-db', '--db', 'sqlite'], ROOT)).rejects.toThrow();
+    });
+
     it('rejects an invalid --db value', async () => {
       await expect(
         GenerateServer.run(['my-api', '--output-dir', '/tmp/out', '--db', 'oracle'], ROOT),

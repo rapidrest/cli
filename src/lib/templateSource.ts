@@ -29,8 +29,9 @@ import yauzl from 'yauzl';
 //   `rapidrest.templates`), so a project only ever receives compatible fixes. `upgrade --latest` is the
 //   explicit way across.
 
+// 1.1: upgrade leaves .claude/settings.json alone, so templates that ship one need at least 1.1.
 /** The template engine contract this CLI implements. */
-export const TEMPLATE_ENGINE_VERSION = '1.0.0';
+export const TEMPLATE_ENGINE_VERSION = '1.1.0';
 export const TEMPLATES_REPO = 'rapidrest/cli';
 export const TEMPLATES_TAG_PREFIX = 'templates-v';
 export const TEMPLATES_ZIP_ASSET = 'rapidrest-templates.zip';

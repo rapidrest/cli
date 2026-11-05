@@ -35,6 +35,8 @@ export default defineConfig({
         globals: true,
         environment: "node",
         include: ["test/**/*.test.ts"],
+        // A new project has no tests until its first model, route or job is generated.
+        passWithNoTests: true,
         fileParallelism: false,
         pool: "forks",
         poolOptions: {

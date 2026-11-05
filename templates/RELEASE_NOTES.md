@@ -4,6 +4,14 @@ The templates are released on their own (tags `templates-v<version>`), separatel
 
 ## Unreleased
 
+* A new project includes `.claude/settings.json`, which registers the RapidREST Claude Code plugin's marketplace
+  (`rapidrest/claude-plugin`, auto-updating) and enables the plugin, so anyone opening the project in Claude Code is
+  offered the RapidREST skills once they trust the folder.
+* Needs template engine 1.1 (`engine: ^1.1.0`), whose `upgrade` never overwrites `.claude/settings.json`, so an older
+  CLI can't replace a project's own Claude Code settings with the template's.
+* Fixed a new project's `test` (and so its CI) failing until its first test was generated: Vitest exited with an error
+  when it found no test files. It now passes with none.
+
 ## v1.0.0
 
 The first release of the templates on their own, targeting `@rapidrest/core` 6, `@rapidrest/service-core` 2,

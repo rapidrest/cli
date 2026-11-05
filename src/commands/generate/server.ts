@@ -117,6 +117,7 @@ export default class GenerateServer extends Command {
     description: Flags.string({ description: 'Short description of the project.' }),
     'pkg-manager': Flags.string({ description: `The Node.js package manager to use. One of: ${PKG_MANAGERS.join(', ')}` }),
     db: Flags.string({ multiple: true, description: `A database feature to enable. One of: ${DB_FEATURES.join(', ')}. Repeatable.` }),
+    'no-db': Flags.boolean({ exclusive: ['db'], description: 'Use no databases (skips the database prompt). Models and the acl route then need a datastore added later.' }),
     route: Flags.string({ multiple: true, description: `A default route to include. One of: ${ROUTE_TYPES.join(', ')}. Repeatable.` }),
     react: Flags.boolean({ allowNo: true, description: 'Include React frontend support.' }),
     docker: Flags.boolean({ allowNo: true, description: 'Include Docker support.' }),
@@ -154,7 +155,7 @@ export default class GenerateServer extends Command {
           ],
         });
 
-    const dbFlag = (flags.db && flags.db.length > 0) ? flags.db : answers.db;
+    const dbFlag = flags['no-db'] ? [] : (flags.db && flags.db.length > 0) ? flags.db : answers.db;
     const dbFeatures = dbFlag
       ? validateEnumList(dbFlag, DB_FEATURES, 'database feature', error)
       : await checkbox<string>({

@@ -1,5 +1,18 @@
 # Release Notes
 
+## Unreleased
+
+### Added
+
+* `generate server --no-db` creates a project without databases, without prompting. Until now only the prompt could
+  choose none
+
+### Changed
+
+* `upgrade` never rewrites a project's `.claude/settings.json`. The server template now seeds it to enable the
+  RapidREST Claude Code plugin, and projects add their own Claude Code permissions, hooks and plugins to it
+* Template engine 1.1, the first that templates shipping `.claude/settings.json` accept
+
 ## v3.0.1
 
 * Fixed publishing: the package's `rapidrest` and `rr` executables (`bin/`) were never committed, so a package

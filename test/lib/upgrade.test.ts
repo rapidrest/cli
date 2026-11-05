@@ -166,6 +166,16 @@ describe('upgrade', () => {
       expect(plan.fileChanges.find((f) => f.relPath === 'test/config.ts')).toBeUndefined();
     });
 
+    it('never includes .claude/settings.json in fileChanges, so a project\'s own Claude Code settings survive', async () => {
+      await writeFileDeep(join(templatesDir, 'server', '.claude', 'settings.json'), '{ "enabledPlugins": {} }\n');
+      await writeFileDeep(join(cwd, '.claude', 'settings.json'), '{ "permissions": { "allow": ["Bash(npm test)"] } }\n');
+      await scaffoldProject();
+
+      const plan = await planUpgrade(ctx);
+
+      expect(plan.fileChanges.find((f) => f.relPath === '.claude/settings.json')).toBeUndefined();
+    });
+
     it('applyUpgrade never writes to src/config.ts even when other server files change', async () => {
       await writeFileDeep(
         join(templatesDir, 'server', 'src', 'config.ts'),

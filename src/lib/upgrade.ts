@@ -80,7 +80,9 @@ const SYNCABLE_TEMPLATE_DIRS = ['server', 'docker', 'helm', 'default-route'];
 // additional named datastore blocks via a ts-block-insert patch (e.g. a custom "orders"
 // datastore), and the file is hand-edited after generation (RBAC flags, connection details). A
 // naive re-render from just features.* would silently drop anything beyond the base scaffold.
-const EXCLUDED_RELPATHS = new Set(['src/config.ts', 'test/config.ts']);
+// .claude/settings.json only seeds the RapidREST Claude Code plugin; a project then adds its own
+// permissions, hooks and plugins to it, which a re-render would wipe.
+const EXCLUDED_RELPATHS = new Set(['src/config.ts', 'test/config.ts', '.claude/settings.json']);
 
 async function buildContext(cwd: string, ctx?: UpgradeContext): Promise<Record<string, unknown>> {
   const [datastores, pkgManager, author, projectName, apiInfo, pkgFile] = await Promise.all([

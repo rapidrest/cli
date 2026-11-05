@@ -562,6 +562,15 @@ describe('generate server', () => {
     });
   });
 
+  it('enables the RapidREST Claude Code plugin through the project\'s .claude/settings.json', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(serverTemplateDir, dir, makeServerContext(), { projectDir: dir });
+      const settings = JSON.parse(await import('fs/promises').then(fs => fs.readFile(join(dir, '.claude', 'settings.json'), 'utf-8')));
+      expect(settings.extraKnownMarketplaces.rapidrest.source).toEqual({ source: 'github', repo: 'rapidrest/claude-plugin' });
+      expect(settings.enabledPlugins['rapidrest@rapidrest']).toBe(true);
+    });
+  });
+
   it('includes GitHub CI workflow when scm.github is enabled', async () => {
     await withTmpDir(async (dir) => {
       const ctx = makeServerContext({ scm: { github: true, gitlab: false, git: false } });
