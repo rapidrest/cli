@@ -7,6 +7,76 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-11-05
+
+### Added
+- Added the missing "Enable corepack" step to the validate job - every other job already has it, and without it yarn runs the container's stock Yarn 1 instead of the packageManager-pinned version, which refuses to run at all against a packageManager field, so validate's yarn npm audit never actually ran regardless of real findings. Confirmed via a real CI failure on rapidmx/server and rapidrest/auth-server; same latent gap across the whole org's shared workflow template
+- Added the rule that the more specific agent model assignment wins where categories overlap
+- Added a --router flag (and prompt) to generate react for @rapidrest/react's client-side navigation, building the routed apps' router entries in vite.config.ts
+- Added an AuthElevationRoute (/auth/elevation) to generate auth, without which no @RequiresElevation action (changing secrets, managing users, the admin restart/clear-cache endpoints) could ever be performed
+- Added @rapidrest/auth's SystemSettings model to the generated auth models
+- Added templates/templates.json, which declares the templates' version, the template engine they need and the @rapidrest majors they target
+- Added template resolution: the newest compatible templates release is downloaded, verified against its SHA-256 and cached in ~/.rapidrest/templates, with the cached copy used offline
+- Added a --templates flag (and RAPIDREST_TEMPLATES) to every command that renders templates, taking a templates version or a local templates directory or zip
+- Added upgrade --latest to move a project to the newest templates major, and recording the templates version applied in package.json
+- Added yarn release templates <bump> and a Templates workflow that publishes a templates release from its tag's green Build
+- Added a new datastore to test/config.ts as well as src/config.ts (in-memory sqlite for SQL, the test MongoDB for MongoDB), and only when generate model sets one up
+- Added a flag for every generate prompt so the commands can run unattended: --no-cache, --no-protect, --no-properties, --datastore-type and --[no-]update-docker/--[no-]update-k8s on model, --no-api and --no-protect on route, --no-router and --no-hydrate on react, and --no-service on react-page
+- Added --oidc-client-id, --oidc-credentials-from-env (leave client secrets empty in config.ts for the environment to supply) and --oidc-custom-* endpoint flags to generate auth
+
+### Changed
+- Document that a downstream package's release bump level follows its upstream dependency's, minor for minor, patch for patch and major for major, in NOTES
+- Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+- Publish a prerelease version to npm under the next tag, which npm requires, and a release under latest
+- Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>
+- Publish only from a release tag's own Build, and only once every Build of that commit has finished green
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Record the standing agent model assignments in the project notes
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Move the agent model assignments to the top of the project notes, keeping session history at the bottom
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Update the agent model assignments to JP's revised criteria: Sonnet for general code and review, Opus for architecture, planning, investigation, security and performance, Haiku for simple operations
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Updated the templates to @rapidrest/core 6.1, @rapidrest/service-core 2.5.1, @rapidrest/auth 2.0 and @rapidrest/react 2.3
+- Updated the README and project notes
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Releasing the templates separately from the CLI, as GitHub releases of this repository tagged templates-v<version>, so templates and their dependency versions can change without a CLI release
+- Keeping existing projects on compatible templates: inside a project, only templates from the major it was scaffolded with and matching its installed @rapidrest versions are used
+- Resolving template dependency ranges written as ^<major> to the newest matching release when scaffolding
+- Recording the templates version in a new project's package.json, with its @rapidrest/cli devDependency set to the CLI that scaffolded it
+- Updated the README with how templates are delivered and versioned
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Updated handlebars to 4.7.10, undici to 8.12.3 and the transitive brace-expansion, follow-redirects and undici 6 to versions without known high-severity advisories
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Updated pinned deps
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Fixed
+- Fixed issue with dot-prefixed files being excluded in templates during npm packaging
+- Fixed generate react-page --service writing a @ReactService path @rapidrest/react 2.x never registers, so the page got none of its service's props; the path is now the page's public URL under the app's mount path
+- Fixed generate auth copying the nested oidc-provider template into every project
+- Fixed generated projects' tests failing to start the server: the auth method, OIDC provider and React manifest settings are now added to test/config.ts as well as src/config.ts, with an in-memory test datastore for auth
+- Fixed the generated CORS allow-list being ignored: the config key is cors.origins, not cors.origin, and since service-core 2.5 it also drives the WebSocket Origin check
+- Fixed the release script's changelog range picking up a templates tag as the previous CLI release
+- Fixed CI failing with "corepack: not found" on Node 25 and later, which no longer bundle corepack: every workflow now installs it before enabling it
+- Fixed generated projects' GitHub and GitLab CI and Dockerfile failing the same way on the current node:lts images
+- Fixed CI running Yarn 1 against the Yarn 4 lockfile, which failed every Build at installing dependencies and stopped the validate job's audit from running: Yarn is now pinned with packageManager yarn@4.12.0
+- Fixed the CI test job: installing git for the release tests, and running the tests as the image's unprivileged node user, since embedded Postgres refuses to run as root
+- Fixed a project with a background job failing to build and test: the generated job test imported ./config instead of ../config and left its test bodies empty, which the project's lint rejects; it now tests the job's schedule, start(), run() and stop()
+- Fixed generate model --datastore with a name that isn't configured writing an empty, type-less datastore block the server can't start with: it now sets up a new datastore of that name, asking for its type or taking the new --datastore-type flag, and rejects names that aren't identifiers
+- Fixed generate model not offering to update the Docker and Helm files after setting up a project's first datastore
+- Fixed entries added to a nested config.ts block being indented one level too shallow and pushing the block's closing brace to column 0
+- Fixed generate model, route, job and react reporting the project directory instead of the generated file's path, and their --output-dir help describing a src/ directory
+- Fixed a custom OIDC provider's default scopes being written as the single scope "openid email profile"
+- Fixed generate auth's --sql-type example and its help still listing account elevation as not scaffolded
+
+### Removed
+- Removed the templates from the npm package
+
 ## [2.1.0] - 2026-09-15
 
 ### Changed
@@ -318,7 +388,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: rapidrest/cli/compare/v2.1.0...HEAD
+[Unreleased]: rapidrest/cli/compare/v3.0.0...HEAD
+[3.0.0]: rapidrest/cli/compare/v2.1.0...v3.0.0
 [2.1.0]: rapidrest/cli/compare/v2.0.0...v2.1.0
 [2.0.0]: rapidrest/cli/compare/v1.0.1...v2.0.0
 [1.0.1]: rapidrest/cli/compare/v1.0.0...v1.0.1
