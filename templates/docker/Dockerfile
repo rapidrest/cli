@@ -14,7 +14,7 @@ RUN echo Building as $NODE_ENV
 # Install any needed packages specified in requirements.txt
 RUN apt update && apt upgrade -y
 {{#if pkgMgr.yarn}}
-RUN corepack enable
+RUN npm install --global corepack && corepack enable
 RUN yarn install --immutable
 RUN yarn build
 {{else}}
@@ -46,7 +46,7 @@ RUN chmod +x /app/scripts/*.sh
 RUN apt update && apt upgrade -f -y && apt install curl -y
 RUN npm install --global nodemon
 {{#if pkgMgr.yarn}}
-RUN corepack enable
+RUN npm install --global corepack && corepack enable
 {{/if}}
 
 ARG NODE_ENV=production

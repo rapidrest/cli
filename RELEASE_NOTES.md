@@ -49,6 +49,7 @@
 * The CLI is published only from a release tag's own Build, and only once every Build of that commit has passed
 * Prereleases are published to npm under the `next` tag, and releases under `latest`
 * The validate job enables corepack, so its `yarn npm audit` actually runs
+* Every workflow installs corepack before enabling it, since Node 25 and later no longer bundle it
 * A new Templates workflow publishes a templates release from a `templates-v*` tag's green Build, and
   `yarn release templates <bump>` cuts one
 

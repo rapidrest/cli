@@ -11,7 +11,7 @@ default:
 .job_template: &job_configuration
     image: node:lts-buster
     before_script:
-        - corepack enable
+        - npm install --global corepack && corepack enable
 
 build:
     stage: build

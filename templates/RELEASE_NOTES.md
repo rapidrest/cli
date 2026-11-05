@@ -21,5 +21,7 @@ templates).
   public URL under the app's mount path.
 * Fixed a generated project's tests failing to start the server: auth method, OIDC provider and React manifest
   settings are now added to `test/config.ts` too.
+* Fixed the generated GitHub and GitLab CI and the Dockerfile failing on Node 25 and later (including the current
+  `node:lts` images), which no longer bundle corepack: they install it before enabling it.
 * Fixed the CORS allow-list being ignored (`cors.origins`, not `cors.origin`); since `@rapidrest/service-core` 2.5 it
   also decides which origins may open a WebSocket.
