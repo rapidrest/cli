@@ -2,6 +2,12 @@
 
 The templates are released on their own (tags `templates-v<version>`), separately from the CLI. See README.md.
 
+## Unreleased
+
+* Fixed a new SQLite or PostgreSQL project failing to install its dependencies with npm (`ERESOLVE`): the server
+  template asked for `better-sqlite3` 13, which `typeorm` 1.1 doesn't support. It now asks for 12, as `generate model`
+  already did.
+
 ## v1.1.0
 
 * A new project includes `.claude/settings.json`, which registers the RapidREST Claude Code plugin's marketplace

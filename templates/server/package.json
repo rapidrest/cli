@@ -41,7 +41,7 @@
 		"nconf": "^0.13",
 		"openapi3-ts": "^4",
 		{{#if features.postgresql}}"pg": "^8",{{/if}}
-		{{#if features.sqlite}}"better-sqlite3": "^13",{{/if}}
+		{{#if features.sqlite}}"better-sqlite3": "^12",{{/if}}
 		"prom-client": "^15",
 		"reflect-metadata": "^0.2",
 		{{#if features.redis}}"redis": "^6",{{/if}}
@@ -57,7 +57,7 @@
 		"@typescript-eslint/eslint-plugin": "^8",
 		"@typescript-eslint/parser": "^8",
 		"@vitest/coverage-v8": "^4",
-		{{#if features.postgresql}}{{#unless features.sqlite}}"better-sqlite3": "^13",{{/unless}}{{/if}}
+		{{#if features.postgresql}}{{#unless features.sqlite}}"better-sqlite3": "^12",{{/unless}}{{/if}}
 		"eslint": "^10",
 		"eslint-plugin-jsdoc": "^64",
 		"globals": "^17",
