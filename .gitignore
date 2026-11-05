@@ -6,7 +6,6 @@
 /tmp
 /node_modules
 oclif.manifest.json
-bin
 coverage
 package-lock.json
 pnpm-lock.yaml

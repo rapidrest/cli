@@ -1,5 +1,11 @@
 # Release Notes
 
+## Unreleased
+
+* Fixed publishing: the package's `rapidrest` and `rr` executables (`bin/`) were never committed, so a package
+  published by CI would have had none, and the publish job failed because npm ran the pack script with the runner's
+  Yarn 1. v3.0.0 was never published to npm because of this; this release is its contents, fixed
+
 ## v3.0.0
 
 ### Breaking

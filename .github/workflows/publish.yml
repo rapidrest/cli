@@ -92,12 +92,14 @@ jobs:
       - name: Install dependencies
         run: yarn install --frozen-lockfile
 
+      # What the prepack script does, run here under the pinned Yarn: inside `npm publish`, `yarn` resolves to the
+      # runner's global Yarn 1, which refuses this Yarn 4 project. npm publish below skips the scripts.
       - name: Build
-        run: yarn build
+        run: yarn build && yarn oclif manifest && yarn oclif readme
 
       - name: Publish to npm
         # A prerelease version (1.0.0-beta.N) must be published under an explicit dist-tag: npm refuses it otherwise, and it must not become `latest`.
         run: |
           version=$(node -p "require('./package.json').version")
           if [[ "$version" == *-* ]]; then tag=next; else tag=latest; fi
-          npm publish --access public --tag "$tag"
+          npm publish --access public --tag "$tag" --ignore-scripts
