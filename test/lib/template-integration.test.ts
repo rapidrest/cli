@@ -198,6 +198,66 @@ describe('generate model', () => {
       expect(content).toContain('BaseEntity');
     });
   });
+
+  describe('new datastore config patches', () => {
+    const configSource = `import nconf from "nconf";
+
+const conf = nconf.argv();
+
+conf.defaults({
+    datastores: {
+        mongo: {
+            type: "mongodb",
+            host: "localhost",
+        },
+    },
+});
+
+export default conf;
+`;
+
+    async function withProject(fn: (dir: string) => Promise<void>): Promise<void> {
+      await withTmpDir(async (dir) => {
+        await mkdir(join(dir, 'src'), { recursive: true });
+        await mkdir(join(dir, 'test'), { recursive: true });
+        await writeFile(join(dir, 'src', 'config.ts'), configSource, 'utf-8');
+        await writeFile(join(dir, 'test', 'config.ts'), configSource, 'utf-8');
+        await writeFile(join(dir, 'package.json'), '{ "name": "my-app" }\n', 'utf-8');
+        await fn(dir);
+      });
+    }
+
+    const read = (path: string): Promise<string> => import('fs/promises').then(fs => fs.readFile(path, 'utf-8'));
+
+    it('adds a typed datastore block to both src/config.ts and test/config.ts for a new SQL datastore', async () => {
+      await withProject(async (dir) => {
+        const ctx = { ...baseContext, datastore: 'orders', datastoreType: 'postgres', isPostgreSql: true, newDatastore: true };
+        await processTemplate(modelTemplateDir, dir, ctx, { projectDir: dir });
+        const src = await read(join(dir, 'src', 'config.ts'));
+        const test = await read(join(dir, 'test', 'config.ts'));
+        expect(src).toMatch(/orders: \{\s*type: "postgres"/);
+        // Tests run SQL datastores against in-memory sqlite, like the rest of test/config.ts.
+        expect(test).toMatch(/orders: \{[\s\S]*?type: "better-sqlite3"[\s\S]*?database: ":memory:"/);
+      });
+    });
+
+    it('adds the test MongoDB port to test/config.ts for a new MongoDB datastore', async () => {
+      await withProject(async (dir) => {
+        const ctx = { ...baseContext, datastore: 'events', datastoreType: 'mongodb', isMongoDb: true, newDatastore: true };
+        await processTemplate(modelTemplateDir, dir, ctx, { projectDir: dir });
+        expect(await read(join(dir, 'test', 'config.ts'))).toMatch(/events: \{\s*type: "mongodb",\s*host: "localhost",\s*port: 9999/);
+      });
+    });
+
+    it('leaves both configs alone when binding to an existing datastore', async () => {
+      await withProject(async (dir) => {
+        const ctx = { ...baseContext, datastore: 'mongo', datastoreType: 'mongodb', isMongoDb: true, newDatastore: false };
+        await processTemplate(modelTemplateDir, dir, ctx, { projectDir: dir });
+        expect(await read(join(dir, 'src', 'config.ts'))).toBe(configSource);
+        expect(await read(join(dir, 'test', 'config.ts'))).toBe(configSource);
+      });
+    });
+  });
 });
 
 // ─── job ──────────────────────────────────────────────────────────────────────
@@ -236,6 +296,18 @@ describe('generate job', () => {
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'test', 'jobs', 'MetricsCollector.test.ts'), 'utf-8'));
       expect(content).toContain('import MetricsCollector from "../../src/jobs/MetricsCollector.js"');
       expect(content).toContain('describe("Job:MetricsCollector Tests"');
+    });
+  });
+
+  it('imports test/config.ts from the test file and leaves no empty test bodies', async () => {
+    await withTmpDir(async (dir) => {
+      await processTemplate(jobTemplateDir, dir, baseContext, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'test', 'jobs', 'MetricsCollector.test.ts'), 'utf-8'));
+      // test/jobs/X.test.ts sits one level below test/config.ts.
+      expect(content).toContain('import config from "../config";');
+      // An empty arrow function body fails the generated project's typescript/no-empty-function lint.
+      expect(content).not.toMatch(/=>\s*\{\s*\}/);
+      expect(content).toContain('expect(job.schedule).toBe("* * * * *");');
     });
   });
 });

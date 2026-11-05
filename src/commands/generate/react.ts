@@ -152,11 +152,11 @@ export default class GenerateReact extends Command {
     force: Flags.boolean({ char: 'f', description: 'Overwrite existing files.' }),
     templates: templatesFlag,
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
-    hydrate: Flags.boolean({ description: 'Enable client-side hydration. Required for interactive apps.' }),
+    hydrate: Flags.boolean({ allowNo: true, description: 'Enable client-side hydration. Required for interactive apps. --no-hydrate disables it without prompting.' }),
     'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
     'output-dir': Flags.string({ description: 'Project directory to add React support to. Defaults to the current working directory.' }),
     path: Flags.string({ char: 'p', description: 'The base path the React application will route to' }),
-    router: Flags.boolean({ description: 'Enable client-side navigation between the app\'s pages. Implies --hydrate.' }),
+    router: Flags.boolean({ allowNo: true, description: 'Enable client-side navigation between the app\'s pages. Implies --hydrate. --no-router disables it without prompting.' }),
   };
 
   async run(): Promise<void> {
@@ -230,7 +230,7 @@ export default class GenerateReact extends Command {
       await writeFile(join(outputDir, 'tsconfig.client.json'), TSCONFIG_CLIENT_CONTENT, 'utf-8');
       await writeFile(join(outputDir, 'src', 'export.ts'), renderExportEntry(allApps, author, year), 'utf-8');
 
-      this.log(`\nReact app "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
+      this.log(`\nReact app "${args.name}" generated at: ${join(outputDir, 'apps', args.name)}`);
 
       if (!flags['no-install']) {
         await installIfPackageJsonChanged(cwd, packageJsonBefore, (m) => this.log(m), (m) => this.warn(m));

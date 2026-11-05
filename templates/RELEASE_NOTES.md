@@ -25,3 +25,9 @@ templates).
   `node:lts` images), which no longer bundle corepack: they install it before enabling it.
 * Fixed the CORS allow-list being ignored (`cors.origins`, not `cors.origin`); since `@rapidrest/service-core` 2.5 it
   also decides which origins may open a WebSocket.
+* Fixed a project with a background job failing to build and test: the job's test imported `./config` instead of
+  `../config` and left its test bodies empty, which the project's lint rejects. It now tests the job's schedule,
+  `start()`, `run()` and `stop()`.
+* `model` adds a new datastore to `test/config.ts` as well as `src/config.ts` (in-memory sqlite for SQL, the test
+  MongoDB for MongoDB), and only when the model sets one up (the `newDatastore` context value), never for an existing
+  one.

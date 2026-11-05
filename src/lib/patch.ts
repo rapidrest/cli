@@ -103,6 +103,19 @@ export function tsBlockInsert(
     throw new Error(`Malformed ${blockName ? `'${blockName}'` : 'root config'} block: no matching closing brace`);
   }
 
+  // Snippets are written for a block whose closing brace is unindented (entries at one level,
+  // their contents at two). When the closing brace sits on its own line, insert at the start of
+  // that line and shift every snippet line by the brace's indentation, so an entry added to a
+  // nested block (e.g. `datastores` inside `.defaults({...})`) lines up with its siblings and the
+  // closing brace keeps its own indentation.
+  const lineStart = source.lastIndexOf('\n', blockEnd - 1) + 1;
+  const braceIndent = source.slice(lineStart, blockEnd);
+  if (lineStart > 0 && /^[ \t]*$/.test(braceIndent)) {
+    const body = snippet.endsWith('\n') ? snippet : snippet + '\n';
+    const indented = body.replace(/^(?=.)/gm, braceIndent);
+    return source.slice(0, lineStart) + indented + source.slice(lineStart);
+  }
+
   return source.slice(0, blockEnd) + snippet + source.slice(blockEnd);
 }
 

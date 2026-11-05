@@ -8,7 +8,15 @@
       "strategy": "ts-block-insert",
       "insertInto": "datastores",
       "idempotencyKey": "{{datastore}}",
-      "condition": "datastore"
+      "condition": "newDatastore"
+    },
+    {
+      "template": "patches/config-datastore-test.ts.hbs",
+      "target": "test/config.ts",
+      "strategy": "ts-block-insert",
+      "insertInto": "datastores",
+      "idempotencyKey": "{{datastore}}",
+      "condition": "newDatastore"
     },
     {
       "template": "patches/package-mongodb.json",

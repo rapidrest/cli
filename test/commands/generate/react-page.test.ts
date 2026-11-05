@@ -165,6 +165,16 @@ describe('generate react-page', () => {
       expect(vi.mocked(confirm)).not.toHaveBeenCalled();
     });
 
+    it('--no-service skips the service confirm prompt', async () => {
+      vi.mocked(inputAuthor).mockResolvedValueOnce('Author');
+
+      await GenerateReactPage.run(['app', 'Dashboard', '--no-service'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.service).toBe(false);
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+    });
+
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(confirm).mockResolvedValueOnce(false);
 

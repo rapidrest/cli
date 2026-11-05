@@ -33,6 +33,27 @@ describe('tsBlockInsert', () => {
     expect(result.indexOf('postgres:')).toBeLessThan(result.indexOf('};'));
   });
 
+  it('indents a snippet to match a nested block and keeps the closing brace in place', () => {
+    const source = 'conf.defaults({\n    datastores: {\n        mongo: {\n            type: "mongodb",\n        },\n    },\n});\n';
+    const snippet = '    orders: {\n        type: "postgres",\n\n    },\n';
+    const result = tsBlockInsert(source, 'datastores', snippet, 'orders');
+    expect(result).toBe(
+      'conf.defaults({\n    datastores: {\n        mongo: {\n            type: "mongodb",\n        },\n' +
+      '        orders: {\n            type: "postgres",\n\n        },\n    },\n});\n',
+    );
+  });
+
+  it('adds a trailing newline to a snippet without one when inserting on its own line', () => {
+    const source = 'conf.defaults({\n    datastores: {\n    },\n});\n';
+    const result = tsBlockInsert(source, 'datastores', '    cache: {\n        type: "redis",\n    },', 'cache');
+    expect(result).toBe('conf.defaults({\n    datastores: {\n        cache: {\n            type: "redis",\n        },\n    },\n});\n');
+  });
+
+  it('inserts inline when the closing brace shares its line with other code', () => {
+    const result = tsBlockInsert('const x = { datastores: { a: 1, } };', 'datastores', ' b: 2,', 'b');
+    expect(result).toBe('const x = { datastores: { a: 1,  b: 2,} };');
+  });
+
   it('is a no-op when idempotencyKey already appears as a depth-1 property', () => {
     const snippet = '    mongo: {\n      type: "mongodb",\n    },\n';
     const result = tsBlockInsert(baseSource, 'datastores', snippet, 'mongo');

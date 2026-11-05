@@ -154,6 +154,29 @@ describe('generate react', () => {
       expect(vi.mocked(confirm)).not.toHaveBeenCalled();
     });
 
+    it('--no-router and --no-hydrate skip both confirm prompts', async () => {
+      vi.mocked(input).mockResolvedValueOnce('/app');
+
+      await GenerateReact.run(['app', '--no-router', '--no-hydrate'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.router).toBe(false);
+      expect(context.hydrate).toBe(false);
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+    });
+
+    it('--no-router still asks about hydration', async () => {
+      vi.mocked(input).mockResolvedValueOnce('/app');
+      vi.mocked(confirm).mockResolvedValueOnce(true); // hydrate
+
+      await GenerateReact.run(['app', '--no-router'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.router).toBe(false);
+      expect(context.hydrate).toBe(true);
+      expect(vi.mocked(confirm)).toHaveBeenCalledTimes(1);
+    });
+
     it('answering yes to the router prompt skips the hydrate prompt and implies hydrate', async () => {
       stubPrompts({ router: true, author: 'Author' });
       await GenerateReact.run(['app'], ROOT);

@@ -421,6 +421,20 @@ describe('generate route', () => {
       expect(vi.mocked(select)).toHaveBeenCalledTimes(1); // model only
     });
 
+    it('--no-api and --no-protect skip both confirm prompts', async () => {
+      await GenerateRoute.run(['OrderRoute', '-d', 'A desc', '--path', '/orders', '-a', 'A', '--no-model', '--no-api', '--no-protect'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.apiRoute).toBe(false);
+      expect(context.protect).toBe(false);
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+    });
+
+    it('--no-api cannot be combined with --api', async () => {
+      await expect(GenerateRoute.run(['OrderRoute', '--api', '1', '--no-api'], ROOT)).rejects.toThrow();
+    });
+
     it('--author skips inputAuthor entirely', async () => {
       vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('/api/v1/x');
       vi.mocked(confirm).mockResolvedValueOnce(false); // isApi

@@ -18,7 +18,7 @@ export default class GenerateJob extends Command {
 
   static override examples = [
     '<%= config.bin %> <%= command.id %> Job',
-    '<%= config.bin %> <%= command.id %> Job --output-dir src/jobs',
+    '<%= config.bin %> <%= command.id %> Job --output-dir ../my-api',
   ];
 
   static override flags = {
@@ -27,7 +27,7 @@ export default class GenerateJob extends Command {
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     description: Flags.string({ char: 'd', description: "The short description of the job."}),
     schedule: Flags.string({char: 's', description: "The crontab-style schedule that the job will execute with (e.g. `* * * * *` runs every second)."}),
-    'output-dir': Flags.string({ char: 'o', description: 'Directory to write the generated job into. Defaults to ./src/jobs.' }),
+    'output-dir': Flags.string({ char: 'o', description: 'Project directory to write the job into (under src/jobs and test/jobs). Defaults to the current directory.' }),
   };
 
   async run(): Promise<void> {
@@ -64,7 +64,7 @@ export default class GenerateJob extends Command {
 
     try {
       await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
-      this.log(`\nJob "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
+      this.log(`\nJob "${args.name}" generated at: ${join(outputDir, 'src', 'jobs', args.name + '.ts')}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

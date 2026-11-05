@@ -40,7 +40,7 @@ export default class GenerateReactPage extends Command {
     templates: templatesFlag,
     author: Flags.string({ char: 'a', description: 'The author to attribute the resulting source code to.' }),
     'output-dir': Flags.string({ description: 'Project directory to add React support to. Defaults to the current working directory.' }),
-    service: Flags.boolean({ char: 's', description: 'Creates a service class for performing server-side data retrieval for the page.' }),
+    service: Flags.boolean({ char: 's', allowNo: true, description: 'Creates a service class for performing server-side data retrieval for the page. --no-service skips it without prompting.' }),
   };
 
   async run(): Promise<void> {

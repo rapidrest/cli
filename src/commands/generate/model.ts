@@ -91,6 +91,14 @@ function parsePropertyFlag(raw: string, existing: PropertyDefinition[], error: (
 // oclif's string flags always consume the next token as their value, so a bare
 // `--cache` at the end of argv or immediately followed by another flag would otherwise
 // throw "Flag --cache expects a value" — this injects the default token in that case.
+const DATASTORE_TYPES = ['mongodb', 'postgres', 'sqlite'] as const;
+const DATASTORE_NAME = /^[A-Za-z_$][\w$]*$/;
+
+/** Maps a configured datastore's TypeORM type back to the --datastore-type value that creates it. */
+function normalizeDatastoreType(type: string): string {
+  return type === 'better-sqlite3' ? 'sqlite' : type;
+}
+
 function resolveCacheArgv(argv: string[]): string[] {
   const result = [...argv];
   for (let i = 0; i < result.length; i++) {
@@ -123,8 +131,13 @@ export default class GenerateModel extends Command {
     cache: Flags.string({ char: 'c', description: "Set the cache TTL of this model. If passed with no value, defaults to 60." }),
     datastore: Flags.string({ aliases: ['ds'], description: "The name of the datastore that the model will be bound to."}),
     description: Flags.string({ char: 'd', description: "The short description of the model."}),
-    'output-dir': Flags.string({ char: 'o', description: 'Directory to write the generated model into. Defaults to ./src/models.' }),
-    protect: Flags.boolean({ char: 'p', description: "Enable RBAC-based protection of this model."}),
+    'output-dir': Flags.string({ char: 'o', description: 'Project directory to write the model into (under src/models). Defaults to the current directory.' }),
+    'datastore-type': Flags.string({ options: [...DATASTORE_TYPES], description: "The type of the new datastore to set up when --datastore names one that isn't configured yet. Without --datastore, sets up (or reuses) a datastore named after the type." }),
+    'no-cache': Flags.boolean({ exclusive: ['cache'], description: "Don't enable caching for this model (skips the prompt)." }),
+    protect: Flags.boolean({ char: 'p', allowNo: true, description: "Enable RBAC-based protection of this model. --no-protect disables it without prompting."}),
+    'no-properties': Flags.boolean({ exclusive: ['property'], description: 'Add no properties beyond the inherited ones (skips the property prompts).' }),
+    'update-docker': Flags.boolean({ allowNo: true, description: 'When a new datastore is set up and the project has Docker support, whether to regenerate the Docker files (overwriting them). Prompted for if omitted.' }),
+    'update-k8s': Flags.boolean({ allowNo: true, description: 'When a new datastore is set up and the project has Helm support, whether to regenerate the Helm chart (overwriting it). Prompted for if omitted.' }),
     property: Flags.string({ description: 'Add a typed property to the model, as name:type (e.g. quantity:number). Append ? to the type to make it optional (e.g. bio:string?). Repeatable.', multiple: true }),
     'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
   };
@@ -151,9 +164,44 @@ export default class GenerateModel extends Command {
     let datastoreType: string;
     let newDatastore: boolean = false;
 
+    const selectDatastoreType = async (message: string): Promise<string> =>
+      flags['datastore-type'] ?? await select<string>({
+        message,
+        choices: [
+          { name: 'MongoDB', value: 'mongodb' },
+          { name: 'PostgreSQL', value: 'postgres' },
+          { name: 'sqlite', value: 'sqlite' },
+        ],
+        default: 'mongodb',
+      });
+
     if (flags.datastore !== undefined) {
       datastore = flags.datastore;
-      datastoreType = configured.find((d) => d.name === flags.datastore)?.type ?? '';
+      if (!DATASTORE_NAME.test(datastore)) {
+        this.error(`Invalid --datastore "${datastore}". A datastore name must be a valid identifier (e.g. mongo, orders).`);
+      }
+      const existing = configured.find((d) => d.name === datastore);
+      if (existing) {
+        datastoreType = existing.type;
+        if (flags['datastore-type'] !== undefined && normalizeDatastoreType(existing.type) !== flags['datastore-type']) {
+          this.error(`The "${datastore}" datastore is already configured as type "${existing.type}", not "${flags['datastore-type']}".`);
+        }
+      } else {
+        // An unknown name sets up a new datastore of that name, rather than binding the model to a
+        // datastore that doesn't exist (an empty, type-less config block the server can't start with).
+        const known = selectable.map((d) => d.name);
+        datastoreType = await selectDatastoreType(
+          `No datastore named "${datastore}" is configured${known.length > 0 ? ` (configured: ${known.join(', ')})` : ''}. ` +
+          'Select the database type to create it as:');
+        newDatastore = true;
+      }
+    } else if (flags['datastore-type'] !== undefined) {
+      // A new datastore named after its type, as the interactive flow below creates, unless one by
+      // that name already exists.
+      datastore = flags['datastore-type'];
+      const existing = configured.find((d) => d.name === datastore);
+      datastoreType = existing?.type ?? flags['datastore-type'];
+      newDatastore = !existing;
     } else if (selectable.length > 0) {
       const selectedName = await select<string>({
         message: 'Select the datastore for this model:',
@@ -164,17 +212,9 @@ export default class GenerateModel extends Command {
         ],
       });
       if (selectedName === '__new__') {
-        datastoreType = await select<string>({
-          message: 'Select database type:',
-          choices: [
-            { name: 'MongoDB', value: 'mongodb' },
-            { name: 'PostgreSQL', value: 'postgres' },
-            { name: 'sqlite', value: 'sqlite' },
-          ],
-          default: 'mongodb',
-        });
+        datastoreType = await selectDatastoreType('Select database type:');
         datastore = datastoreType;
-        newDatastore = true;
+        newDatastore = !configured.some((d) => d.name === datastore);
       } else {
         datastore = selectedName;
         datastoreType = configured.find((d) => d.name === selectedName)?.type ?? '';
@@ -185,16 +225,9 @@ export default class GenerateModel extends Command {
         default: true
       });
       if (setupNew) {
-        datastoreType = await select<string>({
-          message: 'Select database type:',
-          choices: [
-            { name: 'MongoDB', value: 'mongodb' },
-            { name: 'PostgreSQL', value: 'postgres' },
-            { name: 'sqlite', value: 'sqlite' },
-          ],
-          default: 'mongodb',
-        });
+        datastoreType = await selectDatastoreType('Select database type:');
         datastore = datastoreType;
+        newDatastore = true;
       } else {
         datastore = '';
         datastoreType = '';
@@ -202,7 +235,7 @@ export default class GenerateModel extends Command {
     }
 
     let cache = flags.cache ?? '';
-    if (!cache && await confirm({ message: "Enable caching for this model?" })) {
+    if (!cache && !flags['no-cache'] && await confirm({ message: "Enable caching for this model?" })) {
       cache = await input({
         message: 'Enter a cache TTL for this model:',
         default: '60',
@@ -216,8 +249,8 @@ export default class GenerateModel extends Command {
     });
 
     const properties: PropertyDefinition[] = [];
-    if (flags.property) {
-      for (const raw of flags.property) {
+    if (flags.property || flags['no-properties']) {
+      for (const raw of flags.property ?? []) {
         properties.push(parsePropertyFlag(raw, properties, (msg) => this.error(msg)));
       }
     } else {
@@ -278,6 +311,8 @@ export default class GenerateModel extends Command {
       isPostgreSql: datastoreType === 'postgres',
       isSqlite:     datastoreType === 'sqlite' || datastoreType === 'better-sqlite3',
       isRedis:      datastoreType === 'redis',
+      // Only a datastore this command sets up is added to src/config.ts and test/config.ts.
+      newDatastore,
     };
 
     const templates = await useTemplates(this, process.cwd(), 'project', flags.templates);
@@ -286,11 +321,11 @@ export default class GenerateModel extends Command {
 
     try {
       await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
-      this.log(`\nModel "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
+      this.log(`\nModel "${args.name}" generated at: ${join(outputDir, 'src', 'models', args.name + '.ts')}`);
 
       if (newDatastore) {
         if (existsSync(join(outputDir, "docker-compose.yml"))) {
-          const answer = await confirm({
+          const answer = flags['update-docker'] ?? await confirm({
             message: "Update docker files? (this will overwrite all files)",
             default: true
           });
@@ -303,7 +338,7 @@ export default class GenerateModel extends Command {
         }
 
         if (existsSync(join(outputDir, "helm", "Chart.yaml"))) {
-          const answer = await confirm({
+          const answer = flags['update-k8s'] ?? await confirm({
             message: "Update Kubernetes (Helm) files? (this will overwrite all files)",
             default: true
           });

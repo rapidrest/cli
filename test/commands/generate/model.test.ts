@@ -360,16 +360,90 @@ describe('generate model', () => {
       expect(vi.mocked(select)).not.toHaveBeenCalled();
     });
 
-    it('--datastore leaves datastoreType empty when the name is not in the project config', async () => {
-      vi.mocked(input).mockResolvedValueOnce('A desc').mockResolvedValueOnce('60'); // description, cache
-      vi.mocked(confirm)
-        .mockResolvedValueOnce(true)   // enable caching?
-        .mockResolvedValueOnce(false); // protect
-
-      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--datastore', 'unknown'], ROOT);
+    it('--datastore with an existing name binds to it without setting up a new datastore', async () => {
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '--datastore', 'mongo',
+        '--no-cache', '--no-protect', '--no-properties'], ROOT);
 
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
-      expect(context.datastoreType).toBe('');
+      expect(context.datastore).toBe('mongo');
+      expect(context.datastoreType).toBe('mongodb');
+      expect(context.newDatastore).toBe(false);
+    });
+
+    it('--datastore with an unknown name sets up a new datastore of that name, prompting for its type', async () => {
+      vi.mocked(select).mockResolvedValueOnce('postgres'); // db type
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '--datastore', 'orders',
+        '--no-cache', '--no-protect', '--no-properties'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.datastore).toBe('orders');
+      expect(context.datastoreType).toBe('postgres');
+      expect(context.isPostgreSql).toBe(true);
+      expect(context.newDatastore).toBe(true);
+      expect(vi.mocked(select).mock.calls[0][0].message).toContain('No datastore named "orders"');
+    });
+
+    it('--datastore with an unknown name and --datastore-type runs without prompting', async () => {
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '-a', 'A', '--datastore', 'orders',
+        '--datastore-type', 'sqlite', '--no-cache', '--no-protect', '--no-properties'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.datastore).toBe('orders');
+      expect(context.isSqlite).toBe(true);
+      expect(context.newDatastore).toBe(true);
+      expect(vi.mocked(select)).not.toHaveBeenCalled();
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+    });
+
+    it('--datastore-type alone sets up a datastore named after the type', async () => {
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '--datastore-type', 'postgres',
+        '--no-cache', '--no-protect', '--no-properties'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.datastore).toBe('postgres');
+      expect(context.newDatastore).toBe(true);
+    });
+
+    it('--datastore-type alone reuses a configured datastore named after the type', async () => {
+      vi.mocked(readProjectDatastores).mockResolvedValue([...DEFAULT_DATASTORES, { name: 'sqlite', type: 'better-sqlite3' }]);
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '--datastore-type', 'sqlite',
+        '--no-cache', '--no-protect', '--no-properties'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.datastore).toBe('sqlite');
+      expect(context.datastoreType).toBe('better-sqlite3');
+      expect(context.newDatastore).toBe(false);
+    });
+
+    it('--datastore-type that contradicts an existing datastore errors', async () => {
+      await expect(GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '--datastore', 'mongo',
+        '--datastore-type', 'postgres'], ROOT)).rejects.toThrow(/already configured as type "mongodb"/);
+      expect(processTemplate).not.toHaveBeenCalled();
+    });
+
+    it('--datastore that is not an identifier errors', async () => {
+      await expect(GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '--datastore', 'my-db'], ROOT))
+        .rejects.toThrow(/valid identifier/);
+      expect(processTemplate).not.toHaveBeenCalled();
+    });
+
+    it('--no-cache, --no-protect and --no-properties skip their prompts', async () => {
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '-a', 'A', '--datastore', 'mongo',
+        '--no-cache', '--no-protect', '--no-properties'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.cache).toBe('');
+      expect(context.protect).toBe(false);
+      expect(context.properties).toEqual([]);
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+    });
+
+    it('--no-cache cannot be combined with --cache', async () => {
+      await expect(GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '--cache', '30', '--no-cache'], ROOT))
+        .rejects.toThrow();
     });
 
     it('--description skips the description input prompt', async () => {
@@ -604,6 +678,30 @@ describe('generate model', () => {
 
       expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
       expect((GenerateHelm as any).run).toHaveBeenCalledOnce();
+    });
+
+    it('--update-docker and --no-update-k8s answer the update prompts', async () => {
+      vi.mocked(existsSync).mockReturnValue(true);
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '-a', 'A', '--datastore-type', 'mongodb',
+        '--no-cache', '--no-protect', '--no-properties', '--update-docker', '--no-update-k8s'], ROOT);
+
+      expect(vi.mocked(confirm)).not.toHaveBeenCalled();
+      expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
+      expect((GenerateHelm as any).run).not.toHaveBeenCalled();
+    });
+
+    it('offers to update docker after setting up the first datastore of a project with none', async () => {
+      vi.mocked(readProjectDatastores).mockResolvedValue([]);
+      vi.mocked(existsSync).mockImplementation((p) => String(p).endsWith('docker-compose.yml'));
+      vi.mocked(confirm)
+        .mockResolvedValueOnce(true)  // set up a new database?
+        .mockResolvedValueOnce(true); // update docker?
+      vi.mocked(select).mockResolvedValueOnce('mongodb');
+
+      await GenerateModel.run(['Widget', '--output-dir', '/tmp/m', '-d', 'A desc', '--no-cache', '--no-protect', '--no-properties'], ROOT);
+
+      expect((GenerateDocker as any).run).toHaveBeenCalledOnce();
     });
   });
 

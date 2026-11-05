@@ -31,6 +31,17 @@
   user and OIDC routes use
 * Templates `1.0.0`: `@rapidrest/core` 6.1, `@rapidrest/service-core` 2.5, `@rapidrest/auth` 2.0 and
   `@rapidrest/react` 2.3
+* Every `generate` prompt can now be answered by a flag, so the commands can run unattended (in scripts, CI, or by an
+  agent without a terminal):
+  * `generate model`: `--no-cache`, `--no-protect`, `--no-properties`, `--datastore-type mongodb|postgres|sqlite` for
+    a new datastore, and `--update-docker`/`--no-update-docker` and `--update-k8s`/`--no-update-k8s` for regenerating
+    the deployment files after one is added
+  * `generate route`: `--no-api` and `--no-protect`
+  * `generate react`: `--no-router` and `--no-hydrate`; `generate react-page`: `--no-service`
+  * `generate auth`: `--oidc-client-id <provider>=<id>`, `--oidc-credentials-from-env` (leave the client secrets, and
+    any client IDs not given, empty in `config.ts`, to be supplied through the environment instead of typed in), and
+    `--oidc-custom-authorization-url`, `-token-url`, `-profile-url`, `-protocol`, `-issuer`, `-jwks-uri` and `-scope`
+    for a custom provider
 
 ### Fixed
 
@@ -43,6 +54,24 @@
 * The generated CORS allow-list was ignored, allowing every origin: the config key is `cors.origins`, not
   `cors.origin`. Since `@rapidrest/service-core` 2.5 the same list also decides which origins may open a WebSocket
 * Generated projects were missing `.gitignore` and `.npmignore`, which npm packaging dropped from the templates
+* A project with a background job failed to build and test: the generated job test imported `./config` instead of
+  `../config`, and its empty test bodies failed the project's lint. The test now exercises the job's schedule, `start()`,
+  `run()` and `stop()`
+* `generate model --datastore <name>` with a name that isn't configured bound the model to an empty, type-less
+  datastore block in `src/config.ts` (and none in `test/config.ts`), so the server and every test failed to start. It
+  now sets up a new datastore of that name, asking for its type (or taking `--datastore-type`), with its drivers, and
+  adds it to `test/config.ts` too (in-memory sqlite for SQL, the test MongoDB for MongoDB). A datastore name that isn't
+  a valid identifier is rejected
+* `generate model` didn't offer to update the Docker and Helm files after setting up a project's first datastore
+* Entries added to a nested `config.ts` block (a new datastore, auth or React settings) were indented one level too
+  shallow, and pushed the block's closing brace to the start of the line
+* `generate model`, `route`, `job` and `react` reported the wrong path for the generated file (the project directory
+  instead of `src/models/`, `src/routes/`, `src/jobs/` or `apps/`), and their `--output-dir` help described a
+  `src/...` directory when it takes the project directory
+* A custom OIDC provider's default scopes (`openid email profile`) were written as one scope, since only commas
+  separated scopes. Spaces now do too
+* `generate auth`'s examples used `--sql-type sqlite`, which it rejects (`better-sqlite3`), and its help still listed
+  account elevation as not scaffolded
 
 ### CI
 

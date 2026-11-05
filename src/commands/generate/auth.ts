@@ -97,31 +97,74 @@ interface OIDCProviderContext {
   comment?: string;
 }
 
-async function promptOIDCProvider(providerKey: string): Promise<OIDCProviderContext> {
+/** What the flags already settle about the OIDC providers; anything left undefined is prompted for. */
+export interface OIDCFlagAnswers {
+  /** provider key -> client ID, from --oidc-client-id. */
+  clientIDs: Record<string, string>;
+  /** --oidc-credentials-from-env: leave credentials not given by flags empty instead of prompting. */
+  credentialsFromEnv: boolean;
+  custom: {
+    authorizationURL?: string;
+    tokenURL?: string;
+    profileURL?: string;
+    protocol?: 'openid' | 'oauth2';
+    issuer?: string;
+    jwksURI?: string;
+    scope?: string[];
+  };
+}
+
+/** Parses the repeatable `--oidc-client-id <provider>=<id>` flag values. */
+export function parseOIDCClientIDs(values: string[] | undefined, error: (msg: string) => never): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const value of values ?? []) {
+    const eq = value.indexOf('=');
+    const provider = eq > 0 ? value.slice(0, eq) : '';
+    if (!OIDC_PROVIDERS.includes(provider) || eq === value.length - 1) {
+      error(`Invalid --oidc-client-id "${value}". Expected <provider>=<client id>, with provider one of: ${OIDC_PROVIDERS.join(', ')}`);
+    }
+    result[provider] = value.slice(eq + 1);
+  }
+  return result;
+}
+
+async function promptOIDCProvider(providerKey: string, answers: OIDCFlagAnswers): Promise<OIDCProviderContext> {
   const preset = OIDC_PRESETS[providerKey];
   const label = preset?.label ?? 'Custom';
 
-  const clientID = await input({ message: `${label} OIDC Client ID:`, required: true });
-  const clientSecret = await password({ message: `${label} OIDC Client Secret:`, mask: '*' });
+  const clientID = answers.clientIDs[providerKey]
+    ?? (answers.credentialsFromEnv ? '' : await input({ message: `${label} OIDC Client ID:`, required: true }));
+  const clientSecret = answers.credentialsFromEnv
+    ? ''
+    : await password({ message: `${label} OIDC Client Secret:`, mask: '*' });
 
   const name = `oidc_${providerKey}`;
   const envKey = name.toUpperCase();
   const redirectURI = `http://localhost:3000/auth/oidc/${providerKey}/callback`;
 
   if (providerKey === 'custom') {
-    const authorizationURL = await input({ message: 'Authorization URL:', required: true });
-    const tokenURL = await input({ message: 'Token URL:', required: true });
-    const profileURL = await input({ message: 'Profile URL (leave blank if using only an id_token):', required: false });
-    const protocol = await select<'openid' | 'oauth2'>({
+    const flagged = answers.custom;
+    // Once any --oidc-custom-* flag is given, the optional settings it leaves out take their
+    // defaults rather than being prompted for, so a fully flagged run never stops at a prompt.
+    const anyFlagged = Object.values(flagged).some((v) => v !== undefined);
+    const optional = async (value: string | undefined, message: string): Promise<string> =>
+      value ?? (anyFlagged ? '' : await input({ message, required: false }));
+
+    const authorizationURL = flagged.authorizationURL ?? await input({ message: 'Authorization URL:', required: true });
+    const tokenURL = flagged.tokenURL ?? await input({ message: 'Token URL:', required: true });
+    const profileURL = await optional(flagged.profileURL, 'Profile URL (leave blank if using only an id_token):');
+    const protocol = flagged.protocol ?? (anyFlagged ? 'openid' : await select<'openid' | 'oauth2'>({
       message: 'Protocol:',
       choices: [
         { name: 'OpenID Connect', value: 'openid' },
         { name: 'OAuth 2.0', value: 'oauth2' },
       ],
-    });
-    const issuer = protocol === 'openid' ? await input({ message: 'Issuer (expected "iss" claim):', required: false }) : '';
-    const jwksURI = protocol === 'openid' ? await input({ message: 'JWKS URI:', required: false }) : '';
-    const scopeInput = await input({ message: 'Scopes (comma-separated):', default: 'openid email profile', required: false });
+    }));
+    const issuer = protocol === 'openid' ? await optional(flagged.issuer, 'Issuer (expected "iss" claim):') : '';
+    const jwksURI = protocol === 'openid' ? await optional(flagged.jwksURI, 'JWKS URI:') : '';
+    const scopeInput = flagged.scope?.join(',') ?? (anyFlagged
+      ? 'openid email profile'
+      : await input({ message: 'Scopes (comma-separated):', default: 'openid email profile', required: false }));
 
     return {
       providerKey,
@@ -136,7 +179,9 @@ async function promptOIDCProvider(providerKey: string): Promise<OIDCProviderCont
       profileURL: profileURL || undefined,
       issuer: issuer || undefined,
       jwksURI: jwksURI || undefined,
-      scope: scopeInput.split(',').map((s) => s.trim()).filter(Boolean),
+      // Scopes are space-separated in OAuth (RFC 6749 3.3) and the prompt asks for comma-separated,
+      // so either separator, as in the 'openid email profile' default, yields one entry per scope.
+      scope: scopeInput.split(/[\s,]+/).filter(Boolean),
       clientID,
       clientSecret,
     };
@@ -172,16 +217,17 @@ export default class GenerateAuth extends Command {
     'Facebook, and Microsoft, or a custom provider).',
     '',
     'Out of scope for this command (all real, working parts of @rapidrest/auth, just not scaffolded',
-    'here): session refresh, account elevation, auth-method discovery, and direct Profile/Account/',
+    'here): session refresh, auth-method discovery, and direct Profile/Account/',
     'Alias management routes. Add those by hand, following the same pattern as the routes this',
     'command generates.',
   ].join('\n');
 
   static override examples = [
     '<%= config.bin %> <%= command.id %>',
-    '<%= config.bin %> <%= command.id %> --datastore-type sql --sql-type sqlite',
+    '<%= config.bin %> <%= command.id %> --datastore-type sql --sql-type better-sqlite3',
     '<%= config.bin %> <%= command.id %> --datastore-type mongo --default-accounts',
     '<%= config.bin %> <%= command.id %> --method basic --method mfa --method oidc --oidc-provider google --oidc-provider apple',
+    '<%= config.bin %> <%= command.id %> --method oidc --oidc-provider google --oidc-client-id google=1234.apps.googleusercontent.com --oidc-credentials-from-env',
   ];
 
   static override flags = {
@@ -194,6 +240,15 @@ export default class GenerateAuth extends Command {
     'default-accounts': Flags.boolean({ description: 'Also provision a default admin account the first time the server boots against an empty user table.' }),
     method: Flags.string({ multiple: true, description: `Which authentication method(s) to enable. One of: ${AUTH_METHODS.join(', ')}. Repeatable.` }),
     'oidc-provider': Flags.string({ multiple: true, description: `When "oidc" is among --method, which third-party OIDC/OAuth provider(s) to configure. One of: ${OIDC_PROVIDERS.join(', ')}. Repeatable.` }),
+    'oidc-client-id': Flags.string({ multiple: true, description: 'An OIDC provider\'s client ID, as <provider>=<client id> (e.g. google=1234.apps.googleusercontent.com). Repeatable.' }),
+    'oidc-credentials-from-env': Flags.boolean({ description: 'Don\'t prompt for OIDC client secrets (or client IDs not given by --oidc-client-id): leave them empty in config.ts, to be supplied through the environment (e.g. AUTH__OIDC_GOOGLE__CLIENTSECRET).' }),
+    'oidc-custom-authorization-url': Flags.string({ description: 'With --oidc-provider custom, the provider\'s authorization URL.' }),
+    'oidc-custom-token-url': Flags.string({ description: 'With --oidc-provider custom, the provider\'s token URL.' }),
+    'oidc-custom-profile-url': Flags.string({ description: 'With --oidc-provider custom, the provider\'s profile URL (omit when using only an id_token).' }),
+    'oidc-custom-protocol': Flags.string({ options: ['openid', 'oauth2'], description: 'With --oidc-provider custom, the protocol: openid (OpenID Connect, the default) or oauth2.' }),
+    'oidc-custom-issuer': Flags.string({ description: 'With --oidc-provider custom and openid, the expected "iss" claim.' }),
+    'oidc-custom-jwks-uri': Flags.string({ description: 'With --oidc-provider custom and openid, the JWKS URI.' }),
+    'oidc-custom-scope': Flags.string({ multiple: true, description: 'With --oidc-provider custom, a scope to request (default: openid, email, profile). Repeatable.' }),
     'no-install': Flags.boolean({ description: 'Skip running the package manager install after generating.' }),
   };
 
@@ -296,8 +351,21 @@ export default class GenerateAuth extends Command {
         });
       }
 
+      const oidcAnswers: OIDCFlagAnswers = {
+        clientIDs: parseOIDCClientIDs(flags['oidc-client-id'], (msg) => this.error(msg)),
+        credentialsFromEnv: flags['oidc-credentials-from-env'] ?? false,
+        custom: {
+          authorizationURL: flags['oidc-custom-authorization-url'],
+          tokenURL: flags['oidc-custom-token-url'],
+          profileURL: flags['oidc-custom-profile-url'],
+          protocol: flags['oidc-custom-protocol'] as 'openid' | 'oauth2' | undefined,
+          issuer: flags['oidc-custom-issuer'],
+          jwksURI: flags['oidc-custom-jwks-uri'],
+          scope: flags['oidc-custom-scope'],
+        },
+      };
       for (const providerKey of oidcProviderKeys) {
-        oidcProviderContexts.push(await promptOIDCProvider(providerKey));
+        oidcProviderContexts.push(await promptOIDCProvider(providerKey, oidcAnswers));
       }
     }
 

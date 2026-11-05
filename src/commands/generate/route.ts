@@ -25,7 +25,7 @@ export default class GenerateRoute extends Command {
 
   static override examples = [
     '<%= config.bin %> <%= command.id %> ProductRoute',
-    '<%= config.bin %> <%= command.id %> ProductRoute --output-dir src/routes --no-test',
+    '<%= config.bin %> <%= command.id %> ProductRoute --output-dir ../my-api --no-test',
   ];
 
   static override flags = {
@@ -36,9 +36,10 @@ export default class GenerateRoute extends Command {
     description: Flags.string({ char: 'd', description: "The short description of the route."}),
     model: Flags.string({ char: 'm', description: "The name of the model class this route will serve data for (will extend ModelRoute)."}),
     'no-model': Flags.boolean({ description: 'Skip all prompts concerning associating a model class.' }),
-    'output-dir': Flags.string({ description: 'Directory to write the generated route into. Defaults to ./src/routes.' }),
+    'output-dir': Flags.string({ description: 'Project directory to write the route into (under src/routes and test/routes). Defaults to the current directory.' }),
     path: Flags.string({ description: 'The base path of the route (e.g. /api/v1/products).' }),
-    protect: Flags.boolean({ char: 'p', description: "Enable RBAC-based protection of this route."}),
+    protect: Flags.boolean({ char: 'p', allowNo: true, description: "Enable RBAC-based protection of this route. --no-protect disables it without prompting."}),
+    'no-api': Flags.boolean({ exclusive: ['api'], description: 'Use @Route rather than @ApiRoute, without prompting.' }),
   };
 
   async run(): Promise<void> {
@@ -60,7 +61,7 @@ export default class GenerateRoute extends Command {
     });
 
     let api = flags.api ?? undefined;
-    if (!api && await confirm({ message: "Is this an API route?" })) {
+    if (!api && !flags['no-api'] && await confirm({ message: "Is this an API route?" })) {
       api = await input({
         message: 'Enter the API version (enter blank for no version prefix):',
         default: '1',
@@ -159,7 +160,7 @@ export default class GenerateRoute extends Command {
 
     try {
       await renderTemplate(this, templateDir, outputDir, context, { force: flags.force, projectDir: process.cwd() });
-      this.log(`\nRoute "${args.name}" generated at: ${join(outputDir, args.name + '.ts')}`);
+      this.log(`\nRoute "${args.name}" generated at: ${join(outputDir, 'src', 'routes', args.name + '.ts')}`);
     } catch (err) {
       this.error(err instanceof Error ? err.message : String(err));
     }

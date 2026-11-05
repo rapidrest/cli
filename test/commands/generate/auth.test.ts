@@ -292,6 +292,88 @@ describe('generate auth', () => {
       expect(vi.mocked(processTemplate)).toHaveBeenCalledTimes(2); // main template + one provider
     });
 
+    it('--oidc-client-id and --oidc-credentials-from-env skip the credential prompts', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc',
+          '--oidc-provider', 'google', '--oidc-provider', 'apple',
+          '--oidc-client-id', 'google=gid.apps.googleusercontent.com', '--oidc-credentials-from-env'],
+        ROOT,
+      );
+
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      expect(vi.mocked(password)).not.toHaveBeenCalled();
+      const [, , google] = vi.mocked(processTemplate).mock.calls[1];
+      const [, , apple] = vi.mocked(processTemplate).mock.calls[2];
+      expect(google).toMatchObject({ clientID: 'gid.apps.googleusercontent.com', clientSecret: '' });
+      expect(apple).toMatchObject({ clientID: '', clientSecret: '' });
+    });
+
+    it('--oidc-client-id alone still prompts for the client secret only', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc',
+          '--oidc-provider', 'google', '--oidc-client-id', 'google=gid'],
+        ROOT,
+      );
+
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      expect(vi.mocked(password)).toHaveBeenCalledTimes(1);
+      const [, , google] = vi.mocked(processTemplate).mock.calls[1];
+      expect(google).toMatchObject({ clientID: 'gid', clientSecret: 'client-secret-value' });
+    });
+
+    it('rejects a malformed --oidc-client-id', async () => {
+      await expect(
+        GenerateAuth.run(
+          ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc',
+            '--oidc-provider', 'google', '--oidc-client-id', 'github=x'],
+          ROOT,
+        ),
+      ).rejects.toThrow(/Invalid --oidc-client-id "github=x"/);
+    });
+
+    it('--oidc-custom-* flags configure a custom provider without prompting', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc',
+          '--oidc-provider', 'custom', '--oidc-credentials-from-env',
+          '--oidc-custom-authorization-url', 'https://idp.example.com/authorize',
+          '--oidc-custom-token-url', 'https://idp.example.com/token',
+          '--oidc-custom-issuer', 'https://idp.example.com',
+          '--oidc-custom-jwks-uri', 'https://idp.example.com/jwks',
+          '--oidc-custom-scope', 'openid', '--oidc-custom-scope', 'email'],
+        ROOT,
+      );
+
+      expect(vi.mocked(input)).not.toHaveBeenCalled();
+      expect(vi.mocked(select)).not.toHaveBeenCalled();
+      const [, , custom] = vi.mocked(processTemplate).mock.calls[1];
+      expect(custom).toMatchObject({
+        providerKey: 'custom',
+        protocol: 'openid',
+        authorizationURL: 'https://idp.example.com/authorize',
+        tokenURL: 'https://idp.example.com/token',
+        issuer: 'https://idp.example.com',
+        jwksURI: 'https://idp.example.com/jwks',
+        scope: ['openid', 'email'],
+      });
+      expect(custom.profileURL).toBeUndefined();
+    });
+
+    it('--oidc-custom-protocol oauth2 skips the issuer and JWKS settings', async () => {
+      await GenerateAuth.run(
+        ['--datastore-type', 'mongo', '--output-dir', '/tmp/auth', '--author', 'A', '--method', 'oidc',
+          '--oidc-provider', 'custom', '--oidc-credentials-from-env', '--oidc-custom-protocol', 'oauth2',
+          '--oidc-custom-authorization-url', 'https://idp.example.com/authorize',
+          '--oidc-custom-token-url', 'https://idp.example.com/token',
+          '--oidc-custom-profile-url', 'https://idp.example.com/me'],
+        ROOT,
+      );
+
+      const [, , custom] = vi.mocked(processTemplate).mock.calls[1];
+      expect(custom).toMatchObject({ protocol: 'oauth2', profileURL: 'https://idp.example.com/me', scope: ['openid', 'email', 'profile'] });
+      expect(custom.issuer).toBeUndefined();
+      expect(custom.jwksURI).toBeUndefined();
+    });
+
     it('rejects an invalid --oidc-provider', async () => {
       await expect(
         GenerateAuth.run(
