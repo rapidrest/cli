@@ -2,6 +2,18 @@
 
 The templates are released on their own (tags `templates-v<version>`), separately from the CLI. See README.md.
 
+## Unreleased
+
+* Fixed `route`'s generated test failing `findById` with 403: the request was anonymous, and since
+  `@rapidrest/service-core` 2.5 a `.*` ACL record only matches an authenticated user. It now sends the record owner's
+  token.
+* Fixed `route`'s generated test hanging when the project's datastores are of mixed kinds (a SQL model with MongoDB
+  ACLs) or the route has no model in a MongoDB project: it now starts the test MongoDB whenever the project has one, and
+  reads ACLs through the `acl` datastore's own repository type.
+* Fixed a model-less `route`'s test expecting `Hello World!` from an authenticated request, which the route answers
+  with the user's uid.
+* Needs template engine 1.2 (`engine: ^1.2.0`).
+
 ## v1.1.1
 
 * Fixed a new SQLite or PostgreSQL project failing to install its dependencies with npm (`ERESOLVE`): the server

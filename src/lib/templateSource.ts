@@ -30,8 +30,9 @@ import yauzl from 'yauzl';
 //   explicit way across.
 
 // 1.1: upgrade leaves .claude/settings.json alone, so templates that ship one need at least 1.1.
+// 1.2: generate route passes aclIsMongo, startMongo, usesMongoApi and usesSqlApi to its test template.
 /** The template engine contract this CLI implements. */
-export const TEMPLATE_ENGINE_VERSION = '1.1.0';
+export const TEMPLATE_ENGINE_VERSION = '1.2.0';
 export const TEMPLATES_REPO = 'rapidrest/cli';
 export const TEMPLATES_TAG_PREFIX = 'templates-v';
 export const TEMPLATES_ZIP_ASSET = 'rapidrest-templates.zip';

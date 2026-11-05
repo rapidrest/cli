@@ -182,7 +182,44 @@ describe('generate route', () => {
       const [, , context] = vi.mocked(processTemplate).mock.calls[0];
       expect(context.datastore).toBe('');
       expect(context.datastoreType).toBe('');
-      expect(readProjectDatastores).not.toHaveBeenCalled();
+    });
+
+    it('takes the ACL repository type from the acl datastore, not the model\'s', async () => {
+      vi.mocked(readModelDatastore).mockResolvedValue('orders');
+      vi.mocked(readProjectDatastores).mockResolvedValue([
+        { name: 'acl', type: 'mongodb' },
+        { name: 'mongo', type: 'mongodb' },
+        { name: 'orders', type: 'better-sqlite3' },
+      ]);
+
+      await GenerateRoute.run(['OrderRoute', '-d', 'D', '--path', '/orders', '-a', 'A', '-m', 'Order', '--no-api', '--no-protect'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({
+        datastoreType: 'better-sqlite3', aclIsMongo: true, startMongo: true, usesMongoApi: true, usesSqlApi: true,
+      });
+    });
+
+    it('starts the in-memory MongoDB for a model-less route when the project has a MongoDB datastore', async () => {
+      vi.mocked(readProjectDatastores).mockResolvedValue([{ name: 'mongo', type: 'mongodb' }]);
+
+      await GenerateRoute.run(['PingRoute', '-d', 'D', '--path', '/ping', '-a', 'A', '--no-model', '--no-api', '--no-protect'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context.startMongo).toBe(true);
+    });
+
+    it('needs no MongoDB in an all-SQL project', async () => {
+      vi.mocked(readModelDatastore).mockResolvedValue('sqlite');
+      vi.mocked(readProjectDatastores).mockResolvedValue([
+        { name: 'acl', type: 'better-sqlite3' },
+        { name: 'sqlite', type: 'better-sqlite3' },
+      ]);
+
+      await GenerateRoute.run(['OrderRoute', '-d', 'D', '--path', '/orders', '-a', 'A', '-m', 'Order', '--no-api', '--no-protect'], ROOT);
+
+      const [, , context] = vi.mocked(processTemplate).mock.calls[0];
+      expect(context).toMatchObject({ aclIsMongo: false, startMongo: false, usesMongoApi: false, usesSqlApi: true });
     });
 
     it('picks the first property found on the model as the example update target', async () => {

@@ -113,11 +113,38 @@ describe('generate route — test template', () => {
 
   it('includes mongo-specific imports when datastoreType is mongodb', async () => {
     await withTmpDir(async (dir) => {
-      const ctx = { ...baseContext, model: 'Product', datastore: 'products', datastoreType: 'mongodb' };
+      const ctx = { ...baseContext, model: 'Product', datastore: 'products', datastoreType: 'mongodb',
+        aclIsMongo: true, startMongo: true, usesMongoApi: true, usesSqlApi: false };
       await processTemplate(testTemplateDir, dir, ctx, { projectDir: dir });
       const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
       expect(content).toContain('MongoConnection');
       expect(content).toContain('MongoMemoryServer');
+      expect(content).not.toContain('isSqlDataSource');
+    });
+  });
+
+  it('uses a SQL model repository and a MongoDB ACL repository for a SQL model in a MongoDB-ACL project', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = { ...baseContext, model: 'Product', datastore: 'orders', datastoreType: 'better-sqlite3',
+        aclIsMongo: true, startMongo: true, usesMongoApi: true, usesSqlApi: true };
+      await processTemplate(testTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
+      expect(content).toContain('let repo: Repository<Product>;');
+      expect(content).toContain('let aclRepo: MongoRepository<any>;');
+      expect(content).toContain('conn.getMongoRepository("AccessControlListMongo")');
+      expect(content).toContain('conn.getRepository("Product")');
+      // The server connects to the MongoDB acl datastore, so the in-memory MongoDB must start.
+      expect(content).toContain('await mongod.start();');
+    });
+  });
+
+  it('starts the in-memory MongoDB for a model-less route in a MongoDB project', async () => {
+    await withTmpDir(async (dir) => {
+      const ctx = { ...baseContext, model: undefined, startMongo: true };
+      await processTemplate(testTemplateDir, dir, ctx, { projectDir: dir });
+      const content = await import('fs/promises').then(fs => fs.readFile(join(dir, 'routes', 'ProductRoute.test.ts'), 'utf-8'));
+      expect(content).toContain('await mongod.start();');
+      expect(content).toContain('expect(result.body).toBe(`Hello ${user.uid}!`);');
     });
   });
 

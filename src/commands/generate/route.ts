@@ -113,10 +113,10 @@ export default class GenerateRoute extends Command {
     // assuming a hardcoded field that may not exist on the model (e.g. a `status` enum).
     let examplePropertyName = 'name';
     let examplePropertyValue = '"updated"';
+    const configured = await readProjectDatastores(cwd);
     if (model) {
       datastore = await readModelDatastore(cwd, model);
       if (datastore) {
-        const configured = await readProjectDatastores(cwd);
         datastoreType = configured.find((d) => d.name === datastore)?.type ?? '';
         hasRedis = configured.find((d) => d.type === 'redis') ? true : hasRedis;
       }
@@ -137,7 +137,19 @@ export default class GenerateRoute extends Command {
 
     const generateTest = !flags['no-test'];
 
+    // The generated test talks to two datastores that may be of different kinds: the model's own
+    // and the `acl` one (e.g. a SQL model in a project whose ACLs live in MongoDB). Each gets the
+    // repository type of its own datastore, and the in-memory MongoDB the test config points at
+    // starts whenever the server will connect to any MongoDB datastore, not only the model's.
+    const modelIsMongo = datastoreType === 'mongodb';
+    const aclType = configured.find((d) => d.name === 'acl')?.type;
+    const aclIsMongo = aclType ? aclType === 'mongodb' : modelIsMongo;
+
     const context: Record<string, unknown> = {
+      aclIsMongo,
+      startMongo: modelIsMongo || configured.some((d) => d.type === 'mongodb'),
+      usesMongoApi: modelIsMongo || aclIsMongo,
+      usesSqlApi: !modelIsMongo || !aclIsMongo,
       apiRoute: api !== undefined,
       apiVersion: api,
       author,

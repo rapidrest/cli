@@ -29,10 +29,11 @@ import {
     {{#if model}}
     ACLAction,
     ACLRecord,
-    {{#if (eq datastoreType "mongodb")}}
+    {{#if usesMongoApi}}
     MongoConnection,
     MongoRepository,
-    {{else}}
+    {{/if}}
+    {{#if usesSqlApi}}
     isSqlDataSource,
     {{/if}}
     ConnectionManager,
@@ -41,16 +42,16 @@ import {
     ObjectFactory
 } from "@rapidrest/service-core";
 {{#if model}}
-{{#unless (eq datastoreType "mongodb")}}
+{{#if usesSqlApi}}
 import type { Repository } from "typeorm";
-{{/unless}}
+{{/if}}
 {{/if}}
 import { JWTUtils, Logger } from "@rapidrest/core";
 import * as uuid from "uuid";
 {{#if model}}
 import {{model}} from "../../src/models/{{model}}.js";
 {{/if}}
-{{#if (eq datastoreType "mongodb")}}
+{{#if startMongo}}
 import { MongoMemoryServer } from "mongodb-memory-server";
 
 const mongod: MongoMemoryServer = new MongoMemoryServer({
@@ -83,7 +84,7 @@ describe("Route:{{name}} Tests", () => {
     let user: any = undefined;
     let userToken: string = "";
     let repo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<{{model}}>;
-    let aclRepo: {{#if (eq datastoreType "mongodb")}}Mongo{{/if}}Repository<any>;
+    let aclRepo: {{#if aclIsMongo}}Mongo{{/if}}Repository<any>;
 
     const create{{model}} = async function(data?: any): Promise<{{model}}> {
         const obj: {{model}} = new {{model}}({
@@ -131,15 +132,15 @@ describe("Route:{{name}} Tests", () => {
 
     {{/if}}
     beforeAll(async () => {
-        {{#if (eq datastoreType "mongodb")}}
+        {{#if startMongo}}
         await mongod.start();
         {{/if}}
         await server.start();
         {{#if model}}
-        
+
         const connMgr: ConnectionManager | undefined = objectFactory.getInstance(ConnectionManager);
         let conn: any = connMgr?.connections.get("acl");
-        {{#if (eq datastoreType "mongodb")}}
+        {{#if aclIsMongo}}
         if (conn instanceof MongoConnection) {
             aclRepo = conn.getMongoRepository("AccessControlListMongo");
         }
@@ -164,7 +165,7 @@ describe("Route:{{name}} Tests", () => {
 
     afterAll(async () => {
         await server.stop();
-        {{#if (eq datastoreType "mongodb")}}
+        {{#if startMongo}}
         await mongod.stop();
         {{/if}}
         await objectFactory.destroy();
@@ -272,8 +273,11 @@ describe("Route:{{name}} Tests", () => {
         const obj: {{model}} = await create{{model}}();
         const url = baseUrl + "/" + obj.uid;
 
+        // The record's ACL grants READ to its owner and to ".*", and ".*" only matches an
+        // authenticated user, so the request has to carry a token.
         const result = await request(server.getApplication())
-            .get(url);
+            .get(url)
+            .set("Authorization", "jwt " + userToken);
 
         expect(result).toBeDefined();
         expect(result.status).toBeGreaterThanOrEqual(200);
@@ -392,7 +396,8 @@ describe("Route:{{name}} Tests", () => {
         expect(result.status).toBeGreaterThanOrEqual(200);
         expect(result.status).toBeLessThan(300);
         expect(result.body).toBeDefined();
-        expect(result.body).toBe("Hello World!");
+        // The route greets an authenticated user by uid.
+        expect(result.body).toBe(`Hello ${user.uid}!`);
     });
 {{/if}}
 });

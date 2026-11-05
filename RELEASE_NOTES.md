@@ -1,5 +1,15 @@
 # Release Notes
 
+## Unreleased
+
+### Fixed
+
+* `generate route`'s test picked its datastore setup from the route's model alone. A route for a SQL model in a
+  project whose ACLs live in MongoDB used the wrong ACL repository and never started the test MongoDB, and a route
+  without a model never started it either, so the test hung starting the server. The test now uses the `acl`
+  datastore's own repository type and starts the test MongoDB whenever the project has a MongoDB datastore
+* Template engine 1.2, which passes the route test template the values it needs for this
+
 ## v3.1.0
 
 ### Added
