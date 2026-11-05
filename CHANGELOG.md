@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-11-05
+
+### Added
+- Added generate server --no-db to create a project without databases without prompting
+
+### Changed
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Fixed
+- Fixed package file
+- Fixed a new project's test, and so its CI, failing until its first test was generated: the template's Vitest config now passes with no test files
+- Fixed CI failing to install dependencies since the bin paths in package.json changed: yarn.lock now matches them
+
 ## [3.0.1] - 2026-11-05
 
 ### Changed
@@ -397,7 +411,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: rapidrest/cli/compare/v3.0.1...HEAD
+[Unreleased]: https://github.com/rapidrest/cli/compare/v3.1.0...HEAD
+[3.1.0]: https://github.com/rapidrest/cli/compare/v3.0.1...v3.1.0
 [3.0.1]: rapidrest/cli/compare/v3.0.0...v3.0.1
 [3.0.0]: rapidrest/cli/compare/v2.1.0...v3.0.0
 [2.1.0]: rapidrest/cli/compare/v2.0.0...v2.1.0
