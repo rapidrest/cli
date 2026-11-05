@@ -2,7 +2,7 @@
 
 The templates are released on their own (tags `templates-v<version>`), separately from the CLI. See README.md.
 
-## Unreleased
+## v1.1.1
 
 * Fixed a new SQLite or PostgreSQL project failing to install its dependencies with npm (`ERESOLVE`): the server
   template asked for `better-sqlite3` 13, which `typeorm` 1.1 doesn't support. It now asks for 12, as `generate model`
