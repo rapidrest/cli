@@ -1,14 +1,17 @@
 {
   "name": "@rapidrest/cli",
   "description": "The official CLI tool for RapidREST projects",
-  "repository": "rapidrest/cli",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rapidrest/cli.git"
+  },
   "version": "3.0.1",
   "author": "RapidREST <rapidrests@gmail.com>",
   "homepage": "https://github.com/rapidrest/cli",
   "license": "MPL-2.0",
   "bin": {
-    "rapidrest": "./bin/run.js",
-    "rr": "./bin/run.js"
+    "rapidrest": "bin/run.js",
+    "rr": "bin/run.js"
   },
   "bugs": "https://github.com/rapidrest/cli/issues",
   "packageManager": "yarn@4.12.0",
