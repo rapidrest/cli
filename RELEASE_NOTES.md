@@ -1,6 +1,6 @@
 # Release Notes
 
-## Unreleased
+## v3.0.1
 
 * Fixed publishing: the package's `rapidrest` and `rr` executables (`bin/`) were never committed, so a package
   published by CI would have had none, and the publish job failed because npm ran the pack script with the runner's

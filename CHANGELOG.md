@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-11-05
+
+### Changed
+- Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+
+### Fixed
+- Fixed the published package missing its rapidrest and rr executables: bin/ was ignored by git, so CI never had it to publish
+- Fixed the publish job failing because npm ran the pack script with the runner's Yarn 1: the pack steps now run under the pinned Yarn and npm publish skips scripts
+
 ## [3.0.0] - 2026-11-05
 
 ### Added
@@ -388,7 +397,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed imports
 - Fixed tests and a bug with Redis
 
-[Unreleased]: rapidrest/cli/compare/v3.0.0...HEAD
+[Unreleased]: rapidrest/cli/compare/v3.0.1...HEAD
+[3.0.1]: rapidrest/cli/compare/v3.0.0...v3.0.1
 [3.0.0]: rapidrest/cli/compare/v2.1.0...v3.0.0
 [2.1.0]: rapidrest/cli/compare/v2.0.0...v2.1.0
 [2.0.0]: rapidrest/cli/compare/v1.0.1...v2.0.0
